@@ -1,0 +1,37 @@
+log_level: "info"
+
+server:
+  host: "127.0.0.1"
+  port: 8080
+  upstream_timeout_secs: 30
+
+registries:
+  query_mode: priority
+  sources:
+    - type: mock
+      priority: 1
+      services:
+        order-service:
+          - host: "127.0.0.1"
+            port: 9001
+            metadata:
+              env: "local"
+              version: "v1"
+        api-gateway:
+          - host: "127.0.0.1"
+            port: 9000
+
+routes:
+  - id: "orders-api"
+    priority: 10
+    path:
+      type: prefix
+      value: "/api/orders"
+    service_id: "order-service"
+
+  - id: "catch-all"
+    priority: 100
+    path:
+      type: prefix
+      value: "/"
+    service_id: "api-gateway"

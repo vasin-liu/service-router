@@ -1,0 +1,219 @@
+use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+
+/// Top-level application configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct AppConfig {
+    pub server: ServerConfig,
+    pub registries: RegistriesConfig,
+    pub routes: Vec<RoutingRule>,
+    #[serde(default)]
+    pub log_level: String,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            server: ServerConfig::default(),
+            registries: RegistriesConfig::default(),
+            routes: Vec::new(),
+            log_level: "info".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct ServerConfig {
+    #[serde(default = "default_host")]
+    pub host: String,
+    #[serde(default = "default_port")]
+    pub port: u16,
+    /// Timeout in seconds for upstream connections.
+    #[serde(default = "default_upstream_timeout")]
+    pub upstream_timeout_secs: u64,
+}
+
+impl Default for ServerConfig {
+    fn default() -> Self {
+        Self {
+            host: default_host(),
+            port: default_port(),
+            upstream_timeout_secs: default_upstream_timeout(),
+        }
+    }
+}
+
+fn default_host() -> String { "0.0.0.0".to_string() }
+fn default_port() -> u16 { 8080 }
+fn default_upstream_timeout() -> u64 { 30 }
+
+// ---------------------------------------------------------------------------
+// Registry configuration
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub struct RegistriesConfig {
+    /// How multiple registries are queried.
+    #[serde(default)]
+    pub query_mode: RegistryQueryMode,
+    #[serde(default)]
+    pub sources: Vec<RegistryConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum RegistryQueryMode {
+    /// Try registries in priority order; return first non-empty result.
+    #[default]
+    Priority,
+    /// Query all registries concurrently and merge results.
+    Merge,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum RegistryConfig {
+    Nacos(NacosConfig),
+    Eureka(EurekaConfig),
+    Kubernetes(KubernetesConfig),
+    Mock(MockRegistryConfig),
+}
+
+impl RegistryConfig {
+    pub fn priority(&self) -> u32 {
+        match self {
+            RegistryConfig::Nacos(c) => c.priority,
+            RegistryConfig::Eureka(c) => c.priority,
+            RegistryConfig::Kubernetes(c) => c.priority,
+            RegistryConfig::Mock(c) => c.priority,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct NacosConfig {
+    #[serde(default = "default_priority")]
+    pub priority: u32,
+    pub server_addr: String,
+    pub namespace: Option<String>,
+    pub group: Option<String>,
+    pub auth: Option<NacosAuth>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct NacosAuth {
+    pub username: String,
+    pub password: String,
+    #[serde(default = "default_token_refresh")]
+    pub token_refresh_interval_secs: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct EurekaConfig {
+    #[serde(default = "default_priority")]
+    pub priority: u32,
+    pub server_url: String,
+    pub auth: Option<BasicAuth>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct BasicAuth {
+    pub username: String,
+    pub password: String,
+}
+
+/// Kubernetes service discovery (stub — reserved for future implementation).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct KubernetesConfig {
+    #[serde(default = "default_priority")]
+    pub priority: u32,
+    /// Kubernetes API server URL. Defaults to the in-cluster address.
+    #[serde(default = "default_k8s_api_server")]
+    pub api_server_url: String,
+    pub namespace: Option<String>,
+    pub auth: Option<K8sAuth>,
+}
+
+fn default_k8s_api_server() -> String {
+    "https://kubernetes.default.svc".to_string()
+}
+
+/// K8s auth stub.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct K8sAuth {
+    /// Path to a ServiceAccount token file.
+    pub token_file: Option<String>,
+    /// Explicit bearer token (alternative to token_file).
+    pub token: Option<String>,
+}
+
+/// In-memory mock registry for local development and CI tests.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct MockRegistryConfig {
+    #[serde(default = "default_priority")]
+    pub priority: u32,
+    /// Map of service_id -> instances
+    #[serde(default)]
+    pub services: HashMap<String, Vec<MockServiceInstance>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct MockServiceInstance {
+    pub host: String,
+    pub port: u16,
+    #[serde(default)]
+    pub metadata: HashMap<String, String>,
+}
+
+fn default_priority() -> u32 { 100 }
+fn default_token_refresh() -> u64 { 1800 }
+
+// ---------------------------------------------------------------------------
+// Routing rules
+// ---------------------------------------------------------------------------
+
+/// Path matching strategy for a routing rule.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum PathMatcher {
+    Exact { value: String },
+    Prefix { value: String },
+    Glob { value: String },
+    Regex { value: String },
+}
+
+/// A single routing rule as loaded from YAML.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct RoutingRule {
+    pub id: String,
+    pub path: PathMatcher,
+    /// HTTP methods this rule applies to. `None` means all methods.
+    #[serde(default)]
+    pub methods: Option<Vec<String>>,
+    /// Request header matchers (all must match).
+    #[serde(default)]
+    pub headers: Option<HashMap<String, String>>,
+    /// Target: a service ID resolved via the registry, OR a direct URL.
+    pub service_id: Option<String>,
+    /// Direct upstream URL, bypassing registry discovery.
+    pub upstream_url: Option<String>,
+    /// Strip this prefix from the path before forwarding.
+    pub strip_prefix: Option<String>,
+    /// Higher priority rules are evaluated first (lower number = higher priority).
+    #[serde(default = "default_rule_priority")]
+    pub priority: u32,
+}
+
+fn default_rule_priority() -> u32 { 100 }
