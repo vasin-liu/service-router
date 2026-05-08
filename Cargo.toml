@@ -1,0 +1,63 @@
+[package]
+name = "service-router"
+version = "0.1.0"
+edition = "2021"
+description = "Microservice registry proxy with Nacos/Eureka support, intelligent routing, and WebSocket proxying"
+
+[[bin]]
+name = "service-router"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.45", features = ["macros", "rt-multi-thread", "net", "fs", "time", "sync", "signal"] }
+tokio-util = { version = "0.7", features = ["io"] }
+futures = "0.3"
+
+# Web framework
+axum = { version = "0.8", features = ["macros", "ws"] }
+tower = { version = "0.5", features = ["full"] }
+tower-http = { version = "0.6", features = ["trace", "cors", "compression-gzip"] }
+http = "1.0"
+
+# WebSocket
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
+
+# HTTP client
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-webpki-roots", "json", "gzip", "stream"] }
+
+# Configuration
+figment = { version = "0.10", features = ["yaml", "env"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Path matching
+regex = "1.11"
+glob = "0.3"
+
+# Concurrent data structures / hot-reload
+arc-swap = "1.7"
+dashmap = { version = "6", features = ["serde"] }
+async-trait = "0.1"
+
+# Config file watching (hot-reload)
+notify = { version = "7.0", features = [] }
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Logging / tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# Utilities
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+bytes = "1.0"
+once_cell = "1.0"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.0"

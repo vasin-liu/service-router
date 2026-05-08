@@ -1,0 +1,127 @@
+# service-router configuration example
+# Run with: cargo run -- config/config.yaml
+
+log_level: "info"   # trace | debug | info | warn | error
+
+server:
+  host: "127.0.0.1"
+  port: 8080
+  upstream_timeout_secs: 30
+
+# -------------------------------------------------------------------
+# Registry sources — can mix Nacos, Eureka, and Kubernetes
+# Priority: lower number = higher priority (tried first in Priority mode)
+# -------------------------------------------------------------------
+registries:
+  # "priority" — try each registry in order, return first non-empty result
+  # "merge"    — query all registries concurrently and deduplicate instances
+  query_mode: priority
+
+  sources:
+    # ---- Nacos (unauthenticated) -----------------------------------
+    - nacos:
+        priority: 1
+        server_addr: "http://127.0.0.1:8848"
+        namespace: "public"
+        group: "DEFAULT_GROUP"
+
+    # ---- Nacos (with username/password auth) -----------------------
+    # - nacos:
+    #     priority: 1
+    #     server_addr: "http://nacos.example.com:8848"
+    #     namespace: "prod"
+    #     group: "DEFAULT_GROUP"
+    #     username: "nacos"
+    #     password: "${NACOS_PASSWORD}"   # read from env var
+    #     token_refresh_interval_secs: 1800
+
+    # ---- Eureka (unauthenticated) ----------------------------------
+    # - eureka:
+    #     priority: 2
+    #     server_url: "http://127.0.0.1:8761/eureka"
+
+    # ---- Eureka (with Basic Auth) ----------------------------------
+    # - eureka:
+    #     priority: 2
+    #     server_url: "http://eureka.example.com:8761/eureka"
+    #     username: "admin"
+    #     password: "${EUREKA_PASSWORD}"
+
+    # ---- Kubernetes (stub — returns empty; for future use) ---------
+    # - kubernetes:
+    #     priority: 3
+    #     namespace: "default"
+    #     api_server_url: "https://kubernetes.default.svc"
+
+# -------------------------------------------------------------------
+# Routing rules — evaluated in order; first match wins
+# -------------------------------------------------------------------
+routing:
+  rules:
+    # ------------------------------------------------------------------
+    # Rule 1: exact path match — forward to a local dev service
+    # Useful when you have a microservice running locally and want
+    # only specific paths routed to it.
+    # ------------------------------------------------------------------
+    - id: "local-user-service"
+      priority: 10
+      match:
+        path:
+          type: prefix
+          value: "/api/users"
+        # Optionally restrict to specific HTTP methods:
+        # methods: ["GET", "POST"]
+        # Optionally require a header:
+        # headers:
+        #   x-route-target: "local"
+      upstream_url: "http://127.0.0.1:9001"
+      # Strip the matched prefix before forwarding:
+      # strip_prefix: "/api/users"
+
+    # ------------------------------------------------------------------
+    # Rule 2: header-based routing — route "X-Dev-Mode: true" to local
+    # ------------------------------------------------------------------
+    - id: "dev-mode-override"
+      priority: 5
+      match:
+        path:
+          type: prefix
+          value: "/api/"
+        headers:
+          x-dev-mode: "true"
+      upstream_url: "http://127.0.0.1:9002"
+
+    # ------------------------------------------------------------------
+    # Rule 3: regex path match — forward to a specific service ID
+    # The service ID is looked up in the configured registries.
+    # ------------------------------------------------------------------
+    - id: "order-service-regex"
+      priority: 20
+      match:
+        path:
+          type: regex
+          value: "^/api/orders(/.*)?$"
+      service_id: "order-service"
+
+    # ------------------------------------------------------------------
+    # Rule 4: glob path match — forward /static/** to a CDN / upstream
+    # ------------------------------------------------------------------
+    - id: "static-assets"
+      priority: 30
+      match:
+        path:
+          type: glob
+          value: "/static/**"
+      upstream_url: "http://cdn.example.com"
+      strip_prefix: "/static"
+
+    # ------------------------------------------------------------------
+    # Rule 5: catch-all — forward everything else via registry discovery
+    # ------------------------------------------------------------------
+    - id: "default-gateway"
+      priority: 100
+      match:
+        path:
+          type: prefix
+          value: "/"
+      service_id: "api-gateway"
