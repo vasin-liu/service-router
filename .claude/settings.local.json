@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(cmd.exe /c \"cd /d D:\\\\Work\\\\99_Code\\\\service-router && cargo build\" 2>&1)",
+      "Bash(/c/Users/vasin/.cargo/bin/rustup target:*)",
+      "Bash(which gcc:*)",
+      "Bash(/c/Users/vasin/.cargo/bin/cargo build:*)",
+      "Bash(ls \"/c/Program Files \\(x86\\)/Windows Kits/\" 2>/dev/null; ls \"/c/Program Files \\(x86\\)/\" 2>/dev/null | grep -i \"win\")",
+      "Read(//mingw64/**)",
+      "Read(//usr/**)",
+      "Bash(cd \"D:\\\\Work\\\\99_Code\\\\service-router\" && cargo --version && rustc --version)",
+      "Bash(cd \"D:\\\\Work\\\\99_Code\\\\service-router\" && cargo help 2>&1 | grep -E \"^\\\\s+\\(build|test|check|clippy\\)\" | head -10)"
+    ]
+  }
+}
