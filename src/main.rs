@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::{net::TcpListener as StdTcpListener, process::ExitCode};
 
@@ -52,9 +53,10 @@ async fn run() -> anyhow::Result<ExitCode> {
             path,
             method,
             headers,
+            request_file,
             as_json,
             verbose,
-        } => route_explain(config_path, path, method, headers, as_json, verbose),
+        } => route_explain(config_path, path, method, headers, request_file, as_json, verbose),
         Command::Help => {
             print_help();
             Ok(ExitCode::SUCCESS)
@@ -190,6 +192,7 @@ enum Command {
         path: String,
         method: String,
         headers: Vec<(String, String)>,
+        request_file: Option<PathBuf>,
         as_json: bool,
         verbose: bool,
     },
@@ -252,18 +255,24 @@ fn parse_command(args: Vec<String>) -> Command {
             }
         }
         Some("route-explain") => {
-            let path = args.get(1).cloned().unwrap_or_else(|| "/".to_string());
-            let method = args.get(2).cloned().unwrap_or_else(|| "GET".to_string());
             let mut config_path = default_config();
             let mut headers = Vec::new();
             let mut as_json = false;
             let mut verbose = false;
-            let mut i = 3;
+            let mut request_file: Option<PathBuf> = None;
+            let mut positionals: Vec<String> = Vec::new();
+            let mut i = 1;
             while i < args.len() {
                 let arg = &args[i];
                 if arg == "--config" {
                     if let Some(value) = args.get(i + 1) {
                         config_path = PathBuf::from(value);
+                        i += 2;
+                        continue;
+                    }
+                } else if arg == "--request-file" {
+                    if let Some(value) = args.get(i + 1) {
+                        request_file = Some(PathBuf::from(value));
                         i += 2;
                         continue;
                     }
@@ -277,16 +286,34 @@ fn parse_command(args: Vec<String>) -> Command {
                     }
                 } else if arg == "--json" {
                     as_json = true;
+                    i += 1;
+                    continue;
                 } else if arg == "--verbose" {
                     verbose = true;
+                    i += 1;
+                    continue;
+                } else if arg.starts_with('-') {
+                    i += 1;
+                    continue;
+                } else {
+                    positionals.push(arg.clone());
+                    i += 1;
                 }
-                i += 1;
             }
+            let path = positionals
+                .get(0)
+                .cloned()
+                .unwrap_or_else(|| "/".to_string());
+            let method = positionals
+                .get(1)
+                .cloned()
+                .unwrap_or_else(|| "GET".to_string());
             Command::RouteExplain {
                 config_path,
                 path,
                 method,
                 headers,
+                request_file,
                 as_json,
                 verbose,
             }
@@ -301,7 +328,7 @@ fn parse_command(args: Vec<String>) -> Command {
 
 fn print_help() {
     println!(
-        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain <path> [method] [options]            Explain route match result\n    options: --config <path> --header \"key:value\" [--json] [--verbose]\n  help                                               Show help"
+        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  help                                               Show help"
     );
 }
 
@@ -362,14 +389,60 @@ async fn check_config(config_path: PathBuf, as_json: bool, strict: bool) -> anyh
     Ok(ExitCode::SUCCESS)
 }
 
+/// Request sample for `route-explain --request-file` (YAML or JSON).
+#[derive(Debug, serde::Deserialize)]
+struct RouteRequestSample {
+    path: String,
+    #[serde(default)]
+    method: Option<String>,
+    #[serde(default)]
+    headers: HashMap<String, String>,
+}
+
+fn load_route_request_sample(path: &Path) -> anyhow::Result<RouteRequestSample> {
+    let raw =
+        std::fs::read_to_string(path).map_err(|e| anyhow::anyhow!("read {}: {e}", path.display()))?;
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if ext == "json" {
+        serde_json::from_str(&raw).map_err(|e| {
+            anyhow::anyhow!("parse {} as JSON: {e}", path.display())
+        })
+    } else {
+        serde_yaml::from_str(&raw).map_err(|e| {
+            anyhow::anyhow!("parse {} as YAML: {e}", path.display())
+        })
+    }
+}
+
 fn route_explain(
     config_path: PathBuf,
     path: String,
     method: String,
     headers: Vec<(String, String)>,
+    request_file: Option<PathBuf>,
     as_json: bool,
     verbose: bool,
 ) -> anyhow::Result<ExitCode> {
+    let request_file_for_json = request_file.as_ref().map(|p| p.display().to_string());
+    let (path, method, headers) = if let Some(ref rf) = request_file {
+        let sample = load_route_request_sample(rf)?;
+        let method = sample
+            .method
+            .unwrap_or_else(|| "GET".to_string());
+        let mut merged = sample.headers;
+        for (k, v) in headers {
+            merged.insert(k, v);
+        }
+        let headers: Vec<(String, String)> = merged.into_iter().collect();
+        (sample.path, method, headers)
+    } else {
+        (path, method, headers)
+    };
+
     let config = load_config(&config_path)
         .map_err(|e| anyhow::anyhow!("Failed to load config from {}: {}", config_path.display(), e))?;
     let snapshot = service_router::routing::RouterSnapshot::from_config(&config)
@@ -391,6 +464,7 @@ fn route_explain(
                 "diagnostic_version": "1.0",
                 "matched": true,
                 "config_path": config_path.display().to_string(),
+                "request_file": request_file_for_json,
                 "path": path,
                 "method": method.to_uppercase(),
                 "rule_id": rule.id,
@@ -440,6 +514,7 @@ fn route_explain(
             "diagnostic_version": "1.0",
             "matched": false,
             "config_path": config_path_str,
+            "request_file": request_file_for_json,
             "path": path,
             "method": method.to_uppercase(),
             "inspected_rules": inspect_limit,
@@ -1224,8 +1299,8 @@ mod tests {
     use service_router::routing::CompiledRoutingRule;
 
     use super::{
-        explain_rule_mismatch, merge_remediation_outline, parse_host_port_for_probe,
-        run_strict_config_checks,
+        explain_rule_mismatch, load_route_request_sample, merge_remediation_outline,
+        parse_host_port_for_probe, run_strict_config_checks,
     };
 
     #[test]
@@ -1511,5 +1586,37 @@ mod tests {
         let (h, p) = parse_host_port_for_probe("http://example.com:8080/v1/api").unwrap();
         assert_eq!(h, "example.com");
         assert_eq!(p, 8080);
+    }
+
+    #[test]
+    fn load_route_request_sample_reads_yaml_tempfile() {
+        let dir = std::env::temp_dir();
+        let p = dir.join("route-explain-req-test.yaml");
+        std::fs::write(
+            &p,
+            "path: /z\nmethod: PUT\nheaders:\n  h: \"v\"\n",
+        )
+        .unwrap();
+        let s = load_route_request_sample(&p).unwrap();
+        assert_eq!(s.path, "/z");
+        assert_eq!(s.method.as_deref(), Some("PUT"));
+        assert_eq!(s.headers.get("h").map(String::as_str), Some("v"));
+        std::fs::remove_file(&p).ok();
+    }
+
+    #[test]
+    fn load_route_request_sample_reads_json_tempfile() {
+        let dir = std::env::temp_dir();
+        let p = dir.join("route-explain-req-test.json");
+        std::fs::write(
+            &p,
+            r#"{"path":"/a","method":"DELETE","headers":{"X":"y"}}"#,
+        )
+        .unwrap();
+        let s = load_route_request_sample(&p).unwrap();
+        assert_eq!(s.path, "/a");
+        assert_eq!(s.method.as_deref(), Some("DELETE"));
+        assert_eq!(s.headers.get("X").map(String::as_str), Some("y"));
+        std::fs::remove_file(&p).ok();
     }
 }

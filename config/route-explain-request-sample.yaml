@@ -1,0 +1,5 @@
+# Sample request for: cargo run -- route-explain --request-file config/route-explain-request-sample.yaml --config config/mock-config.yaml
+path: "/api/orders/123"
+method: "GET"
+headers:
+  x-trace-id: "sample-trace"

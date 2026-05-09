@@ -7,8 +7,38 @@
 - `diagnostic_version`: string, currently `"1.0"`
 - `matched`: boolean
 - `config_path`: string
+- `request_file`: string or null — set when `--request-file` was used (path to the sample file)
 - `path`: string
 - `method`: string
+
+## Request sample file (`--request-file`)
+
+Load path/method/headers from a **YAML** (default) or **JSON** file (if extension is `.json`).
+
+YAML shape:
+
+```yaml
+path: "/api/orders/123"
+method: "GET"
+headers:
+  x-env: "dev"
+```
+
+JSON shape:
+
+```json
+{
+  "path": "/api/orders/123",
+  "method": "POST",
+  "headers": { "X-Trace": "1" }
+}
+```
+
+- `path` (required): request URI path.
+- `method` (optional): defaults to `GET`.
+- `headers` (optional): string map. Repeated `--header key:value` on the CLI **overrides** the same key from the file.
+
+Example: `config/route-explain-request-sample.yaml`.
 
 ## Matched output example
 
@@ -17,6 +47,7 @@
   "diagnostic_version": "1.0",
   "matched": true,
   "config_path": "config/mock-config.yaml",
+  "request_file": null,
   "path": "/api/orders/123",
   "method": "GET",
   "rule_id": "orders-api",
@@ -33,6 +64,7 @@
   "diagnostic_version": "1.0",
   "matched": false,
   "config_path": "config/mock-config.yaml",
+  "request_file": null,
   "path": "/api/unknown",
   "method": "POST",
   "inspected_rules": 5,
