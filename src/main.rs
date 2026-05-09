@@ -123,13 +123,33 @@ async fn run_server(config_path: PathBuf) -> anyhow::Result<ExitCode> {
     }
 
     // --- Build Axum app ---
+    let metrics = Arc::new(ProxyMetrics::default());
     let state = AppState::new(
         shared_router,
         resolver_slot,
         config_slot,
         config.server.upstream_timeout_secs,
-        Arc::new(ProxyMetrics::default()),
+        Arc::clone(&metrics),
     );
+
+    // Lightweight periodic metrics log for environments where scraping `/metrics`
+    // is inconvenient. Logs only when counters are non-empty.
+    {
+        let metrics = Arc::clone(&metrics);
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                let snapshot = metrics.snapshot();
+                if !snapshot.route_hits.is_empty() || !snapshot.failure_reasons.is_empty() {
+                    info!(
+                        route_hits = ?snapshot.route_hits,
+                        failure_reasons = ?snapshot.failure_reasons,
+                        "proxy metrics snapshot"
+                    );
+                }
+            }
+        });
+    }
 
     let listen_addr = format!("{}:{}", config.server.host, config.server.port);
 
