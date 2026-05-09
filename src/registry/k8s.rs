@@ -417,7 +417,7 @@ impl ServiceTcpFilter {
         let mut numeric_targets = HashSet::new();
         let mut named_targets = HashSet::new();
         for p in ports {
-            if p.protocol.as_deref() == Some("UDP") {
+            if protocol_excluded_from_http_proxy(p.protocol.as_deref()) {
                 continue;
             }
             match &p.target_port {
@@ -439,6 +439,13 @@ impl ServiceTcpFilter {
             named_targets,
         }
     }
+}
+
+fn protocol_excluded_from_http_proxy(protocol: Option<&str>) -> bool {
+    matches!(
+        protocol.map(|p| p.eq_ignore_ascii_case("UDP") || p.eq_ignore_ascii_case("SCTP")),
+        Some(true)
+    )
 }
 
 #[derive(Debug, Deserialize)]
@@ -544,7 +551,7 @@ fn endpoint_slices_to_instances(list: EndpointSliceList, tcp_filter: &ServiceTcp
             }
             for addr in &ep.addresses {
                 for port_ent in &slice.ports {
-                    if port_ent.protocol.as_deref() == Some("UDP") {
+                    if protocol_excluded_from_http_proxy(port_ent.protocol.as_deref()) {
                         continue;
                     }
                     let Some(port_num) = port_ent.port else {
@@ -576,7 +583,7 @@ fn endpoints_to_instances(endpoints: K8sEndpoints, tcp_filter: &ServiceTcpFilter
         let ports = subset.ports.unwrap_or_default();
         for address in &addresses {
             for port in &ports {
-                if port.protocol.as_deref() == Some("UDP") {
+                if protocol_excluded_from_http_proxy(port.protocol.as_deref()) {
                     continue;
                 }
                 if !tcp_filter.allows(port.port, port.name.as_deref()) {
@@ -702,6 +709,28 @@ mod tests {
         let instances = endpoints_to_instances(endpoints, &filter);
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].port, 8443);
+    }
+
+    #[test]
+    fn service_tcp_filter_skips_udp_and_sctp_spec_ports() {
+        let svc_ports = [
+            K8sServicePort {
+                target_port: Some(TargetPort::Int(53)),
+                protocol: Some("UDP".into()),
+            },
+            K8sServicePort {
+                target_port: Some(TargetPort::Int(9900)),
+                protocol: Some("SCTP".into()),
+            },
+            K8sServicePort {
+                target_port: Some(TargetPort::Int(8080)),
+                protocol: Some("TCP".into()),
+            },
+        ];
+        let f = ServiceTcpFilter::from_service_ports(&svc_ports);
+        assert_eq!(f.numeric_targets.len(), 1);
+        assert!(f.numeric_targets.contains(&8080));
+        assert!(f.named_targets.is_empty());
     }
 
     #[test]

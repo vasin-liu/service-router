@@ -46,6 +46,16 @@ Unreachable or parse failure:
   - `upstream_url`: `host`, `port` or `error`
   - `service_id`: `service_id`, `resolved_instances` or `error`
 
+### Kubernetes registry and `service_id` probes
+
+When the configured registry for a route is **Kubernetes**, resolving `service_id` uses the same logic as proxy discovery:
+
+1. Load `Service` TCP targets from `spec.ports` (skips `UDP` / `SCTP` for HTTP proxy use).
+2. Query Core `Endpoints`, then `EndpointSlice` if no instances are produced.
+3. Filter backend port rows to those targets (numeric `targetPort` or named port entry match).
+
+`resolved_instances` is the count of distinct `(host, port)` pairs after that filtering. Each pair is TCP-probed for `reachable` when `--probe-upstream` is set.
+
 ## Pass example
 
 ```json
