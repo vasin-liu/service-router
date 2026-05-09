@@ -79,19 +79,19 @@ script:
 
 Add **`cache:` for `target/`** on long-running pipelines if runners allow it.
 
-## Optional: upstream TCP probe
+## Upstream TCP probe (dockerized)
 
 Workflow `.github/workflows/doctor-probe.yml` runs **only on manual trigger** (`workflow_dispatch`).
 
-It executes:
+It now boots local mock upstreams via Docker Compose (`.github/compose/doctor-probe.compose.yml`) before probing:
 
 ```bash
+docker compose -f .github/compose/doctor-probe.compose.yml up -d
 cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json
+docker compose -f .github/compose/doctor-probe.compose.yml down -v
 ```
 
-On default GitHub-hosted runners nothing listens on the mock profile ports (`127.0.0.1:9000`, etc.), so this job often **fails** until you run it where upstreams exist (self-hosted runner, VPN to dev cluster, or after starting local mocks). Use it to validate connectivity in an environment that mirrors runtime.
-
-**Product priority:** orchestrating Docker Compose inside CI purely to green this probe is intentionally **lower priority** than core feature work (`docs/next-iteration-backlog.md`, item B09). Do not block feature milestones on CI probe hardening unless there is an explicit release gate need.
+The compose stack binds `127.0.0.1:9000` and `127.0.0.1:9001`, matching `config/mock-config.yaml`, so probe results are deterministic on hosted runners.
 
 ## Why this baseline
 

@@ -89,11 +89,12 @@
 - **B04** `doctor --probe-upstream`：对 Nacos/Eureka/K8s 配置地址做 TCP 探测，JSON `registry_endpoint_probe` + `TCP_UNREACHABLE` / `ENDPOINT_PARSE_ERROR`；mock 仅跳过端点探测。
 - **B07** `route-explain --request-file`：从 YAML/JSON 读 `path`/`method`/`headers`；CLI `--header` 覆盖同名键；文档与示例文件已补充。
 - **B08** 指标：`GET /metrics` 返回 `route_hits` / `failure_reasons`；`server/metrics.rs`；失败码与 `ProxyError`/`RegistryError` 对齐。
+- **B09** CI probe：`doctor-probe.yml` 在 GitHub runner 中先 `docker compose up` 启动 9000/9001 mock 上游，再跑 `doctor --probe-upstream --json`，结束后自动 `down -v`。
 
 ## 优先级说明（与路线图一致）
 
 - **功能实现优先**：严格检查、路由解释、mock 场景、CLI 文档等持续推进。
-- **Docker Compose 探测 CI**：已记入 `docs/next-iteration-backlog.md` 的 **B09（P3 暂缓）**，不抢占主线。
+- **Docker Compose 探测 CI**：B09 已落地，作为 `doctor-probe` 手动工作流保留（不影响主线 CI 门禁）。
 
 ## 下一个迭代建议（按优先级）
 
