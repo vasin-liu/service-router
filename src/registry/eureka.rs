@@ -45,12 +45,19 @@ impl EurekaRegistry {
         self.config.server_url.trim_end_matches('/')
     }
 
-    fn apps_url(&self) -> String {
-        format!("{}/apps", self.base_url())
-    }
-
     fn app_url(&self, service_name: &str) -> String {
         format!("{}/apps/{}", self.base_url(), service_name)
+    }
+
+    fn health_url(&self) -> String {
+        let path = self.config.health_path.trim();
+        if path.is_empty() {
+            format!("{}/apps", self.base_url())
+        } else if path.starts_with('/') {
+            format!("{}{}", self.base_url(), path)
+        } else {
+            format!("{}/{}", self.base_url(), path)
+        }
     }
 
     fn add_auth(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
@@ -116,10 +123,10 @@ impl ServiceRegistry for EurekaRegistry {
     }
 
     async fn health(&self) -> RegistryHealth {
-        // `/apps` is a stronger Eureka-specific signal than Spring `/info`.
+        // Default `/apps`; configurable for non-standard Eureka deployments.
         let req = self
             .http
-            .get(self.apps_url())
+            .get(self.health_url())
             .header("Accept", "application/json");
         let req = self.add_auth(req);
 

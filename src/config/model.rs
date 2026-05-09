@@ -119,7 +119,15 @@ pub struct EurekaConfig {
     #[serde(default = "default_priority")]
     pub priority: u32,
     pub server_url: String,
+    /// Health check path appended to `server_url` for `doctor`/registry liveness.
+    /// Defaults to `/apps` for Eureka-native availability checks.
+    #[serde(default = "default_eureka_health_path")]
+    pub health_path: String,
     pub auth: Option<BasicAuth>,
+}
+
+fn default_eureka_health_path() -> String {
+    "/apps".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
