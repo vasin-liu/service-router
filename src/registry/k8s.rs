@@ -46,6 +46,19 @@ impl K8sRegistry {
         )
     }
 
+    fn endpoint_slices_list_url(&self, namespace: &str, service_name: &str) -> String {
+        let base = format!(
+            "{}/apis/discovery.k8s.io/v1/namespaces/{}/endpointslices",
+            self.config.api_server_url.trim_end_matches('/'),
+            namespace
+        );
+        let selector = format!("kubernetes.io/service-name={}", service_name);
+        let query = url::form_urlencoded::Serializer::new(String::new())
+            .append_pair("labelSelector", &selector)
+            .finish();
+        format!("{base}?{query}")
+    }
+
     fn health_url(&self) -> String {
         format!("{}/readyz", self.config.api_server_url.trim_end_matches('/'))
     }
@@ -57,6 +70,66 @@ impl K8sRegistry {
             }
         }
         req
+    }
+
+    async fn fetch_core_endpoints(&self, namespace: &str, name: &str) -> Result<Vec<ServiceInstance>, RegistryError> {
+        let url = self.endpoint_url(namespace, name);
+        let req = self.with_auth(self.http.get(url.clone()));
+        let resp = req.send().await?;
+
+        if resp.status() == reqwest::StatusCode::UNAUTHORIZED
+            || resp.status() == reqwest::StatusCode::FORBIDDEN
+        {
+            return Err(RegistryError::AuthFailed);
+        }
+        if resp.status() == reqwest::StatusCode::NOT_FOUND {
+            return Ok(vec![]);
+        }
+        if !resp.status().is_success() {
+            return Err(RegistryError::UnexpectedResponse(format!(
+                "Kubernetes endpoints {} returned {}",
+                url,
+                resp.status()
+            )));
+        }
+
+        let endpoints: K8sEndpoints = resp
+            .json()
+            .await
+            .map_err(|e| RegistryError::UnexpectedResponse(e.to_string()))?;
+        Ok(endpoints_to_instances(endpoints))
+    }
+
+    async fn fetch_endpoint_slices(
+        &self,
+        namespace: &str,
+        service_name: &str,
+    ) -> Result<Vec<ServiceInstance>, RegistryError> {
+        let url = self.endpoint_slices_list_url(namespace, service_name);
+        let req = self.with_auth(self.http.get(url.clone()));
+        let resp = req.send().await?;
+
+        if resp.status() == reqwest::StatusCode::UNAUTHORIZED
+            || resp.status() == reqwest::StatusCode::FORBIDDEN
+        {
+            return Err(RegistryError::AuthFailed);
+        }
+        if resp.status() == reqwest::StatusCode::NOT_FOUND {
+            return Ok(vec![]);
+        }
+        if !resp.status().is_success() {
+            return Err(RegistryError::UnexpectedResponse(format!(
+                "Kubernetes endpointSlices {} returned {}",
+                url,
+                resp.status()
+            )));
+        }
+
+        let list: EndpointSliceList = resp
+            .json()
+            .await
+            .map_err(|e| RegistryError::UnexpectedResponse(e.to_string()))?;
+        Ok(endpoint_slices_to_instances(list))
     }
 }
 
@@ -71,31 +144,11 @@ impl ServiceRegistry for K8sRegistry {
         service_id: &str,
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
         let namespace = self.config.namespace.as_deref().unwrap_or("default");
-        let url = self.endpoint_url(namespace, service_id);
-
-        let req = self.with_auth(self.http.get(url));
-        let resp = req.send().await?;
-
-        if resp.status() == reqwest::StatusCode::UNAUTHORIZED
-            || resp.status() == reqwest::StatusCode::FORBIDDEN
-        {
-            return Err(RegistryError::AuthFailed);
+        let from_core = self.fetch_core_endpoints(namespace, service_id).await?;
+        if !from_core.is_empty() {
+            return Ok(from_core);
         }
-        if resp.status() == reqwest::StatusCode::NOT_FOUND {
-            return Ok(vec![]);
-        }
-        if !resp.status().is_success() {
-            return Err(RegistryError::UnexpectedResponse(format!(
-                "Kubernetes returned {}",
-                resp.status()
-            )));
-        }
-
-        let endpoints: K8sEndpoints = resp
-            .json()
-            .await
-            .map_err(|e| RegistryError::UnexpectedResponse(e.to_string()))?;
-        Ok(endpoints_to_instances(endpoints))
+        self.fetch_endpoint_slices(namespace, service_id).await
     }
 
     async fn health(&self) -> RegistryHealth {
@@ -309,6 +362,76 @@ struct K8sEndpointPort {
     port: u16,
 }
 
+/// `EndpointSliceList` (`discovery.k8s.io/v1`) — fallback when Core `Endpoints` is empty/unavailable.
+#[derive(Debug, Deserialize)]
+struct EndpointSliceList {
+    #[serde(default)]
+    items: Vec<EndpointSlice>,
+}
+
+#[derive(Debug, Deserialize)]
+struct EndpointSlice {
+    #[serde(default)]
+    endpoints: Vec<SliceEndpoint>,
+    #[serde(default)]
+    ports: Vec<SlicePort>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SliceEndpoint {
+    #[serde(default)]
+    addresses: Vec<String>,
+    #[serde(default)]
+    conditions: SliceEndpointConditions,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct SliceEndpointConditions {
+    /// When `Some(false)`, drop (not ready / terminating).
+    #[serde(default)]
+    ready: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SlicePort {
+    port: Option<u16>,
+    protocol: Option<String>,
+}
+
+fn endpoint_slices_to_instances(list: EndpointSliceList) -> Vec<ServiceInstance> {
+    let mut out = Vec::new();
+    let mut seen = HashSet::new();
+    for slice in list.items {
+        let tcp_ports: Vec<u16> = slice
+            .ports
+            .iter()
+            .filter(|p| p.protocol.as_deref() != Some("UDP"))
+            .filter_map(|p| p.port)
+            .collect();
+        if tcp_ports.is_empty() {
+            continue;
+        }
+        for ep in slice.endpoints {
+            if ep.conditions.ready == Some(false) {
+                continue;
+            }
+            for addr in &ep.addresses {
+                for port in &tcp_ports {
+                    let key = format!("{addr}:{port}");
+                    if seen.insert(key) {
+                        out.push(ServiceInstance {
+                            host: addr.clone(),
+                            port: *port,
+                            metadata: std::collections::HashMap::new(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
 fn endpoints_to_instances(endpoints: K8sEndpoints) -> Vec<ServiceInstance> {
     let mut out = Vec::new();
     let mut seen = HashSet::new();
@@ -362,5 +485,61 @@ mod tests {
         assert_eq!(instances[0].port, 8080);
         assert_eq!(instances[1].host, "10.0.0.2");
         assert_eq!(instances[1].port, 9090);
+    }
+
+    #[test]
+    fn endpoint_slices_to_instances_filters_not_ready_and_udp() {
+        let list = EndpointSliceList {
+            items: vec![EndpointSlice {
+                endpoints: vec![
+                    SliceEndpoint {
+                        addresses: vec!["10.1.1.1".to_string()],
+                        conditions: SliceEndpointConditions {
+                            ready: Some(true),
+                        },
+                    },
+                    SliceEndpoint {
+                        addresses: vec!["10.1.1.2".to_string()],
+                        conditions: SliceEndpointConditions {
+                            ready: Some(false),
+                        },
+                    },
+                ],
+                ports: vec![
+                    SlicePort {
+                        port: Some(443),
+                        protocol: Some("TCP".to_string()),
+                    },
+                    SlicePort {
+                        port: Some(53),
+                        protocol: Some("UDP".to_string()),
+                    },
+                ],
+            }],
+        };
+        let instances = endpoint_slices_to_instances(list);
+        assert_eq!(instances.len(), 1);
+        assert_eq!(instances[0].host, "10.1.1.1");
+        assert_eq!(instances[0].port, 443);
+    }
+
+    #[test]
+    fn endpoint_slices_to_instances_defaults_ready_unknown_to_included() {
+        let list = EndpointSliceList {
+            items: vec![EndpointSlice {
+                endpoints: vec![SliceEndpoint {
+                    addresses: vec!["fc00::1".to_string()],
+                    conditions: SliceEndpointConditions { ready: None },
+                }],
+                ports: vec![SlicePort {
+                    port: Some(6443),
+                    protocol: None,
+                }],
+            }],
+        };
+        let instances = endpoint_slices_to_instances(list);
+        assert_eq!(instances.len(), 1);
+        assert_eq!(instances[0].host, "fc00::1");
+        assert_eq!(instances[0].port, 6443);
     }
 }

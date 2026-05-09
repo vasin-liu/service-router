@@ -39,10 +39,10 @@
 - 未提供完整负载均衡策略（当前优先首实例）
 - WebSocket 尚未实现完整双向帧透传
 - `/ready` 暂未聚合注册中心真实健康状态
-- Kubernetes 当前基于 Endpoints（v1），尚未接入 EndpointSlice 与更丰富过滤策略
+- Kubernetes：`Endpoints` 优先，若无实例则回退 `EndpointSlice`；就绪过滤与高阶策略仍可增强
 
 ## 下一步（建议）
 
 - P1：完善 WS 双向代理、引入负载均衡、增强 readiness 真实性
 - P2：加入熔断重试与核心指标
-- P3：Kubernetes EndpointSlice / 就绪过滤等与大规模集群兼容性增强
+- P3：Kubernetes 端口/Service 对齐、就绪与标签维度过滤等与大规模集群兼容性增强

@@ -26,7 +26,7 @@
 - 当前边界
   - 未实现完整负载均衡策略（当前取实例列表第一个）
   - WebSocket 为“可升级 + 上游连接”骨架，未完成双向完整透传
-  - Kubernetes 基于 Core `Endpoints`；EndpointSlice / 就绪地址过滤等为后续增强
+  - Kubernetes：优先 Core `Endpoints`；无实例时再查 `discovery.k8s.io/v1` EndpointSlice（`kubernetes.io/service-name`）；按 Service 端口名筛选等仍为后续增强
   - `/ready` 暂未执行实际 registry health 聚合检测
 
 ## 3. 用户与使用场景
@@ -64,9 +64,9 @@
 - 已实现：
   - Nacos：支持鉴权、token 获取与定时刷新、401/403 重试
   - Eureka：支持 Basic Auth，服务名转大写查询
-  - Kubernetes：`GET /api/v1/namespaces/{ns}/endpoints/{name}` 解析 `addresses × ports`；支持 `kubeconfig_path`/`kubeconfig_context`、`auth.token`/`token_file`、`insecure_skip_tls_verify`
+  - Kubernetes：Core `GET .../endpoints/{name}`；若为空则 `GET .../endpointslices?labelSelector=kubernetes.io/service-name%3D{name}`；支持 `kubeconfig_path`/`kubeconfig_context`、`auth.token`/`token_file`、`insecure_skip_tls_verify`
 - 后续增强：
-  - Kubernetes：EndpointSlice、按 `ready/notReady` 或标签过滤实例
+  - Kubernetes：与 Service 声明端口的精确匹配、更细的就绪/标签过滤
 
 ### 4.4 代理转发
 
@@ -138,7 +138,7 @@
   - 熔断/重试/超时分层策略
   - 路由命中指标、上游耗时指标、错误码指标
 - P3
-  - Kubernetes EndpointSlice / 过滤策略完备化
+  - Kubernetes 与 Service 端口/多协议场景的完备化
   - 动态配置来源扩展（配置中心/API）
 
 ## 10. 验收标准（当前版本）

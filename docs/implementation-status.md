@@ -90,7 +90,7 @@
 - **B07** `route-explain --request-file`：从 YAML/JSON 读 `path`/`method`/`headers`；CLI `--header` 覆盖同名键；文档与示例文件已补充。
 - **B08** 指标：`GET /metrics` 返回 `route_hits` / `failure_reasons`；`server/metrics.rs`；失败码与 `ProxyError`/`RegistryError` 对齐。
 - **B09** CI probe：`doctor-probe.yml` 在 GitHub runner 中先 `docker compose up` 启动 9000/9001 mock 上游，再跑 `doctor --probe-upstream --json`，结束后自动 `down -v`。
-- **K8s registry**：已从 stub 升级为可用实现；支持基于 `Endpoints` API 的实例发现（`/api/v1/namespaces/{ns}/endpoints/{service}`），并支持 `kubeconfig_path`/`kubeconfig_context` 加载 TLS 与认证信息；`doctor` 健康检查已验证通过。
+- **K8s registry**：已从 stub 升级为可用实现；优先 `Endpoints`，空则回退 `EndpointSlice`（`discovery.k8s.io/v1`）；支持 `kubeconfig_path`/`kubeconfig_context` 加载 TLS 与认证信息。
 
 ## 优先级说明（与路线图一致）
 
@@ -99,8 +99,8 @@
 
 ## 下一阶段建议（按优先级）
 
-1. 增强 Kubernetes 发现能力（EndpointSlice + 过滤策略）  
-   在现有 Endpoints 实现基础上补充 EndpointSlice 查询与可选筛选（ready/label），提升大规模集群稳定性与兼容性。
+1. 增强 Kubernetes 发现能力与过滤策略  
+   在 EndpointSlice 回退基础上补充与 Service 端口的对齐、就绪/标签细粒度筛选，提升大规模集群稳定性。
 
 2. 完善发布验收与回归矩阵  
    统一 Nacos/Eureka/K8s/Mock 四类场景的 smoke/regression 清单，形成可复用发布门禁模板。
