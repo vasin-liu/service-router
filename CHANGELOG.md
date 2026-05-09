@@ -21,6 +21,8 @@ All notable changes to this project are documented in this file.
 - `doctor-probe` workflow now starts/stops dockerized mock upstreams (`.github/compose/doctor-probe.compose.yml`) so `doctor --probe-upstream` is deterministic on hosted runners.
 - `doctor-probe` workflow adds manual inputs (`config_path`, `compose_file`) while preserving mock defaults.
 - Added local helper `docs/doctor-probe-compose.sh` to run the same compose-backed probe flow outside CI.
+- `doctor-probe` now uploads docker diagnostics artifact (`compose-ps.txt`, `compose-logs.txt`) when probe fails.
+- Added `/metrics/prometheus` text endpoint (`service_router_route_hits_total`, `service_router_failures_total`) alongside JSON `/metrics`.
 
 ## [0.1.0] - 2026-05-08
 

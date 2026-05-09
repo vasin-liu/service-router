@@ -39,4 +39,5 @@ In-process counters updated on each proxied request. Poll from automation or scr
 
 - Counters are **in-memory**; they reset on process restart.
 - **`GET /metrics`** is registered on the Axum router **before** the catch-all proxy; it is not forwarded upstream.
+- **`GET /metrics/prometheus`** exposes the same counters in Prometheus text format (`service_router_route_hits_total`, `service_router_failures_total`).
 - Service runtime emits a periodic `proxy metrics snapshot` log (60s) when at least one counter is non-empty.

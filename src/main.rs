@@ -18,7 +18,10 @@ use service_router::{
     registry::factory::build_resolver,
     routing::{rebuild_router, SharedRouter},
     server::{
-        handlers::{health_handler, metrics_handler, proxy_handler, ready_handler},
+        handlers::{
+            health_handler, metrics_handler, metrics_prometheus_handler, proxy_handler,
+            ready_handler,
+        },
         AppState, ProxyMetrics,
     },
 };
@@ -157,6 +160,7 @@ async fn run_server(config_path: PathBuf) -> anyhow::Result<ExitCode> {
         .route("/health", get(health_handler))
         .route("/ready", get(ready_handler))
         .route("/metrics", get(metrics_handler))
+        .route("/metrics/prometheus", get(metrics_prometheus_handler))
         .fallback(any(proxy_handler))
         .with_state(state);
 

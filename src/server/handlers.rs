@@ -1,6 +1,6 @@
 use axum::{
     extract::{Request, State},
-    http::StatusCode,
+    http::{header::CONTENT_TYPE, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
     Json,
 };
@@ -9,7 +9,9 @@ use tracing::{debug, info};
 
 use crate::error::ProxyError;
 use crate::proxy::{http_proxy, ws_proxy};
-use crate::server::metrics::{failure_code_for_proxy, failure_code_for_registry};
+use crate::server::metrics::{
+    failure_code_for_proxy, failure_code_for_registry, render_prometheus,
+};
 use crate::server::state::AppState;
 
 /// Main proxy handler — routes every incoming request through the routing
@@ -121,4 +123,15 @@ pub async fn ready_handler(State(state): State<AppState>) -> impl IntoResponse {
 /// Minimal JSON counters: route hits and failure reasons (B08).
 pub async fn metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
     (StatusCode::OK, Json(state.metrics.snapshot()))
+}
+
+/// Prometheus-compatible text exposition for proxy counters.
+pub async fn metrics_prometheus_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let mut headers = axum::http::HeaderMap::new();
+    headers.insert(
+        CONTENT_TYPE,
+        HeaderValue::from_static("text/plain; version=0.0.4; charset=utf-8"),
+    );
+    let body = render_prometheus(&state.metrics.snapshot());
+    (StatusCode::OK, headers, body)
 }

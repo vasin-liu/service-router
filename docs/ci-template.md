@@ -98,6 +98,11 @@ The compose stack binds `127.0.0.1:9000` and `127.0.0.1:9001`, matching `config/
 - `config_path` (default `config/mock-config.yaml`)
 - `compose_file` (default `.github/compose/doctor-probe.compose.yml`)
 
+When probe fails, workflow uploads `doctor-probe-docker-diagnostics` artifact containing:
+
+- `compose-ps.txt`
+- `compose-logs.txt`
+
 Local equivalent script: `docs/doctor-probe-compose.sh`
 
 ```bash

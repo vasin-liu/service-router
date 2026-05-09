@@ -52,6 +52,21 @@ jobs:
       - name: Doctor with upstream probe (mock profile)
         run: cargo run -- doctor --config "$DOCTOR_CONFIG" --probe-upstream --json
 
+      - name: Collect docker diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p .artifacts
+          docker compose -f "$DOCKER_COMPOSE_FILE" ps > .artifacts/compose-ps.txt || true
+          docker compose -f "$DOCKER_COMPOSE_FILE" logs --no-color > .artifacts/compose-logs.txt || true
+
+      - name: Upload docker diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-probe-docker-diagnostics
+          path: .artifacts/
+
       - name: Stop mock upstreams
         if: always()
         run: docker compose -f "$DOCKER_COMPOSE_FILE" down -v

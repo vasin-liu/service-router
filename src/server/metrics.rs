@@ -75,6 +75,46 @@ pub struct MetricsSnapshot {
     pub failure_reasons: HashMap<String, u64>,
 }
 
+fn escape_label_value(input: &str) -> String {
+    input
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+}
+
+/// Render a Prometheus text exposition (v0.0.4) from the snapshot.
+pub fn render_prometheus(snapshot: &MetricsSnapshot) -> String {
+    let mut out = String::new();
+    out.push_str("# HELP service_router_route_hits_total Total matched requests by route id.\n");
+    out.push_str("# TYPE service_router_route_hits_total counter\n");
+    let mut route_keys: Vec<_> = snapshot.route_hits.keys().cloned().collect();
+    route_keys.sort();
+    for route_id in route_keys {
+        if let Some(v) = snapshot.route_hits.get(&route_id) {
+            out.push_str(&format!(
+                "service_router_route_hits_total{{route_id=\"{}\"}} {}\n",
+                escape_label_value(&route_id),
+                v
+            ));
+        }
+    }
+
+    out.push_str("# HELP service_router_failures_total Total proxy failures by reason code.\n");
+    out.push_str("# TYPE service_router_failures_total counter\n");
+    let mut reason_keys: Vec<_> = snapshot.failure_reasons.keys().cloned().collect();
+    reason_keys.sort();
+    for reason in reason_keys {
+        if let Some(v) = snapshot.failure_reasons.get(&reason) {
+            out.push_str(&format!(
+                "service_router_failures_total{{reason=\"{}\"}} {}\n",
+                escape_label_value(&reason),
+                v
+            ));
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,5 +141,17 @@ mod tests {
             failure_code_for_proxy(&ProxyError::NoInstances("x".into())),
             "no_instances"
         );
+    }
+
+    #[test]
+    fn renders_prometheus_metrics() {
+        let m = ProxyMetrics::default();
+        m.record_route_hit("orders-api");
+        m.record_failure("no_matching_route");
+        let txt = render_prometheus(&m.snapshot());
+        assert!(txt.contains("service_router_route_hits_total"));
+        assert!(txt.contains("route_id=\"orders-api\""));
+        assert!(txt.contains("service_router_failures_total"));
+        assert!(txt.contains("reason=\"no_matching_route\""));
     }
 }

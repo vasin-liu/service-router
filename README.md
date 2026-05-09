@@ -65,7 +65,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 
 - `docs/route-explain-json-schema.md`
 - `docs/doctor-json-schema.md`
-- `docs/metrics-json.md` — `GET /metrics` (rule hit counts, failure reason codes)
+- `docs/metrics-json.md` — `GET /metrics` JSON + `/metrics/prometheus` text exposition
 - CI copy-paste: `docs/ci-template.md` · `docs/ci-copy-paste.sh` · `docs/doctor-probe-compose.sh`
 
 ## Migrate to Mock Dev Mode
