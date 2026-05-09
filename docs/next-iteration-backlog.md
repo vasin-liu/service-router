@@ -20,7 +20,7 @@
 
 | ID | 优先级 | 事项 | 价值 | 验收标准 |
 |---|---|---|---|---|
-| B01 | P0 | `check-config --strict` 增加更多冲突检测（优先级重叠、不可达规则） | 更早发现配置风险 | 至少新增 3 类可复现冲突检测，附测试用例 |
+| B01 | ~~P0~~ **Done** | `check-config --strict` 增加更多冲突检测（优先级重叠、不可达规则） | 更早发现配置风险 | ~~至少新增 3 类~~：评估顺序遮蔽、`upstream_url`+`service_id` 冗余、Prefix/`strip_prefix` 永不生效 |
 | B02 | P0 | `route-explain` 输出建议动作（如何修复 mismatch） | 降低排障门槛 | 每类失败原因至少给 1 条建议，JSON/文本都可见 |
 | B03 | P0 | CI 命令模板（`check-config` + `doctor` + smoke） | 降低团队接入成本 | 提供可复制的 CI 配置片段（GitHub/GitLab 至少一种） |
 | B04 | P1 | `doctor` 增加网络连通检查（上游 URL / registry endpoint） | 提高故障定位效率 | 输出可读通过/失败原因，不可连通时明确失败码 |
@@ -34,7 +34,7 @@
 
 ### Sprint A（P0）
 
-- B01 严格检查增强
+- ~~B01 严格检查增强~~（已实现）
 - B02 诊断建议增强
 - B03 CI 模板输出
 

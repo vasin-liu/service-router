@@ -606,24 +606,70 @@ fn run_strict_config_checks(config: &service_router::config::AppConfig) -> Vec<S
         }
     }
 
-    // Overshadow hint: earlier broad matcher with higher/equal priority and
-    // equivalent method/header constraints can make later rules unreachable.
-    for (i, left) in config.routes.iter().enumerate() {
-        for right in config.routes.iter().skip(i + 1) {
-            if left.priority <= right.priority
-                && method_constraints_cover(left.methods.as_ref(), right.methods.as_ref())
+    // Shadows / unreachable overlaps: iterate in router evaluation order (stable sort by
+    // priority, ties keep YAML declaration order) per `RouterSnapshot::from_config`.
+    let indices = routing_evaluation_order_indices(&config.routes);
+    for ei in 0..indices.len() {
+        let left_idx = indices[ei];
+        let left = &config.routes[left_idx];
+        for &right_idx in indices.iter().skip(ei + 1) {
+            let right = &config.routes[right_idx];
+            if method_constraints_cover(left.methods.as_ref(), right.methods.as_ref())
                 && header_constraints_cover(left.headers.as_ref(), right.headers.as_ref())
                 && path_matcher_covers(&left.path, &right.path)
             {
                 findings.push(format!(
-                    "rule '{}' may shadow '{}' (earlier matcher covers later matcher with higher/equal priority)",
-                    left.id, right.id
+                    "rule '{}' is evaluated before '{}' and covers its path; overlapping requests cannot reach '{}'",
+                    left.id, right.id, right.id
                 ));
             }
         }
     }
 
+    use service_router::config::model::PathMatcher;
+
+    // Redundant downstream fields: resolver prefers `upstream_url` (see handlers); `service_id` is ignored then.
+    for rule in &config.routes {
+        if rule.upstream_url.is_some() && rule.service_id.is_some() {
+            findings.push(format!(
+                "rule '{}' sets both upstream_url and service_id (upstream wins; registry lookup is unreachable)",
+                rule.id
+            ));
+        }
+        // Prefix route with strip_prefix that never applies to matched paths (`strip_prefix(&path)` misses when path starts with matcher prefix).
+        match (&rule.path, &rule.strip_prefix) {
+            (PathMatcher::Prefix { value: p }, Some(strip)) if !strip.is_empty() && p.as_str() != "/" => {
+                if !strip_prefix_applies_to_matched_requests(p.as_str(), strip.as_str()) {
+                    findings.push(format!(
+                        "rule '{}' strip_prefix '{}' never applies (prefix matcher '{}') — path matches never begin with '{}'",
+                        rule.id,
+                        strip,
+                        p,
+                        strip
+                    ));
+                }
+            }
+            _ => {}
+        }
+    }
+
     findings
+}
+
+/// Indices `0..routes.len()` sorted like [`service_router::routing::RouterSnapshot`]: ascending `priority`,
+/// preserving declaration order for ties (`sort_by_key` is stable).
+fn routing_evaluation_order_indices(
+    routes: &[service_router::config::model::RoutingRule],
+) -> Vec<usize> {
+    let mut indices: Vec<usize> = (0..routes.len()).collect();
+    indices.sort_by_key(|&i| routes[i].priority);
+    indices
+}
+
+/// True iff some request path admitted by Prefix `matcher_prefix` is also prefixed by `strip`
+/// (`CompiledRoutingRule::rewrite_path`).
+fn strip_prefix_applies_to_matched_requests(matcher_prefix: &str, strip: &str) -> bool {
+    matcher_prefix.starts_with(strip)
 }
 
 fn path_matcher_covers(
@@ -1036,7 +1082,104 @@ mod tests {
             log_level: "info".to_string(),
         };
         let findings = run_strict_config_checks(&config);
-        assert!(findings.iter().any(|f| f.contains("may shadow")));
+        assert!(findings
+            .iter()
+            .any(|f| f.contains("evaluated before") || f.contains("covers its path")));
+    }
+
+    #[test]
+    fn strict_check_priority_order_masks_narrow_when_broad_runs_first() {
+        let config = AppConfig {
+            server: ServerConfig::default(),
+            registries: RegistriesConfig::default(),
+            routes: vec![
+                RoutingRule {
+                    id: "detail".to_string(),
+                    path: PathMatcher::Prefix {
+                        value: "/api/item".to_string(),
+                    },
+                    methods: None,
+                    headers: None,
+                    service_id: Some("svc-detail".to_string()),
+                    upstream_url: None,
+                    strip_prefix: None,
+                    priority: 80,
+                },
+                RoutingRule {
+                    id: "site".to_string(),
+                    path: PathMatcher::Prefix {
+                        value: "/".to_string(),
+                    },
+                    methods: None,
+                    headers: None,
+                    service_id: Some("svc-site".to_string()),
+                    upstream_url: None,
+                    strip_prefix: None,
+                    priority: 40,
+                },
+            ],
+            log_level: "info".to_string(),
+        };
+        let findings = run_strict_config_checks(&config);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.contains("'site'") && f.contains("'detail'") && f.contains("evaluated before"))
+        );
+    }
+
+    #[test]
+    fn strict_check_reports_upstream_plus_service_ambiguity() {
+        let config = AppConfig {
+            server: ServerConfig::default(),
+            registries: RegistriesConfig::default(),
+            routes: vec![RoutingRule {
+                id: "dup-target".to_string(),
+                path: PathMatcher::Prefix {
+                    value: "/hook".to_string(),
+                },
+                methods: None,
+                headers: None,
+                service_id: Some("ignored-registry".to_string()),
+                upstream_url: Some("http://127.0.0.1:9090".to_string()),
+                strip_prefix: None,
+                priority: 10,
+            }],
+            log_level: "info".to_string(),
+        };
+        let findings = run_strict_config_checks(&config);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.contains("upstream_url") && f.contains("service_id"))
+        );
+    }
+
+    #[test]
+    fn strict_check_reports_strip_prefix_never_applies() {
+        let config = AppConfig {
+            server: ServerConfig::default(),
+            registries: RegistriesConfig::default(),
+            routes: vec![RoutingRule {
+                id: "bad-strip".to_string(),
+                path: PathMatcher::Prefix {
+                    value: "/api".to_string(),
+                },
+                methods: None,
+                headers: None,
+                service_id: Some("svc".to_string()),
+                upstream_url: None,
+                strip_prefix: Some("/nope".to_string()),
+                priority: 10,
+            }],
+            log_level: "info".to_string(),
+        };
+        let findings = run_strict_config_checks(&config);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.contains("strip_prefix") && f.contains("never applies") && f.contains("bad-strip"))
+        );
     }
 
     #[test]

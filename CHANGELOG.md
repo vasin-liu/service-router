@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - README: CLI conventions, exit code table, and mock scenario documentation.
+- `check-config --strict`: shadowing uses router evaluation order (sorted by priority); flags `upstream_url` + `service_id` together on a rule and Prefix matchers whose `strip_prefix` cannot apply.
 
 ## [0.1.0] - 2026-05-08
 

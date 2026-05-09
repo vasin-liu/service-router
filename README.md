@@ -31,7 +31,7 @@ Server listens on `127.0.0.1:8080` by default in mock config.
 ## CLI Commands
 
 - `run [config]` — omit `config` to use `config/config.yaml`
-- `check-config [<config>] [--json] [--strict]` — any non-flag token is treated as the config path; if you pass multiple, the **last** one wins (flags can be mixed before/after the path depending on iteration order; prefer `[--json] [--strict] config.yaml`).
+- `check-config [<config>] [--json] [--strict]` — any non-flag token is treated as the config path; if you pass multiple, the **last** one wins (flags can be mixed before/after the path depending on iteration order; prefer `[--json] [--strict] config.yaml`). With `--strict`, findings include overshadowing computed in router evaluation order (`priority`, then YAML order ties), simultaneous `upstream_url` + `service_id` on a rule, and Prefix rules whose `strip_prefix` cannot apply to matched paths.
 - `doctor [<config>] [--config <path>] [--probe-upstream] [--json]` — prefer `--config path` for clarity; a bare path positional is accepted
 - `route-explain <path> [method] [--config path] [--header name:value …] [--json] [--verbose]`
 
