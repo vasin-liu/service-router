@@ -70,6 +70,7 @@
   - mismatch 原因与建议输出
 - 已落地 CI 基线：
   - `.github/workflows/ci.yml`
+  - `.github/workflows/doctor-probe.yml`（仅 `workflow_dispatch`，上游 TCP 探测）
   - `docs/ci-template.md`
   - `docs/route-explain-json-schema.md`（CI 可消费 JSON 示例）
 - 最新验证：

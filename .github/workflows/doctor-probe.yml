@@ -1,0 +1,23 @@
+# Optional upstream TCP probes — does not run on every push.
+# Use when you have reachable instances (self-hosted runner, VPN, or local act).
+
+name: doctor-upstream-probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Doctor with upstream probe (mock profile)
+        run: cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json
