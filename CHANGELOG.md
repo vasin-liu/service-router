@@ -23,6 +23,7 @@ All notable changes to this project are documented in this file.
 - Added local helper `docs/doctor-probe-compose.sh` to run the same compose-backed probe flow outside CI.
 - `doctor-probe` now uploads docker diagnostics artifact (`compose-ps.txt`, `compose-logs.txt`) when probe fails.
 - Added `/metrics/prometheus` text endpoint (`service_router_route_hits_total`, `service_router_failures_total`) alongside JSON `/metrics`.
+- Eureka registry health check now probes `/apps` (with auth) instead of `/info`, aligning health status with actual discovery availability.
 
 ## [0.1.0] - 2026-05-08
 

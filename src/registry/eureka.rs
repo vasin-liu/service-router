@@ -41,6 +41,18 @@ impl EurekaRegistry {
         Self { config, http }
     }
 
+    fn base_url(&self) -> &str {
+        self.config.server_url.trim_end_matches('/')
+    }
+
+    fn apps_url(&self) -> String {
+        format!("{}/apps", self.base_url())
+    }
+
+    fn app_url(&self, service_name: &str) -> String {
+        format!("{}/apps/{}", self.base_url(), service_name)
+    }
+
     fn add_auth(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
         if let Some(auth) = &self.config.auth {
             req.basic_auth(&auth.username, Some(&auth.password))
@@ -62,7 +74,7 @@ impl ServiceRegistry for EurekaRegistry {
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
         // Eureka uses uppercase service names.
         let service_name = service_id.to_uppercase();
-        let url = format!("{}/apps/{}", self.config.server_url.trim_end_matches('/'), service_name);
+        let url = self.app_url(&service_name);
 
         let req = self
             .http
@@ -104,8 +116,11 @@ impl ServiceRegistry for EurekaRegistry {
     }
 
     async fn health(&self) -> RegistryHealth {
-        let info_url = format!("{}/info", self.config.server_url.trim_end_matches('/'));
-        let req = self.http.get(&info_url);
+        // `/apps` is a stronger Eureka-specific signal than Spring `/info`.
+        let req = self
+            .http
+            .get(self.apps_url())
+            .header("Accept", "application/json");
         let req = self.add_auth(req);
 
         match req.send().await {
