@@ -21,6 +21,9 @@ registries:
     # ---- Nacos (unauthenticated) -----------------------------------
     - nacos:
         priority: 1
+        # Accepts both forms:
+        # - http://127.0.0.1:8848
+        # - http://127.0.0.1:8848/nacos
         server_addr: "http://127.0.0.1:8848"
         namespace: "public"
         group: "DEFAULT_GROUP"
@@ -28,7 +31,7 @@ registries:
     # ---- Nacos (with username/password auth) -----------------------
     # - nacos:
     #     priority: 1
-    #     server_addr: "http://nacos.example.com:8848"
+    #     server_addr: "http://nacos.example.com:8848"   # or .../nacos
     #     namespace: "prod"
     #     group: "DEFAULT_GROUP"
     #     username: "nacos"
