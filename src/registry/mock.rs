@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use reqwest::Client;
 
-use crate::config::model::MockRegistryConfig;
+use crate::config::model::{MockRegistryConfig, MockRegistryHealthBehavior};
 use crate::error::RegistryError;
 use crate::registry::{RegistryHealth, RegistryKind, ServiceInstance, ServiceRegistry};
 
@@ -27,6 +27,9 @@ impl ServiceRegistry for MockRegistry {
         &self,
         service_id: &str,
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
+        if let Some(msg) = self.config.error_services.get(service_id) {
+            return Err(RegistryError::UnexpectedResponse(msg.clone()));
+        }
         Ok(self
             .config
             .services
@@ -43,7 +46,23 @@ impl ServiceRegistry for MockRegistry {
     }
 
     async fn health(&self) -> RegistryHealth {
-        RegistryHealth::Healthy
+        match &self.config.health_behavior {
+            MockRegistryHealthBehavior::Healthy => RegistryHealth::Healthy,
+            MockRegistryHealthBehavior::Degraded { message } => {
+                if message.is_empty() {
+                    RegistryHealth::Degraded("mock degraded".to_string())
+                } else {
+                    RegistryHealth::Degraded(message.clone())
+                }
+            }
+            MockRegistryHealthBehavior::Unhealthy { message } => {
+                if message.is_empty() {
+                    RegistryHealth::Unhealthy("mock unhealthy".to_string())
+                } else {
+                    RegistryHealth::Unhealthy(message.clone())
+                }
+            }
+        }
     }
 }
 
@@ -53,6 +72,7 @@ mod tests {
 
     use super::*;
     use crate::config::model::{MockRegistryConfig, MockServiceInstance};
+    use crate::error::RegistryError;
 
     fn make_registry() -> MockRegistry {
         let mut services = HashMap::new();
@@ -74,6 +94,8 @@ mod tests {
         let cfg = MockRegistryConfig {
             priority: 1,
             services,
+            error_services: HashMap::new(),
+            health_behavior: MockRegistryHealthBehavior::Healthy,
         };
         let http = reqwest::Client::builder()
             .build()
@@ -101,5 +123,79 @@ mod tests {
             .await
             .expect("resolve unknown service");
         assert!(instances.is_empty());
+    }
+
+    #[tokio::test]
+    async fn returns_empty_for_explicit_empty_instances() {
+        let mut services = HashMap::new();
+        services.insert("empty".to_string(), vec![]);
+        let cfg = MockRegistryConfig {
+            priority: 1,
+            services,
+            error_services: HashMap::new(),
+            health_behavior: MockRegistryHealthBehavior::Healthy,
+        };
+        let http = reqwest::Client::builder().build().unwrap();
+        let registry = MockRegistry::new(cfg, http);
+        let instances = registry
+            .get_healthy_instances("empty")
+            .await
+            .expect("resolve empty service");
+        assert!(instances.is_empty());
+    }
+
+    #[tokio::test]
+    async fn error_service_returns_registry_error() {
+        let mut error_services = HashMap::new();
+        error_services.insert("down".to_string(), "simulated outage".to_string());
+        let cfg = MockRegistryConfig {
+            priority: 1,
+            services: HashMap::new(),
+            error_services,
+            health_behavior: MockRegistryHealthBehavior::Healthy,
+        };
+        let http = reqwest::Client::builder().build().unwrap();
+        let registry = MockRegistry::new(cfg, http);
+        let err = registry
+            .get_healthy_instances("down")
+            .await
+            .expect_err("expected synthetic error");
+        assert!(matches!(err, RegistryError::UnexpectedResponse(_)));
+    }
+
+    #[tokio::test]
+    async fn degraded_health_reports_degraded() {
+        let cfg = MockRegistryConfig {
+            priority: 1,
+            services: HashMap::new(),
+            error_services: HashMap::new(),
+            health_behavior: MockRegistryHealthBehavior::Degraded {
+                message: "rollout".into(),
+            },
+        };
+        let http = reqwest::Client::builder().build().unwrap();
+        let registry = MockRegistry::new(cfg, http);
+        assert!(matches!(
+            registry.health().await,
+            RegistryHealth::Degraded(ref m) if m == "rollout"
+        ));
+    }
+
+    #[tokio::test]
+    async fn unhealthy_health_reports_unhealthy() {
+        let cfg = MockRegistryConfig {
+            priority: 1,
+            services: HashMap::new(),
+            error_services: HashMap::new(),
+            health_behavior: MockRegistryHealthBehavior::Unhealthy {
+                message: "dead".into(),
+            },
+        };
+        let http = reqwest::Client::builder().build().unwrap();
+        let registry = MockRegistry::new(cfg, http);
+        assert!(matches!(
+            registry.health().await,
+            RegistryHealth::Unhealthy(ref m) if m == "dead"
+        ));
     }
 }

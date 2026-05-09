@@ -156,6 +156,24 @@ pub struct K8sAuth {
     pub token: Option<String>,
 }
 
+/// How [`MockRegistry`] reports its own liveness in [`ServiceRegistry::health`].
+///
+/// Lets tests and local workflows simulate degraded/unhealthy registry without Nacos/Eureka.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case", tag = "type")]
+pub enum MockRegistryHealthBehavior {
+    #[default]
+    Healthy,
+    Degraded {
+        #[serde(default)]
+        message: String,
+    },
+    Unhealthy {
+        #[serde(default)]
+        message: String,
+    },
+}
+
 /// In-memory mock registry for local development and CI tests.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -165,6 +183,11 @@ pub struct MockRegistryConfig {
     /// Map of service_id -> instances
     #[serde(default)]
     pub services: HashMap<String, Vec<MockServiceInstance>>,
+    /// Service IDs that resolve with a simulated registry failure (never return instances).
+    #[serde(default)]
+    pub error_services: HashMap<String, String>,
+    #[serde(default)]
+    pub health_behavior: MockRegistryHealthBehavior,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

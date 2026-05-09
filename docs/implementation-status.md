@@ -79,6 +79,11 @@
   - 新增 P1 进展：`doctor --probe-upstream` 可探测上游连通性（直连 URL + registry 解析实例）
   - 新增 P1 进展：`doctor --json` 输出结构化诊断（含 registry health 与 upstream probe 结果）
 
+## 已实现（迭代）
+
+- **B05** mock：`error_services`（模拟解析失败）、显式空实例、`health_behavior`（degraded/unhealthy）；示例见 `config/mock-scenarios-sample.yaml`。
+- **B06**：README 补充 CLI 参数约定、`ExitCode` 说明与 mock 扩展说明。
+
 ## 优先级说明（与路线图一致）
 
 - **功能实现优先**：严格检查、路由解释、mock 场景、CLI 文档等持续推进。

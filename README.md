@@ -30,15 +30,35 @@ Server listens on `127.0.0.1:8080` by default in mock config.
 
 ## CLI Commands
 
-- `run [config]`
-- `check-config [config] [--json] [--strict]`
-- `doctor [config] [--config <path>] [--probe-upstream] [--json]`
-- `route-explain <path> [method] --config <path> --header "key:value" [--json]`
+- `run [config]` — omit `config` to use `config/config.yaml`
+- `check-config [<config>] [--json] [--strict]` — any non-flag token is treated as the config path; if you pass multiple, the **last** one wins (flags can be mixed before/after the path depending on iteration order; prefer `[--json] [--strict] config.yaml`).
+- `doctor [<config>] [--config <path>] [--probe-upstream] [--json]` — prefer `--config path` for clarity; a bare path positional is accepted
+- `route-explain <path> [method] [--config path] [--header name:value …] [--json] [--verbose]`
+
+### Exit codes (`std::process::ExitCode`)
+
+| Exit | When |
+|:-----|:-----|
+| `0` | Command succeeded (`run` exited cleanly, `help`, checks passed, `route-explain` matched a route, `doctor` overall PASS) |
+| `1` | Any failure handled in-process: invalid/missing config, init errors, `--strict` findings, unmatched `route-explain`, upstream/registry probe failures in `doctor`, top-level anyhow error |
+
+Unknown subcommands print usage and exit `0` (same as explicit `help`).
+
+`--json` mode still exits with code `1` when the logical outcome is failure (e.g. `doctor.status == "fail"`, `route-explain` unmatched). Scripts should parse JSON when stable signals are needed.
+
+### Mock registry test scenarios
+
+- Explicit **empty** instances: YAML `services: { mysvc: [] }`.
+- Synthetic **resolver errors**: `error_services:` maps `service_id` → human message; resolves as `UnexpectedResponse`.
+- **`health_behavior`**: `type: healthy` (default), `type: degraded` + `message`, or `type: unhealthy` + `message`; drives `doctor` registry health rows.
+
+Example file: **`config/mock-scenarios-sample.yaml`**.
 
 ## Config Notes
 
 - Default config path: `config/config.yaml`
 - Mock development config: `config/mock-config.yaml`
+- Mock behaviors sample: `config/mock-scenarios-sample.yaml` (patterns for empty/error/health overrides)
 - `config/config.yaml` may require environment variables such as `NACOS_PASSWORD` before checks pass.
 
 ## JSON Diagnostics Docs

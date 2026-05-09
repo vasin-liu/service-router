@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Added
+
+- Mock registry simulation hooks: `error_services`, `health_behavior` (healthy/degraded/unhealthy).
+- Sample config `config/mock-scenarios-sample.yaml` for empty-list and error pathways.
+
+### Changed
+
+- README: CLI conventions, exit code table, and mock scenario documentation.
+
 ## [0.1.0] - 2026-05-08
 
 ### Added

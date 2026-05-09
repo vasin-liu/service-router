@@ -24,8 +24,8 @@
 | B02 | P0 | `route-explain` 输出建议动作（如何修复 mismatch） | 降低排障门槛 | 每类失败原因至少给 1 条建议，JSON/文本都可见 |
 | B03 | P0 | CI 命令模板（`check-config` + `doctor` + smoke） | 降低团队接入成本 | 提供可复制的 CI 配置片段（GitHub/GitLab 至少一种） |
 | B04 | P1 | `doctor` 增加网络连通检查（上游 URL / registry endpoint） | 提高故障定位效率 | 输出可读通过/失败原因，不可连通时明确失败码 |
-| B05 | P1 | Mock registry 增加动态场景（空实例/异常状态） | 增强测试覆盖 | 支持至少 2 种异常模拟并提供示例配置 |
-| B06 | P1 | 统一 CLI 参数规范与错误码文档 | 降低学习成本 | README 增加命令规范表与退出码说明 |
+| B05 | ~~P1~~ **Done** | Mock registry 增加动态场景（空实例/异常状态） | 增强测试覆盖 | `error_services`、显式空列表、`health_behavior`；`config/mock-scenarios-sample.yaml` + 单元测试 |
+| B06 | ~~P1~~ **Done** | 统一 CLI 参数规范与错误码文档 | 降低学习成本 | README：命令说明、路径/flag 惯例、Exit code 表、JSON + 退出码 |
 | B07 | P2 | `route-explain` 增加请求样例回放输入 | 缩短联调链路 | 支持从文件读取 path/method/headers 并解释 |
 | B08 | P2 | 指标输出最小集（规则命中次数、失败原因计数） | 支持运营优化 | 暴露基础统计并可通过日志/接口查看 |
 | B09 | P3（暂缓） | CI 中用 Docker Compose 拉起 mock 上游再跑 `doctor --probe-upstream` | 托管环境下探测流水线可预期变绿 | 仅在功能主线告一段落后再评估；不要求近期交付 |
