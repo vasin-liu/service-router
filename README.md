@@ -69,6 +69,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/route-explain-json-schema.md`
 - `docs/doctor-json-schema.md`
 - `docs/metrics-json.md` — `GET /metrics` JSON + `/metrics/prometheus` text exposition
+- `docs/release-acceptance-matrix.md` — pre-release regression checklist for Mock/Nacos/Eureka/Kubernetes
 - CI copy-paste: `docs/ci-template.md` · `docs/ci-copy-paste.sh` · `docs/doctor-probe-compose.sh`
 
 ## Migrate to Mock Dev Mode
