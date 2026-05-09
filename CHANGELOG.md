@@ -27,6 +27,8 @@ All notable changes to this project are documented in this file.
 - Eureka config adds optional `health_path` (default `/apps`) so health probing can adapt to custom endpoints.
 - Nacos registry now normalizes `server_addr` so both `http://host:port` and `http://host:port/nacos` work without duplicate-path failures.
 - `config/config.yaml` now documents both supported Nacos `server_addr` forms to prevent misconfiguration.
+- Kubernetes registry now performs real endpoint discovery (`/api/v1/namespaces/{ns}/endpoints/{service}`) instead of returning empty instances.
+- Kubernetes registry supports kubeconfig-backed TLS/auth (`kubeconfig_path`, optional `kubeconfig_context`) plus optional `insecure_skip_tls_verify`.
 
 ## [0.1.0] - 2026-05-08
 

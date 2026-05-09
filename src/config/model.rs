@@ -144,9 +144,19 @@ pub struct KubernetesConfig {
     #[serde(default = "default_priority")]
     pub priority: u32,
     /// Kubernetes API server URL. Defaults to the in-cluster address.
+    ///
+    /// When `kubeconfig_path` is set and this field keeps default value,
+    /// server URL will be taken from the selected kubeconfig context.
     #[serde(default = "default_k8s_api_server")]
     pub api_server_url: String,
     pub namespace: Option<String>,
+    /// Optional kubeconfig path used to load cluster CA, client cert/key, and token.
+    pub kubeconfig_path: Option<String>,
+    /// Optional kubeconfig context name. Defaults to kubeconfig `current-context`.
+    pub kubeconfig_context: Option<String>,
+    /// If true, disable TLS certificate validation for Kubernetes API calls.
+    #[serde(default)]
+    pub insecure_skip_tls_verify: bool,
     pub auth: Option<K8sAuth>,
 }
 

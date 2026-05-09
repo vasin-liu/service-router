@@ -62,6 +62,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `config/config.yaml` may require environment variables such as `NACOS_PASSWORD` before checks pass.
 - Eureka note: `registries.sources[].health_path` is optional (default `/apps`) for health probing on non-standard deployments.
 - Nacos note: `server_addr` accepts both base host (`http://host:port`) and suffix form (`http://host:port/nacos`).
+- Kubernetes note: `type: kubernetes` supports endpoint discovery via `/api/v1/namespaces/{namespace}/endpoints/{service}`. For external clusters, set `kubeconfig_path` (and optional `kubeconfig_context`) so TLS/auth comes from kubeconfig; keep `insecure_skip_tls_verify: false` unless troubleshooting.
 
 ## JSON Diagnostics Docs
 

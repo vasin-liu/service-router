@@ -26,7 +26,8 @@ pub async fn build_resolver(config: &AppConfig) -> Result<MultiRegistryResolver,
                 std::sync::Arc::new(EurekaRegistry::new(eureka_cfg.clone(), http.clone()))
             }
             RegistryConfig::Kubernetes(k8s_cfg) => {
-                std::sync::Arc::new(K8sRegistry::new(k8s_cfg.clone(), http.clone()))
+                let registry = K8sRegistry::new(k8s_cfg.clone(), config.server.upstream_timeout_secs)?;
+                std::sync::Arc::new(registry)
             }
             RegistryConfig::Mock(mock_cfg) => {
                 std::sync::Arc::new(MockRegistry::new(mock_cfg.clone(), http.clone()))

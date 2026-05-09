@@ -90,6 +90,7 @@
 - **B07** `route-explain --request-file`：从 YAML/JSON 读 `path`/`method`/`headers`；CLI `--header` 覆盖同名键；文档与示例文件已补充。
 - **B08** 指标：`GET /metrics` 返回 `route_hits` / `failure_reasons`；`server/metrics.rs`；失败码与 `ProxyError`/`RegistryError` 对齐。
 - **B09** CI probe：`doctor-probe.yml` 在 GitHub runner 中先 `docker compose up` 启动 9000/9001 mock 上游，再跑 `doctor --probe-upstream --json`，结束后自动 `down -v`。
+- **K8s registry**：已从 stub 升级为可用实现；支持基于 `Endpoints` API 的实例发现（`/api/v1/namespaces/{ns}/endpoints/{service}`），并支持 `kubeconfig_path`/`kubeconfig_context` 加载 TLS 与认证信息；`doctor` 健康检查已验证通过。
 
 ## 优先级说明（与路线图一致）
 

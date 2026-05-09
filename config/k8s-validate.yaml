@@ -1,0 +1,24 @@
+log_level: "info"
+
+server:
+  host: "127.0.0.1"
+  port: 18080
+  upstream_timeout_secs: 5
+
+registries:
+  query_mode: priority
+  sources:
+    - type: kubernetes
+      priority: 1
+      api_server_url: "https://10.210.21.210:6443"
+      namespace: "default"
+      kubeconfig_path: "E:/Home/vasin.GENSOKYO/.kube/config.yaml"
+      kubeconfig_context: "kubernetes-admin@10.210.21.210"
+
+routes:
+  - id: "k8s-service-route"
+    priority: 10
+    path:
+      type: prefix
+      value: "/api/k8s"
+    service_id: "kubernetes"
