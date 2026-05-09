@@ -26,5 +26,5 @@ jobs:
       - name: Mock profile strict check
         run: cargo run -- check-config config/mock-config.yaml --json --strict
 
-      - name: Mock profile doctor check
-        run: cargo run -- doctor --config config/mock-config.yaml
+      - name: Mock profile doctor (JSON)
+        run: cargo run -- doctor --config config/mock-config.yaml --json
