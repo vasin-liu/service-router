@@ -26,7 +26,7 @@
 - 当前边界
   - 未实现完整负载均衡策略（当前取实例列表第一个）
   - WebSocket 为“可升级 + 上游连接”骨架，未完成双向完整透传
-  - Kubernetes：优先 Core `Endpoints`；无实例时再查 `discovery.k8s.io/v1` EndpointSlice（`kubernetes.io/service-name`）；按 Service 端口名筛选等仍为后续增强
+  - Kubernetes：读取 `Service` TCP `targetPort`，再解析 Core `Endpoints`；空则 EndpointSlice（`kubernetes.io/service-name`）；多端口场景的 Service 语义对齐可作后续增强
   - `/ready` 暂未执行实际 registry health 聚合检测
 
 ## 3. 用户与使用场景

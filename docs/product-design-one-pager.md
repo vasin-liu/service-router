@@ -39,7 +39,7 @@
 - 未提供完整负载均衡策略（当前优先首实例）
 - WebSocket 尚未实现完整双向帧透传
 - `/ready` 暂未聚合注册中心真实健康状态
-- Kubernetes：`Endpoints` 优先，若无实例则回退 `EndpointSlice`；就绪过滤与高阶策略仍可增强
+- Kubernetes：`Service.spec.ports` 约束后端 TCP 端口，再读 `Endpoints` / `EndpointSlice`；就绪与高阶筛选仍可增强
 
 ## 下一步（建议）
 

@@ -46,6 +46,15 @@ impl K8sRegistry {
         )
     }
 
+    fn service_url(&self, namespace: &str, service_id: &str) -> String {
+        format!(
+            "{}/api/v1/namespaces/{}/services/{}",
+            self.config.api_server_url.trim_end_matches('/'),
+            namespace,
+            service_id
+        )
+    }
+
     fn endpoint_slices_list_url(&self, namespace: &str, service_name: &str) -> String {
         let base = format!(
             "{}/apis/discovery.k8s.io/v1/namespaces/{}/endpointslices",
@@ -72,7 +81,42 @@ impl K8sRegistry {
         req
     }
 
-    async fn fetch_core_endpoints(&self, namespace: &str, name: &str) -> Result<Vec<ServiceInstance>, RegistryError> {
+    /// Load Service `spec.ports` targets so we only keep backend ports that match TCP `targetPort`
+    /// (numeric or port name), reducing spurious combinations when a Service exposes multiple ports.
+    async fn fetch_service_tcp_filter(&self, namespace: &str, name: &str) -> Result<ServiceTcpFilter, RegistryError> {
+        let url = self.service_url(namespace, name);
+        let req = self.with_auth(self.http.get(url.clone()));
+        let resp = req.send().await?;
+
+        if resp.status() == reqwest::StatusCode::UNAUTHORIZED
+            || resp.status() == reqwest::StatusCode::FORBIDDEN
+        {
+            return Err(RegistryError::AuthFailed);
+        }
+        if resp.status() == reqwest::StatusCode::NOT_FOUND {
+            return Ok(ServiceTcpFilter::default());
+        }
+        if !resp.status().is_success() {
+            return Err(RegistryError::UnexpectedResponse(format!(
+                "Kubernetes service {} returned {}",
+                url,
+                resp.status()
+            )));
+        }
+
+        let svc: K8sService = resp
+            .json()
+            .await
+            .map_err(|e| RegistryError::UnexpectedResponse(e.to_string()))?;
+        Ok(ServiceTcpFilter::from_service_ports(&svc.spec.ports))
+    }
+
+    async fn fetch_core_endpoints(
+        &self,
+        namespace: &str,
+        name: &str,
+        tcp_filter: &ServiceTcpFilter,
+    ) -> Result<Vec<ServiceInstance>, RegistryError> {
         let url = self.endpoint_url(namespace, name);
         let req = self.with_auth(self.http.get(url.clone()));
         let resp = req.send().await?;
@@ -97,13 +141,14 @@ impl K8sRegistry {
             .json()
             .await
             .map_err(|e| RegistryError::UnexpectedResponse(e.to_string()))?;
-        Ok(endpoints_to_instances(endpoints))
+        Ok(endpoints_to_instances(endpoints, tcp_filter))
     }
 
     async fn fetch_endpoint_slices(
         &self,
         namespace: &str,
         service_name: &str,
+        tcp_filter: &ServiceTcpFilter,
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
         let url = self.endpoint_slices_list_url(namespace, service_name);
         let req = self.with_auth(self.http.get(url.clone()));
@@ -129,7 +174,7 @@ impl K8sRegistry {
             .json()
             .await
             .map_err(|e| RegistryError::UnexpectedResponse(e.to_string()))?;
-        Ok(endpoint_slices_to_instances(list))
+        Ok(endpoint_slices_to_instances(list, tcp_filter))
     }
 }
 
@@ -144,11 +189,14 @@ impl ServiceRegistry for K8sRegistry {
         service_id: &str,
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
         let namespace = self.config.namespace.as_deref().unwrap_or("default");
-        let from_core = self.fetch_core_endpoints(namespace, service_id).await?;
+        let tcp_filter = self.fetch_service_tcp_filter(namespace, service_id).await?;
+        let from_core = self
+            .fetch_core_endpoints(namespace, service_id, &tcp_filter)
+            .await?;
         if !from_core.is_empty() {
             return Ok(from_core);
         }
-        self.fetch_endpoint_slices(namespace, service_id).await
+        self.fetch_endpoint_slices(namespace, service_id, &tcp_filter).await
     }
 
     async fn health(&self) -> RegistryHealth {
@@ -341,6 +389,85 @@ fn decode_base64_field(input: Option<&str>) -> Result<Option<Vec<u8>>, RegistryE
     Ok(Some(bytes))
 }
 
+#[derive(Debug, Default)]
+struct ServiceTcpFilter {
+    /// Backend port numbers gathered from numeric `spec.ports[].targetPort`.
+    numeric_targets: HashSet<u16>,
+    /// Port names from string `spec.ports[].targetPort` (subset / slice entry `name` must match).
+    named_targets: HashSet<String>,
+}
+
+impl ServiceTcpFilter {
+    fn allows(&self, port: u16, port_entry_name: Option<&str>) -> bool {
+        if self.numeric_targets.is_empty() && self.named_targets.is_empty() {
+            return true;
+        }
+        if self.numeric_targets.contains(&port) {
+            return true;
+        }
+        if let Some(name) = port_entry_name {
+            if self.named_targets.contains(name) {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn from_service_ports(ports: &[K8sServicePort]) -> Self {
+        let mut numeric_targets = HashSet::new();
+        let mut named_targets = HashSet::new();
+        for p in ports {
+            if p.protocol.as_deref() == Some("UDP") {
+                continue;
+            }
+            match &p.target_port {
+                Some(TargetPort::Int(v)) => {
+                    if let Ok(pp) = u16::try_from(*v) {
+                        numeric_targets.insert(pp);
+                    }
+                }
+                Some(TargetPort::Name(n)) => {
+                    if !n.is_empty() {
+                        named_targets.insert(n.clone());
+                    }
+                }
+                None => {}
+            }
+        }
+        Self {
+            numeric_targets,
+            named_targets,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct K8sService {
+    #[serde(default)]
+    spec: K8sServiceSpec,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct K8sServiceSpec {
+    #[serde(default)]
+    ports: Vec<K8sServicePort>,
+}
+
+#[derive(Debug, Deserialize)]
+struct K8sServicePort {
+    #[serde(rename = "targetPort")]
+    target_port: Option<TargetPort>,
+    #[serde(default)]
+    protocol: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum TargetPort {
+    Int(u64),
+    Name(String),
+}
+
 #[derive(Debug, Deserialize)]
 struct K8sEndpoints {
     subsets: Option<Vec<K8sEndpointSubset>>,
@@ -360,6 +487,10 @@ struct K8sEndpointAddress {
 #[derive(Debug, Deserialize)]
 struct K8sEndpointPort {
     port: u16,
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    protocol: Option<String>,
 }
 
 /// `EndpointSliceList` (`discovery.k8s.io/v1`) — fallback when Core `Endpoints` is empty/unavailable.
@@ -395,20 +526,16 @@ struct SliceEndpointConditions {
 #[derive(Debug, Deserialize)]
 struct SlicePort {
     port: Option<u16>,
+    #[serde(default)]
+    name: Option<String>,
     protocol: Option<String>,
 }
 
-fn endpoint_slices_to_instances(list: EndpointSliceList) -> Vec<ServiceInstance> {
+fn endpoint_slices_to_instances(list: EndpointSliceList, tcp_filter: &ServiceTcpFilter) -> Vec<ServiceInstance> {
     let mut out = Vec::new();
     let mut seen = HashSet::new();
     for slice in list.items {
-        let tcp_ports: Vec<u16> = slice
-            .ports
-            .iter()
-            .filter(|p| p.protocol.as_deref() != Some("UDP"))
-            .filter_map(|p| p.port)
-            .collect();
-        if tcp_ports.is_empty() {
+        if slice.ports.is_empty() && slice.endpoints.is_empty() {
             continue;
         }
         for ep in slice.endpoints {
@@ -416,12 +543,21 @@ fn endpoint_slices_to_instances(list: EndpointSliceList) -> Vec<ServiceInstance>
                 continue;
             }
             for addr in &ep.addresses {
-                for port in &tcp_ports {
-                    let key = format!("{addr}:{port}");
+                for port_ent in &slice.ports {
+                    if port_ent.protocol.as_deref() == Some("UDP") {
+                        continue;
+                    }
+                    let Some(port_num) = port_ent.port else {
+                        continue;
+                    };
+                    if !tcp_filter.allows(port_num, port_ent.name.as_deref()) {
+                        continue;
+                    }
+                    let key = format!("{addr}:{port_num}");
                     if seen.insert(key) {
                         out.push(ServiceInstance {
                             host: addr.clone(),
-                            port: *port,
+                            port: port_num,
                             metadata: std::collections::HashMap::new(),
                         });
                     }
@@ -432,7 +568,7 @@ fn endpoint_slices_to_instances(list: EndpointSliceList) -> Vec<ServiceInstance>
     out
 }
 
-fn endpoints_to_instances(endpoints: K8sEndpoints) -> Vec<ServiceInstance> {
+fn endpoints_to_instances(endpoints: K8sEndpoints, tcp_filter: &ServiceTcpFilter) -> Vec<ServiceInstance> {
     let mut out = Vec::new();
     let mut seen = HashSet::new();
     for subset in endpoints.subsets.unwrap_or_default() {
@@ -440,6 +576,12 @@ fn endpoints_to_instances(endpoints: K8sEndpoints) -> Vec<ServiceInstance> {
         let ports = subset.ports.unwrap_or_default();
         for address in &addresses {
             for port in &ports {
+                if port.protocol.as_deref() == Some("UDP") {
+                    continue;
+                }
+                if !tcp_filter.allows(port.port, port.name.as_deref()) {
+                    continue;
+                }
                 let key = format!("{}:{}", address.ip, port.port);
                 if seen.insert(key) {
                     out.push(ServiceInstance {
@@ -467,24 +609,99 @@ mod tests {
                         ip: "10.0.0.1".to_string(),
                     }]),
                     ports: Some(vec![
-                        K8sEndpointPort { port: 8080 },
-                        K8sEndpointPort { port: 8080 },
+                        K8sEndpointPort {
+                            port: 8080,
+                            name: None,
+                            protocol: None,
+                        },
+                        K8sEndpointPort {
+                            port: 8080,
+                            name: None,
+                            protocol: None,
+                        },
                     ]),
                 },
                 K8sEndpointSubset {
                     addresses: Some(vec![K8sEndpointAddress {
                         ip: "10.0.0.2".to_string(),
                     }]),
-                    ports: Some(vec![K8sEndpointPort { port: 9090 }]),
+                    ports: Some(vec![K8sEndpointPort {
+                        port: 9090,
+                        name: None,
+                        protocol: None,
+                    }]),
                 },
             ]),
         };
-        let instances = endpoints_to_instances(endpoints);
+        let filter = ServiceTcpFilter::default();
+        let instances = endpoints_to_instances(endpoints, &filter);
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].host, "10.0.0.1");
         assert_eq!(instances[0].port, 8080);
         assert_eq!(instances[1].host, "10.0.0.2");
         assert_eq!(instances[1].port, 9090);
+    }
+
+    #[test]
+    fn endpoints_to_instances_filtered_by_service_numeric_target() {
+        let endpoints = K8sEndpoints {
+            subsets: Some(vec![K8sEndpointSubset {
+                addresses: Some(vec![K8sEndpointAddress {
+                    ip: "10.0.0.1".to_string(),
+                }]),
+                ports: Some(vec![
+                    K8sEndpointPort {
+                        port: 8080,
+                        name: Some("web".into()),
+                        protocol: Some("TCP".into()),
+                    },
+                    K8sEndpointPort {
+                        port: 8443,
+                        name: Some("tls".into()),
+                        protocol: Some("TCP".into()),
+                    },
+                ]),
+            }]),
+        };
+        let svc_ports = [K8sServicePort {
+            target_port: Some(TargetPort::Int(8080)),
+            protocol: Some("TCP".into()),
+        }];
+        let filter = ServiceTcpFilter::from_service_ports(&svc_ports);
+        let instances = endpoints_to_instances(endpoints, &filter);
+        assert_eq!(instances.len(), 1);
+        assert_eq!(instances[0].port, 8080);
+    }
+
+    #[test]
+    fn endpoints_to_instances_filtered_by_service_named_target() {
+        let endpoints = K8sEndpoints {
+            subsets: Some(vec![K8sEndpointSubset {
+                addresses: Some(vec![K8sEndpointAddress {
+                    ip: "10.0.0.1".to_string(),
+                }]),
+                ports: Some(vec![
+                    K8sEndpointPort {
+                        port: 8443,
+                        name: Some("https".into()),
+                        protocol: Some("TCP".into()),
+                    },
+                    K8sEndpointPort {
+                        port: 8080,
+                        name: Some("http".into()),
+                        protocol: Some("TCP".into()),
+                    },
+                ]),
+            }]),
+        };
+        let svc_ports = [K8sServicePort {
+            target_port: Some(TargetPort::Name("https".into())),
+            protocol: Some("TCP".into()),
+        }];
+        let filter = ServiceTcpFilter::from_service_ports(&svc_ports);
+        let instances = endpoints_to_instances(endpoints, &filter);
+        assert_eq!(instances.len(), 1);
+        assert_eq!(instances[0].port, 8443);
     }
 
     #[test]
@@ -508,16 +725,19 @@ mod tests {
                 ports: vec![
                     SlicePort {
                         port: Some(443),
+                        name: None,
                         protocol: Some("TCP".to_string()),
                     },
                     SlicePort {
                         port: Some(53),
+                        name: None,
                         protocol: Some("UDP".to_string()),
                     },
                 ],
             }],
         };
-        let instances = endpoint_slices_to_instances(list);
+        let filter = ServiceTcpFilter::default();
+        let instances = endpoint_slices_to_instances(list, &filter);
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].host, "10.1.1.1");
         assert_eq!(instances[0].port, 443);
@@ -533,13 +753,47 @@ mod tests {
                 }],
                 ports: vec![SlicePort {
                     port: Some(6443),
+                    name: None,
                     protocol: None,
                 }],
             }],
         };
-        let instances = endpoint_slices_to_instances(list);
+        let filter = ServiceTcpFilter::default();
+        let instances = endpoint_slices_to_instances(list, &filter);
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].host, "fc00::1");
         assert_eq!(instances[0].port, 6443);
+    }
+
+    #[test]
+    fn endpoint_slices_respect_named_service_target_filter() {
+        let list = EndpointSliceList {
+            items: vec![EndpointSlice {
+                endpoints: vec![SliceEndpoint {
+                    addresses: vec!["192.168.1.10".into()],
+                    conditions: SliceEndpointConditions { ready: Some(true) },
+                }],
+                ports: vec![
+                    SlicePort {
+                        port: Some(8080),
+                        name: Some("http".into()),
+                        protocol: Some("TCP".into()),
+                    },
+                    SlicePort {
+                        port: Some(8443),
+                        name: Some("webhook".into()),
+                        protocol: Some("TCP".into()),
+                    },
+                ],
+            }],
+        };
+        let svc_ports = [K8sServicePort {
+            target_port: Some(TargetPort::Name("webhook".into())),
+            protocol: Some("TCP".into()),
+        }];
+        let filter = ServiceTcpFilter::from_service_ports(&svc_ports);
+        let instances = endpoint_slices_to_instances(list, &filter);
+        assert_eq!(instances.len(), 1);
+        assert_eq!(instances[0].port, 8443);
     }
 }
