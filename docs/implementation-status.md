@@ -86,6 +86,7 @@
 - **B01** `--strict`：按路由器评估顺序判定遮蔽；同规则并存 `upstream_url`+`service_id`；Prefix + 永不命中 `strip_prefix`；单元测试覆盖。
 - **B02** `route-explain`：未命中时按匹配器类型细化 PATH 提示；METHOD/HEADER 建议带可执行 `cargo run …`；无效规则 header 键 `RULE_HEADER_NAME_INVALID`；JSON `remediation_outline` + 文本汇总。
 - **B03** CI：`ci.yml` 增加 smoke `route-explain`；根目录 `.gitlab-ci.yml`、`docs/ci-copy-paste.sh`、扩展后的 `docs/ci-template.md`（GitHub/GitLab + 门禁表）。
+- **B04** `doctor --probe-upstream`：对 Nacos/Eureka/K8s 配置地址做 TCP 探测，JSON `registry_endpoint_probe` + `TCP_UNREACHABLE` / `ENDPOINT_PARSE_ERROR`；mock 仅跳过端点探测。
 
 ## 优先级说明（与路线图一致）
 

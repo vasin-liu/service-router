@@ -9,7 +9,8 @@
 - `config_path`: string
 - `probe_upstream_enabled`: boolean
 - `registry_health`: array
-- `upstream_probe`: array (non-empty only when `--probe-upstream` is enabled)
+- `registry_endpoint_probe`: array (populated when `--probe-upstream` runs; empty otherwise)
+- `upstream_probe`: array (populated when `--probe-upstream` runs; empty otherwise)
 
 ## `registry_health` item
 
@@ -17,6 +18,24 @@
 - `kind`: string (for example `Mock`, `Nacos`, `Eureka`, `Kubernetes`)
 - `status`: `"healthy" | "degraded" | "unhealthy"`
 - `message`: optional string (present for degraded/unhealthy)
+
+## `registry_endpoint_probe` item (`--probe-upstream`)
+
+TCP connect (2s timeout) to the **remote** registry’s configured API address. **Mock** registries are skipped (they have no remote endpoint).
+
+Successful parse and probe:
+
+- `kind`: `"Nacos" | "Eureka" | "Kubernetes"`
+- `priority`: number
+- `configured`: string (raw value from YAML: URL or `host:port`)
+- `host`, `port`: resolved values used for the socket
+- `reachable`: boolean
+
+Unreachable or parse failure:
+
+- `reachable`: false
+- `failure_code`: `"TCP_UNREACHABLE"` (probe failed) or `"ENDPOINT_PARSE_ERROR"` (could not parse host/port from config)
+- `reason`: human-readable explanation
 
 ## `upstream_probe` item
 
@@ -42,6 +61,7 @@
       "status": "healthy"
     }
   ],
+  "registry_endpoint_probe": [],
   "upstream_probe": []
 }
 ```
@@ -61,6 +81,7 @@
       "status": "healthy"
     }
   ],
+  "registry_endpoint_probe": [],
   "upstream_probe": [
     {
       "route_id": "orders-api",
@@ -83,7 +104,7 @@
 ## CI policy suggestions
 
 - Block pipeline when `status == "fail"`.
-- In triage jobs, enable `--probe-upstream` for network-level diagnosis.
+- In triage jobs, enable `--probe-upstream` for network-level diagnosis (registry API endpoints and resolved route upstreams).
 - For environment-sensitive checks, run both:
   - baseline: `doctor --json`
   - connectivity: `doctor --probe-upstream --json`

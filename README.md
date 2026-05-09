@@ -32,7 +32,7 @@ Server listens on `127.0.0.1:8080` by default in mock config.
 
 - `run [config]` — omit `config` to use `config/config.yaml`
 - `check-config [<config>] [--json] [--strict]` — any non-flag token is treated as the config path; if you pass multiple, the **last** one wins (flags can be mixed before/after the path depending on iteration order; prefer `[--json] [--strict] config.yaml`). With `--strict`, findings include overshadowing computed in router evaluation order (`priority`, then YAML order ties), simultaneous `upstream_url` + `service_id` on a rule, and Prefix rules whose `strip_prefix` cannot apply to matched paths.
-- `doctor [<config>] [--config <path>] [--probe-upstream] [--json]` — prefer `--config path` for clarity; a bare path positional is accepted
+- `doctor [<config>] [--config <path>] [--probe-upstream] [--json]` — prefer `--config path` for clarity; a bare path positional is accepted. **`--probe-upstream`** runs TCP checks on remote registry API endpoints (when not mock) and on each route’s upstream URL or registry-resolved instances; see `docs/doctor-json-schema.md` for `registry_endpoint_probe`.
 - `route-explain <path> [method] [--config path] [--header name:value …] [--json] [--verbose]` — unmatched runs print per-rule reasons and suggestions; text mode ends with a de-duplicated “Suggested actions” block; `--json` adds `remediation_outline` (one suggestion per `code`).
 
 ### Exit codes (`std::process::ExitCode`)

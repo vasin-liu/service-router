@@ -23,7 +23,7 @@
 | B01 | ~~P0~~ **Done** | `check-config --strict` 增加更多冲突检测（优先级重叠、不可达规则） | 更早发现配置风险 | ~~至少新增 3 类~~：评估顺序遮蔽、`upstream_url`+`service_id` 冗余、Prefix/`strip_prefix` 永不生效 |
 | B02 | ~~P0~~ **Done** | `route-explain` 输出建议动作（如何修复 mismatch） | 降低排障门槛 | 分类消息 + `command`（含 `--config`）、JSON `remediation_outline`、文本汇总 |
 | B03 | ~~P0~~ **Done** | CI 命令模板（`check-config` + `doctor` + smoke） | 降低团队接入成本 | `docs/ci-template.md`（GitHub 摘录 + GitLab `script`）+ `.gitlab-ci.yml` + `docs/ci-copy-paste.sh`；`ci.yml` 增加 route-explain smoke |
-| B04 | P1 | `doctor` 增加网络连通检查（上游 URL / registry endpoint） | 提高故障定位效率 | 输出可读通过/失败原因，不可连通时明确失败码 |
+| B04 | ~~P1~~ **Done** | `doctor` 增加网络连通检查（上游 URL / registry endpoint） | 提高故障定位效率 | `--probe-upstream` 增加 registry 端点 TCP + JSON `failure_code`；文档更新 |
 | B05 | ~~P1~~ **Done** | Mock registry 增加动态场景（空实例/异常状态） | 增强测试覆盖 | `error_services`、显式空列表、`health_behavior`；`config/mock-scenarios-sample.yaml` + 单元测试 |
 | B06 | ~~P1~~ **Done** | 统一 CLI 参数规范与错误码文档 | 降低学习成本 | README：命令说明、路径/flag 惯例、Exit code 表、JSON + 退出码 |
 | B07 | P2 | `route-explain` 增加请求样例回放输入 | 缩短联调链路 | 支持从文件读取 path/method/headers 并解释 |

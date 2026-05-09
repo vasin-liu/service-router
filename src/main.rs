@@ -301,7 +301,7 @@ fn parse_command(args: Vec<String>) -> Command {
 
 fn print_help() {
     println!(
-        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Run local environment checks\n  route-explain <path> [method] [options]            Explain route match result\n    options: --config <path> --header \"key:value\" [--json] [--verbose]\n  help                                               Show help"
+        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain <path> [method] [options]            Explain route match result\n    options: --config <path> --header \"key:value\" [--json] [--verbose]\n  help                                               Show help"
     );
 }
 
@@ -935,8 +935,98 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
     }
 
     let mut upstream_probe_json: Vec<serde_json::Value> = Vec::new();
+    let mut registry_endpoint_probe_json: Vec<serde_json::Value> = Vec::new();
     let mut probe_failures = 0usize;
     if probe_upstream {
+        use service_router::config::model::RegistryConfig;
+
+        let has_remote_registry = config
+            .registries
+            .sources
+            .iter()
+            .any(|s| !matches!(s, RegistryConfig::Mock(_)));
+
+        if has_remote_registry {
+            if !as_json {
+                println!(" - registry endpoint probe:");
+            }
+            for src in &config.registries.sources {
+                let (kind, priority, target_parse) = match src {
+                    RegistryConfig::Nacos(c) => (
+                        "Nacos",
+                        c.priority,
+                        parse_host_port_for_probe(&c.server_addr).map(|x| (c.server_addr.clone(), x)),
+                    ),
+                    RegistryConfig::Eureka(c) => (
+                        "Eureka",
+                        c.priority,
+                        parse_host_port_for_probe(&c.server_url).map(|x| (c.server_url.clone(), x)),
+                    ),
+                    RegistryConfig::Kubernetes(c) => (
+                        "Kubernetes",
+                        c.priority,
+                        parse_host_port_for_probe(&c.api_server_url).map(|x| (c.api_server_url.clone(), x)),
+                    ),
+                    RegistryConfig::Mock(_) => continue,
+                };
+                match target_parse {
+                    Ok((configured, (host, port))) => {
+                        let reachable = probe_tcp(&host, port).await;
+                        if !reachable {
+                            probe_failures += 1;
+                        }
+                        let mut entry = serde_json::json!({
+                            "kind": kind,
+                            "priority": priority,
+                            "configured": configured,
+                            "host": host,
+                            "port": port,
+                            "reachable": reachable
+                        });
+                        if !reachable {
+                            entry["failure_code"] = serde_json::json!("TCP_UNREACHABLE");
+                            entry["reason"] = serde_json::json!(format!(
+                                "TCP connect to {}:{} failed or timed out (2s)",
+                                host, port
+                            ));
+                        }
+                        registry_endpoint_probe_json.push(entry);
+                        if !as_json {
+                            if reachable {
+                                println!(
+                                    "   - [{}] {} {} ({}:{}): reachable",
+                                    priority, kind, configured, host, port
+                                );
+                            } else {
+                                println!(
+                                    "   - [{}] {} {} ({}:{}): unreachable (TCP_UNREACHABLE)",
+                                    priority, kind, configured, host, port
+                                );
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        probe_failures += 1;
+                        registry_endpoint_probe_json.push(serde_json::json!({
+                            "kind": kind,
+                            "priority": priority,
+                            "reachable": false,
+                            "failure_code": "ENDPOINT_PARSE_ERROR",
+                            "reason": e.to_string()
+                        }));
+                        if !as_json {
+                            println!(
+                                "   - [{}] {} endpoint parse failed: {} (ENDPOINT_PARSE_ERROR)",
+                                priority, kind, e
+                            );
+                        }
+                    }
+                }
+            }
+        } else if !as_json {
+            println!(" - registry endpoint probe: SKIP (mock registry only)");
+        }
+
         if !as_json {
             println!(" - upstream probe:");
         }
@@ -1043,11 +1133,14 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
         }
         if probe_failures > 0 {
             if !as_json {
-                println!(" - upstream probe result: FAIL ({} issue(s))", probe_failures);
+                println!(
+                    " - network probe result: FAIL ({} issue(s); registry endpoints + route upstreams)",
+                    probe_failures
+                );
             }
             has_unhealthy = true;
         } else if !as_json {
-            println!(" - upstream probe result: PASS");
+            println!(" - network probe result: PASS");
         }
     }
 
@@ -1058,6 +1151,7 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
             "config_path": config_path.display().to_string(),
             "probe_upstream_enabled": probe_upstream,
             "registry_health": registry_health_json,
+            "registry_endpoint_probe": registry_endpoint_probe_json,
             "upstream_probe": upstream_probe_json
         }))?);
     }
@@ -1088,6 +1182,26 @@ fn parse_host_port_from_url(url: &str) -> anyhow::Result<(String, u16)> {
     Ok((host, port))
 }
 
+/// Host/port for TCP probes: full URL with scheme, or `host:port`.
+fn parse_host_port_for_probe(addr_or_url: &str) -> anyhow::Result<(String, u16)> {
+    let t = addr_or_url.trim();
+    if t.contains("://") {
+        parse_host_port_from_url(t)
+    } else {
+        let colon = t
+            .rfind(':')
+            .ok_or_else(|| anyhow::anyhow!("expected host:port, got {:?}", t))?;
+        let host = t[..colon].trim();
+        if host.is_empty() {
+            anyhow::bail!("empty host in {:?}", t);
+        }
+        let port: u16 = t[colon + 1..]
+            .parse()
+            .map_err(|e| anyhow::anyhow!("invalid port in {:?}: {e}", t))?;
+        Ok((host.to_string(), port))
+    }
+}
+
 async fn probe_tcp(host: &str, port: u16) -> bool {
     let addr = format!("{}:{}", host, port);
     matches!(
@@ -1109,7 +1223,10 @@ mod tests {
     };
     use service_router::routing::CompiledRoutingRule;
 
-    use super::{explain_rule_mismatch, merge_remediation_outline, run_strict_config_checks};
+    use super::{
+        explain_rule_mismatch, merge_remediation_outline, parse_host_port_for_probe,
+        run_strict_config_checks,
+    };
 
     #[test]
     fn strict_check_reports_duplicate_route_ids() {
@@ -1380,5 +1497,19 @@ mod tests {
             merged[0].get("command").and_then(|v| v.as_str()),
             Some("c1")
         );
+    }
+
+    #[test]
+    fn parse_host_port_for_probe_accepts_host_colon_port() {
+        let (h, p) = parse_host_port_for_probe("127.0.0.1:8848").unwrap();
+        assert_eq!(h, "127.0.0.1");
+        assert_eq!(p, 8848);
+    }
+
+    #[test]
+    fn parse_host_port_for_probe_accepts_http_url() {
+        let (h, p) = parse_host_port_for_probe("http://example.com:8080/v1/api").unwrap();
+        assert_eq!(h, "example.com");
+        assert_eq!(p, 8080);
     }
 }
