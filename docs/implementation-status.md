@@ -79,6 +79,11 @@
   - 新增 P1 进展：`doctor --probe-upstream` 可探测上游连通性（直连 URL + registry 解析实例）
   - 新增 P1 进展：`doctor --json` 输出结构化诊断（含 registry health 与 upstream probe 结果）
 
+## 优先级说明（与路线图一致）
+
+- **功能实现优先**：严格检查、路由解释、mock 场景、CLI 文档等持续推进。
+- **Docker Compose 探测 CI**：已记入 `docs/next-iteration-backlog.md` 的 **B09（P3 暂缓）**，不抢占主线。
+
 ## 下一个迭代建议（按优先级）
 
 1. 实施 `route explain`（FR-2.1）  

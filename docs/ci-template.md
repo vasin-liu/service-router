@@ -21,6 +21,8 @@ cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json
 
 On default GitHub-hosted runners nothing listens on the mock profile ports (`127.0.0.1:9000`, etc.), so this job often **fails** until you run it where upstreams exist (self-hosted runner, VPN to dev cluster, or after starting local mocks). Use it to validate connectivity in an environment that mirrors runtime.
 
+**Product priority:** orchestrating Docker Compose inside CI purely to green this probe is intentionally **lower priority** than core feature work (`docs/next-iteration-backlog.md`, item B09). Do not block feature milestones on CI probe hardening unless there is an explicit release gate need.
+
 ## Why this baseline
 
 - Catches compile/test regressions early.
