@@ -34,6 +34,7 @@ All notable changes to this project are documented in this file.
 - Kubernetes port handling skips `SCTP` alongside `UDP` for Service targets and endpoint rows (HTTP proxy scope).
 - `docs/doctor-json-schema.md` documents how Kubernetes resolution affects `upstream_probe` for `service_id`.
 - GitHub Actions: `release-acceptance` manual workflow (`.github/workflows/release-acceptance.yml`) runs `docs/release-acceptance.sh` with optional compose-backed mock upstreams and uploads JSON artifacts.
+- GitLab CI: optional manual job `release-acceptance-manual` runs the same release script and saves JSON artifacts (`allow_failure: true`; `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` without Docker compose).
 - Docs: `product-design.md` / `product-design-one-pager.md` aligned with Kubernetes Endpoints-based discovery and next-step EndpointSlice work.
 - Mock profile: `api-gateway` mock instance now uses `127.0.0.1:9001` (same as `order-service`) so `doctor --probe-upstream` passes with a single local upstream; CI template note updated accordingly.
 

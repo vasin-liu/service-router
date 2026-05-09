@@ -66,7 +66,7 @@ Keep **paths** aligned with where you copied `mock-config.yaml` (or your profile
 
 ## GitLab CI
 
-This repository ships **`.gitlab-ci.yml`** with the same stages in a single `rust` image job (`rust:1-bookworm`). Copy that file into a consumer repo or paste the `script:` block:
+The included **`.gitlab-ci.yml`** mirrors the baseline in a `rust:1-bookworm` job: compile, test, `check-config --strict`, `doctor`, `route-explain`. Copy that file into a consumer repo or paste the `script:` block:
 
 ```yaml
 script:
@@ -77,15 +77,19 @@ script:
   - cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
 ```
 
+Optional manual job **`release-acceptance-manual`** (stage `release`) runs **`docs/release-acceptance.sh`** and uploads JSON from `artifacts/release-acceptance/`. It sets `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` so `doctor --probe-upstream` does not fail the job when no mock TCP upstream is listening; for compose-backed probes (like GitHub’s `release-acceptance` workflow), use a runner with [Docker-in-Docker](https://docs.gitlab.com/ci/docker/using_docker_build/) and mirror `.github/workflows/release-acceptance.yml`.
+
 Add **`cache:` for `target/`** on long-running pipelines if runners allow it.
 
-## Upstream TCP probe (dockerized)
+## GitHub manual workflows (compose-backed)
 
-Workflow `.github/workflows/release-acceptance.yml` runs **only on manual trigger** (`workflow_dispatch`): it starts the same compose-backed mock upstreams (unless `skip_compose`), then runs `bash docs/release-acceptance.sh` so `check-config` / `doctor` / probe / `route-explain` JSON land in the `release-acceptance-json` artifact.
+### `release-acceptance` (full JSON artifact set)
 
-Workflow `.github/workflows/doctor-probe.yml` runs **only on manual trigger** (`workflow_dispatch`).
+Workflow `.github/workflows/release-acceptance.yml` runs **only on manual trigger** (`workflow_dispatch`): it starts the compose-backed mock upstreams (unless `skip_compose`), waits on `9000`/`9001`, runs `bash docs/release-acceptance.sh`, and uploads **`release-acceptance-json`** (files under `artifacts/release-acceptance/`).
 
-It now boots local mock upstreams via Docker Compose (`.github/compose/doctor-probe.compose.yml`) before probing:
+### `doctor-upstream-probe` (doctor only)
+
+Workflow `.github/workflows/doctor-probe.yml` runs **only on manual trigger** (`workflow_dispatch`). It boots the same Compose file (default `.github/compose/doctor-probe.compose.yml`) before running `doctor --probe-upstream --json`.
 
 ```bash
 docker compose -f .github/compose/doctor-probe.compose.yml up -d
@@ -95,12 +99,9 @@ docker compose -f .github/compose/doctor-probe.compose.yml down -v
 
 The compose stack binds `127.0.0.1:9000` and `127.0.0.1:9001`. Mock profile defaults both mock `service_id` targets to `127.0.0.1:9001`, so **`doctor --probe-upstream`** is satisfied once port `9001` is reachable (the workflow still waits on both compose ports).
 
-`workflow_dispatch` supports optional inputs:
+Both workflows expose `workflow_dispatch` inputs such as `config_path` and `compose_file` (defaults as in each YAML).
 
-- `config_path` (default `config/mock-config.yaml`)
-- `compose_file` (default `.github/compose/doctor-probe.compose.yml`)
-
-When probe fails, workflow uploads `doctor-probe-docker-diagnostics` artifact containing:
+When `doctor-probe` fails, the workflow uploads `doctor-probe-docker-diagnostics` containing:
 
 - `compose-ps.txt`
 - `compose-logs.txt`

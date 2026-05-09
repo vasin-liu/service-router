@@ -1,6 +1,7 @@
 # Copy-paste baseline for GitLab CI. Adjust image version or cache as needed for your runners.
 stages:
   - check
+  - release
 
 variables:
   CARGO_TERM_COLOR: never
@@ -17,3 +18,21 @@ rust-validate:
     - cargo run -- check-config config/mock-config.yaml --json --strict
     - cargo run -- doctor --config config/mock-config.yaml --json
     - cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
+
+# Optional: full gates + JSON artifacts (same script as GitHub release-acceptance workflow).
+# Without compose, TCP probes may fail; ALLOW_PROBE_FAIL keeps the job usable for artifact collection.
+release-acceptance-manual:
+  stage: release
+  image: rust:1-bookworm
+  when: manual
+  allow_failure: true
+  variables:
+    SERVICE_ROUTER_CONFIG: "config/mock-config.yaml"
+    SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL: "1"
+  script:
+    - bash docs/release-acceptance.sh
+  artifacts:
+    when: always
+    paths:
+      - artifacts/release-acceptance/
+    expire_in: 30 days
