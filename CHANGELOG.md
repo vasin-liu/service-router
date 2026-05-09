@@ -25,6 +25,7 @@ All notable changes to this project are documented in this file.
 - Added `/metrics/prometheus` text endpoint (`service_router_route_hits_total`, `service_router_failures_total`) alongside JSON `/metrics`.
 - Eureka registry health check now probes `/apps` (with auth) instead of `/info`, aligning health status with actual discovery availability.
 - Eureka config adds optional `health_path` (default `/apps`) so health probing can adapt to custom endpoints.
+- Nacos registry now normalizes `server_addr` so both `http://host:port` and `http://host:port/nacos` work without duplicate-path failures.
 
 ## [0.1.0] - 2026-05-08
 

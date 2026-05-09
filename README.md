@@ -61,6 +61,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - Mock behaviors sample: `config/mock-scenarios-sample.yaml` (patterns for empty/error/health overrides)
 - `config/config.yaml` may require environment variables such as `NACOS_PASSWORD` before checks pass.
 - Eureka note: `registries.sources[].health_path` is optional (default `/apps`) for health probing on non-standard deployments.
+- Nacos note: `server_addr` accepts both base host (`http://host:port`) and suffix form (`http://host:port/nacos`).
 
 ## JSON Diagnostics Docs
 

@@ -41,6 +41,17 @@ struct NacosHost {
 }
 
 impl NacosRegistry {
+    /// Normalize server base so both `http://host:port` and `http://host:port/nacos`
+    /// resolve to the same API root.
+    fn api_base(&self) -> String {
+        let base = self.config.server_addr.trim_end_matches('/');
+        if base.ends_with("/nacos") {
+            base.to_string()
+        } else {
+            format!("{}/nacos", base)
+        }
+    }
+
     pub async fn new(config: NacosConfig, http: Client) -> Result<Self, RegistryError> {
         let token = Arc::new(ArcSwap::from_pointee(String::new()));
 
@@ -61,7 +72,7 @@ impl NacosRegistry {
             None => return Ok(()),
         };
 
-        let login_url = format!("{}/nacos/v1/auth/login", self.config.server_addr);
+        let login_url = format!("{}/v1/auth/login", self.api_base());
         let resp = self
             .http
             .post(&login_url)
@@ -122,7 +133,15 @@ impl NacosRegistry {
                     None => break,
                 };
 
-                let login_url = format!("{}/nacos/v1/auth/login", config.server_addr);
+                let base = {
+                    let b = config.server_addr.trim_end_matches('/');
+                    if b.ends_with("/nacos") {
+                        b.to_string()
+                    } else {
+                        format!("{}/nacos", b)
+                    }
+                };
+                let login_url = format!("{}/v1/auth/login", base);
                 match http
                     .post(&login_url)
                     .form(&[("username", &auth.username), ("password", &auth.password)])
@@ -158,8 +177,9 @@ impl ServiceRegistry for NacosRegistry {
         service_id: &str,
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
         let mut url = format!(
-            "{}/nacos/v1/ns/instance/list?serviceName={}&healthyOnly=true",
-            self.config.server_addr, service_id
+            "{}/v1/ns/instance/list?serviceName={}&healthyOnly=true",
+            self.api_base(),
+            service_id
         );
 
         if let Some(ns) = &self.config.namespace {
@@ -192,7 +212,7 @@ impl ServiceRegistry for NacosRegistry {
     }
 
     async fn health(&self) -> RegistryHealth {
-        let ping_url = format!("{}/nacos/v1/console/health/liveness", self.config.server_addr);
+        let ping_url = format!("{}/v1/console/health/liveness", self.api_base());
         match self.http.get(&ping_url).send().await {
             Ok(r) if r.status().is_success() => RegistryHealth::Healthy,
             Ok(r) => RegistryHealth::Degraded(format!("HTTP {}", r.status())),
