@@ -28,3 +28,6 @@ jobs:
 
       - name: Mock profile doctor (JSON)
         run: cargo run -- doctor --config config/mock-config.yaml --json
+
+      - name: Smoke route-explain (mock profile — expect match)
+        run: cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json

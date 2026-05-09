@@ -65,6 +65,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 
 - `docs/route-explain-json-schema.md`
 - `docs/doctor-json-schema.md`
+- CI copy-paste: `docs/ci-template.md` · `docs/ci-copy-paste.sh`
 
 ## Migrate to Mock Dev Mode
 

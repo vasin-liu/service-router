@@ -1,0 +1,19 @@
+# Copy-paste baseline for GitLab CI. Adjust image version or cache as needed for your runners.
+stages:
+  - check
+
+variables:
+  CARGO_TERM_COLOR: never
+
+rust-validate:
+  stage: check
+  image: rust:1-bookworm
+  script:
+    - rustc --version
+    - cargo --version
+    - cargo check
+    - cargo test -- --nocapture
+    # Mock profile: deterministic, no external registries
+    - cargo run -- check-config config/mock-config.yaml --json --strict
+    - cargo run -- doctor --config config/mock-config.yaml --json
+    - cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
