@@ -67,6 +67,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 ## JSON Diagnostics Docs
 
 - `docs/diagnostic-codes.md` — stable strings for metrics, doctor probes, route-explain, `/ready`
+- `docs/check-config-strict-schema.md` — `--strict` finding `code` / `details` for `check-config --json`
 - `docs/operations-runbook.md` — probes, metrics, config rollback, triage (no cluster naming assumptions)
 - `docs/route-explain-json-schema.md`
 - `docs/doctor-json-schema.md`

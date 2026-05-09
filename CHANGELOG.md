@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- `check-config --json --strict`: `strict_findings` is now an array of objects `{ "code", "message", "details"? }` instead of strings; see `docs/check-config-strict-schema.md`.
 - README: index entries for `docs/diagnostic-codes.md` and `docs/operations-runbook.md`.
 - `GET /ready`: aggregates per-registry health via `MultiRegistryResolver::health_report()`; returns **503** when every registry is `unhealthy`, with JSON `registry_health` rows matching `doctor --json` (breaking for deployments that assumed `/ready` was always 200 with registries configured).
 - README: CLI conventions, exit code table, and mock scenario documentation.
