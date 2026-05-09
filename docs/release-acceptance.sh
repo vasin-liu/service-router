@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Release acceptance runner: executes matrix command gates and stores JSON artifacts.
+set -euo pipefail
+
+CONFIG_PATH="${SERVICE_ROUTER_CONFIG:-config/mock-config.yaml}"
+SMOKE_PATH="${SERVICE_ROUTER_SMOKE_PATH:-/api/orders/123}"
+SMOKE_METHOD="${SERVICE_ROUTER_SMOKE_METHOD:-GET}"
+ARTIFACT_DIR="${SERVICE_ROUTER_ACCEPTANCE_OUT:-artifacts/release-acceptance}"
+RUN_GLOBAL_GATES="${SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL:-1}"
+ALLOW_PROBE_FAIL="${SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL:-0}"
+
+mkdir -p "${ARTIFACT_DIR}"
+
+echo "[release-acceptance] config: ${CONFIG_PATH}"
+echo "[release-acceptance] smoke: ${SMOKE_METHOD} ${SMOKE_PATH}"
+echo "[release-acceptance] output: ${ARTIFACT_DIR}"
+
+if [[ "${RUN_GLOBAL_GATES}" == "1" ]]; then
+  echo "[release-acceptance] global gates: cargo check + cargo test"
+  cargo check
+  cargo test -- --nocapture
+fi
+
+echo "[release-acceptance] check-config --strict"
+cargo run -- check-config --config "${CONFIG_PATH}" --json --strict \
+  | tee "${ARTIFACT_DIR}/check-config.json"
+
+echo "[release-acceptance] doctor"
+cargo run -- doctor --config "${CONFIG_PATH}" --json \
+  | tee "${ARTIFACT_DIR}/doctor.json"
+
+echo "[release-acceptance] doctor --probe-upstream"
+set +e
+cargo run -- doctor --config "${CONFIG_PATH}" --probe-upstream --json \
+  | tee "${ARTIFACT_DIR}/doctor-probe.json"
+probe_exit=$?
+set -e
+if [[ "${probe_exit}" -ne 0 && "${ALLOW_PROBE_FAIL}" != "1" ]]; then
+  echo "[release-acceptance] doctor --probe-upstream failed (exit ${probe_exit})"
+  exit "${probe_exit}"
+fi
+
+echo "[release-acceptance] route-explain smoke"
+cargo run -- route-explain "${SMOKE_PATH}" "${SMOKE_METHOD}" --config "${CONFIG_PATH}" --json \
+  | tee "${ARTIFACT_DIR}/route-explain-smoke.json"
+
+echo "[release-acceptance] done"

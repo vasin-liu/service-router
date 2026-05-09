@@ -3,6 +3,18 @@
 Use this checklist before release cut or environment rollout.  
 Goal: verify the same command contracts across `Mock`, `Nacos`, `Eureka`, and `Kubernetes`.
 
+Quick runner (generates JSON artifacts):
+
+```bash
+bash docs/release-acceptance.sh
+```
+
+PowerShell (Windows):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File docs/release-acceptance.ps1
+```
+
 ## 1) Global Gates (all profiles)
 
 Run once per build artifact:
@@ -101,3 +113,16 @@ Store these per profile for each release candidate:
 - `route-explain-smoke.json`
 
 Retention recommendation: keep at least last 10 release candidates.
+
+## 8) Helper Script Inputs
+
+`docs/release-acceptance.sh` supports:
+
+- `SERVICE_ROUTER_CONFIG` (default `config/mock-config.yaml`)
+- `SERVICE_ROUTER_SMOKE_PATH` (default `/api/orders/123`)
+- `SERVICE_ROUTER_SMOKE_METHOD` (default `GET`)
+- `SERVICE_ROUTER_ACCEPTANCE_OUT` (default `artifacts/release-acceptance`)
+- `SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL` (`1` by default; set `0` to skip `cargo check/test`)
+- `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL` (`0` by default; set `1` to keep collecting artifacts when `doctor --probe-upstream` fails)
+
+`docs/release-acceptance.ps1` reads the same environment variables.
