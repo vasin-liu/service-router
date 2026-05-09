@@ -98,6 +98,17 @@ The compose stack binds `127.0.0.1:9000` and `127.0.0.1:9001`, matching `config/
 - `config_path` (default `config/mock-config.yaml`)
 - `compose_file` (default `.github/compose/doctor-probe.compose.yml`)
 
+Local equivalent script: `docs/doctor-probe-compose.sh`
+
+```bash
+bash docs/doctor-probe-compose.sh
+```
+
+Optional env vars for local run:
+
+- `SERVICE_ROUTER_CONFIG` (default `config/mock-config.yaml`)
+- `SERVICE_ROUTER_PROBE_COMPOSE_FILE` (default `.github/compose/doctor-probe.compose.yml`)
+
 ## Why this baseline
 
 - Catches compile/test regressions early.
