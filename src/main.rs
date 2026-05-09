@@ -419,11 +419,12 @@ fn route_explain(
         return Ok(ExitCode::SUCCESS);
     }
 
+    let config_path_str = config_path.display().to_string();
     let mut diagnostics = Vec::new();
     let inspect_limit = if verbose { snapshot.rules.len() } else { 5 };
     for rule in snapshot.rules.iter().take(inspect_limit) {
         let (path_ok, method_ok, headers_ok, reasons, suggestions) =
-            explain_rule_mismatch(rule, &path, &method, &header_map);
+            explain_rule_mismatch(rule, &path, &method, &header_map, &config_path_str);
         diagnostics.push(serde_json::json!({
             "rule_id": rule.id,
             "path": path_ok,
@@ -433,14 +434,16 @@ fn route_explain(
             "suggestions": suggestions
         }));
     }
+    let remediation_outline = merge_remediation_outline(&diagnostics);
     if as_json {
         let output = serde_json::json!({
             "diagnostic_version": "1.0",
             "matched": false,
-            "config_path": config_path.display().to_string(),
+            "config_path": config_path_str,
             "path": path,
             "method": method.to_uppercase(),
             "inspected_rules": inspect_limit,
+            "remediation_outline": remediation_outline,
             "diagnostics": diagnostics
         });
         println!("{}", serde_json::to_string_pretty(&output)?);
@@ -456,7 +459,7 @@ fn route_explain(
         "No route matched. Candidate diagnostics (showing {} rule(s)):",
         inspect_limit
     );
-    for item in diagnostics {
+    for item in &diagnostics {
         let reasons = item
             .get("reasons")
             .and_then(|v| v.as_array())
@@ -491,7 +494,70 @@ fn route_explain(
             suggestions
         );
     }
+    if !remediation_outline.is_empty() {
+        println!("Suggested actions (first hit per issue code):");
+        for entry in &remediation_outline {
+            let code = entry.get("code").and_then(|c| c.as_str()).unwrap_or("?");
+            let message = entry.get("message").and_then(|m| m.as_str()).unwrap_or("");
+            let command = entry.get("command").and_then(|c| c.as_str()).unwrap_or("");
+            println!(" - [{}] {} | {}", code, message, command);
+        }
+    }
     Ok(ExitCode::from(1))
+}
+
+/// Builds a stable, de-duplicated list of suggestions (one entry per `code`) for unmatched runs.
+fn merge_remediation_outline(diagnostics: &[serde_json::Value]) -> Vec<serde_json::Value> {
+    use std::collections::HashSet;
+    let mut seen = HashSet::new();
+    let mut out = Vec::new();
+    for d in diagnostics {
+        let Some(arr) = d.get("suggestions").and_then(|x| x.as_array()) else {
+            continue;
+        };
+        for s in arr {
+            let Some(code) = s.get("code").and_then(|c| c.as_str()) else {
+                continue;
+            };
+            if seen.insert(code.to_string()) {
+                out.push(s.clone());
+            }
+        }
+    }
+    out
+}
+
+fn describe_path_expectation(
+    compiled: &service_router::routing::matcher::CompiledPath,
+) -> String {
+    use service_router::routing::matcher::CompiledPath;
+    match compiled {
+        CompiledPath::Exact(v) => format!("exact '{}'", v),
+        CompiledPath::Prefix(v) => format!("prefix '{}' (path must start with this)", v),
+        CompiledPath::Glob(p) => format!("glob '{}'", p.as_str()),
+        CompiledPath::Regex(re) => format!("regex `{}`", re.as_str()),
+    }
+}
+
+fn path_mismatch_action_message(
+    compiled: &service_router::routing::matcher::CompiledPath,
+) -> String {
+    use service_router::routing::matcher::CompiledPath;
+    match compiled {
+        CompiledPath::Exact(v) => format!("use path '{}' or change the rule to the path you need", v),
+        CompiledPath::Prefix(v) => format!(
+            "ensure the path starts with '{}' or adjust the rule prefix / try a more specific rule first",
+            v
+        ),
+        CompiledPath::Glob(p) => format!(
+            "shape the path to match glob '{}' or relax/tighten the pattern in config",
+            p.as_str()
+        ),
+        CompiledPath::Regex(re) => format!(
+            "adjust the path to satisfy regex `{}` or update the pattern in config",
+            re.as_str()
+        ),
+    }
 }
 
 fn explain_rule_mismatch(
@@ -499,16 +565,26 @@ fn explain_rule_mismatch(
     path: &str,
     method: &str,
     header_map: &axum::http::HeaderMap,
+    config_path: &str,
 ) -> (bool, bool, bool, Vec<String>, Vec<serde_json::Value>) {
     let mut reasons = Vec::new();
     let mut suggestions: Vec<serde_json::Value> = Vec::new();
     let path_ok = rule.compiled_path.matches(path);
     if !path_ok {
-        reasons.push(format!("path '{}' does not match rule pattern", path));
+        let expectation = describe_path_expectation(&rule.compiled_path);
+        reasons.push(format!(
+            "path '{}' does not match rule ({})",
+            path, expectation
+        ));
         suggestions.push(serde_json::json!({
             "code": "PATH_MISMATCH",
-            "message": "check path matcher type/value for this rule",
-            "command": format!("cargo run -- route-explain {} {} --config config/mock-config.yaml --verbose", path, method.to_uppercase())
+            "message": path_mismatch_action_message(&rule.compiled_path),
+            "command": format!(
+                "cargo run -- route-explain {} {} --config {} --verbose",
+                path,
+                method.to_uppercase(),
+                config_path
+            )
         }));
     }
     let method_ok = rule
@@ -523,10 +599,23 @@ fn explain_rule_mismatch(
             .map(|m| m.join(","))
             .unwrap_or_else(|| "*".to_string());
         reasons.push(format!("method '{}' not in [{}]", method.to_uppercase(), allowed));
+        let sample_method = rule
+            .methods
+            .as_ref()
+            .and_then(|ms| ms.first())
+            .map(|m| m.to_uppercase())
+            .unwrap_or_else(|| "GET".to_string());
         suggestions.push(serde_json::json!({
             "code": "METHOD_MISMATCH",
-            "message": "adjust request method or extend rule.methods",
-            "command": "update rule.methods in config and rerun check-config --strict"
+            "message": format!(
+                "call with one of [{}] or add '{}' to rule.methods",
+                allowed,
+                method.to_uppercase()
+            ),
+            "command": format!(
+                "cargo run -- route-explain {} {} --config {}",
+                path, sample_method, config_path
+            )
         }));
     }
     let headers_ok = rule
@@ -539,6 +628,11 @@ fn explain_rule_mismatch(
                     Ok(n) => n,
                     Err(_) => {
                         reasons.push(format!("invalid rule header name '{}'", name));
+                        suggestions.push(serde_json::json!({
+                            "code": "RULE_HEADER_NAME_INVALID",
+                            "message": "header names must be valid HTTP tokens; fix the key in YAML for this rule",
+                            "command": format!("edit route '{}' headers: replace invalid key '{}'", rule.id, name)
+                        }));
                         ok = false;
                         continue;
                     }
@@ -553,7 +647,10 @@ fn explain_rule_mismatch(
                         suggestions.push(serde_json::json!({
                             "code": "HEADER_VALUE_MISMATCH",
                             "message": format!("set header '{}' to '{}' or update rule condition", name, expected),
-                            "command": format!("retry with --header \"{}:{}\"", name, expected)
+                            "command": format!(
+                                "cargo run -- route-explain {} {} --config {} --header \"{}:{}\"",
+                                path, method.to_uppercase(), config_path, name, expected
+                            )
                         }));
                         ok = false;
                     }
@@ -561,8 +658,11 @@ fn explain_rule_mismatch(
                         reasons.push(format!("missing required header '{}'", name));
                         suggestions.push(serde_json::json!({
                             "code": "HEADER_MISSING",
-                            "message": format!("add required header '{}' with expected value", name),
-                            "command": format!("retry with --header \"{}:{}\"", name, expected)
+                            "message": format!("add required header '{}' with expected value '{}'", name, expected),
+                            "command": format!(
+                                "cargo run -- route-explain {} {} --config {} --header \"{}:{}\"",
+                                path, method.to_uppercase(), config_path, name, expected
+                            )
                         }));
                         ok = false;
                     }
@@ -1009,7 +1109,7 @@ mod tests {
     };
     use service_router::routing::CompiledRoutingRule;
 
-    use super::{explain_rule_mismatch, run_strict_config_checks};
+    use super::{explain_rule_mismatch, merge_remediation_outline, run_strict_config_checks};
 
     #[test]
     fn strict_check_reports_duplicate_route_ids() {
@@ -1198,8 +1298,9 @@ mod tests {
         };
         let compiled = CompiledRoutingRule::compile(&rule).expect("compile rule");
         let header_map = axum::http::HeaderMap::new();
+        let cfg = "config/dev-routes.yaml";
         let (_path_ok, method_ok, headers_ok, reasons, suggestions) =
-            explain_rule_mismatch(&compiled, "/api/orders", "POST", &header_map);
+            explain_rule_mismatch(&compiled, "/api/orders", "POST", &header_map, cfg);
         assert!(!method_ok);
         assert!(!headers_ok);
         assert!(reasons.iter().any(|r| r.contains("method 'POST' not in")));
@@ -1210,5 +1311,74 @@ mod tests {
                 .map(|c| c == "METHOD_MISMATCH")
                 .unwrap_or(false)
         }));
+        assert!(suggestions.iter().any(|s| {
+            s.get("command")
+                .and_then(|v| v.as_str())
+                .map(|c| c.contains(cfg) && c.contains("--config"))
+                .unwrap_or(false)
+        }));
+    }
+
+    #[test]
+    fn explain_path_reason_includes_prefix_expectation() {
+        let rule = RoutingRule {
+            id: "pfx".to_string(),
+            path: PathMatcher::Prefix {
+                value: "/shop".to_string(),
+            },
+            methods: None,
+            headers: None,
+            service_id: Some("svc".to_string()),
+            upstream_url: None,
+            strip_prefix: None,
+            priority: 10,
+        };
+        let compiled = CompiledRoutingRule::compile(&rule).expect("compile");
+        let header_map = axum::http::HeaderMap::new();
+        let (path_ok, _m, _h, reasons, suggestions) =
+            explain_rule_mismatch(&compiled, "/other", "GET", &header_map, "c.yaml");
+        assert!(!path_ok);
+        assert!(reasons.iter().any(|r| r.contains("prefix")));
+        assert!(reasons.iter().any(|r| r.contains("/shop")));
+        assert!(suggestions.iter().any(|s| {
+            s.get("code").and_then(|v| v.as_str()) == Some("PATH_MISMATCH")
+        }));
+    }
+
+    #[test]
+    fn explain_invalid_rule_header_name_has_remediation() {
+        let rule = RoutingRule {
+            id: "bad-hdr-rule".to_string(),
+            path: PathMatcher::Prefix {
+                value: "/".to_string(),
+            },
+            methods: None,
+            headers: Some(HashMap::from([("not a token".to_string(), "v".to_string())])),
+            service_id: Some("svc".to_string()),
+            upstream_url: None,
+            strip_prefix: None,
+            priority: 10,
+        };
+        let compiled = CompiledRoutingRule::compile(&rule).expect("compile");
+        let header_map = axum::http::HeaderMap::new();
+        let (_p, _m, _h, _r, suggestions) =
+            explain_rule_mismatch(&compiled, "/x", "GET", &header_map, "c.yaml");
+        assert!(suggestions.iter().any(|s| {
+            s.get("code").and_then(|v| v.as_str()) == Some("RULE_HEADER_NAME_INVALID")
+        }));
+    }
+
+    #[test]
+    fn merge_remediation_outline_keeps_first_code_only() {
+        let diagnostics = vec![
+            serde_json::json!({"suggestions":[{"code":"PATH_MISMATCH","message":"a","command":"c1"}]}),
+            serde_json::json!({"suggestions":[{"code":"PATH_MISMATCH","message":"b","command":"c2"},{"code":"METHOD_MISMATCH","message":"m","command":"c3"}]}),
+        ];
+        let merged = merge_remediation_outline(&diagnostics);
+        assert_eq!(merged.len(), 2);
+        assert_eq!(
+            merged[0].get("command").and_then(|v| v.as_str()),
+            Some("c1")
+        );
     }
 }
