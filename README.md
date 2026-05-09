@@ -32,7 +32,7 @@ Server listens on `127.0.0.1:8080` by default in mock config.
 
 - `run [config]`
 - `check-config [config] [--json] [--strict]`
-- `doctor [config] [--config <path>]`
+- `doctor [config] [--config <path>] [--probe-upstream] [--json]`
 - `route-explain <path> [method] --config <path> --header "key:value" [--json]`
 
 ## Config Notes
@@ -40,6 +40,11 @@ Server listens on `127.0.0.1:8080` by default in mock config.
 - Default config path: `config/config.yaml`
 - Mock development config: `config/mock-config.yaml`
 - `config/config.yaml` may require environment variables such as `NACOS_PASSWORD` before checks pass.
+
+## JSON Diagnostics Docs
+
+- `docs/route-explain-json-schema.md`
+- `docs/doctor-json-schema.md`
 
 ## Migrate to Mock Dev Mode
 

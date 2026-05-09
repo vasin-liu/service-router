@@ -42,7 +42,11 @@ async fn run() -> anyhow::Result<ExitCode> {
             as_json,
             strict,
         } => check_config(config_path, as_json, strict).await,
-        Command::Doctor(config_path) => doctor(config_path).await,
+        Command::Doctor {
+            config_path,
+            probe_upstream,
+            as_json,
+        } => doctor(config_path, probe_upstream, as_json).await,
         Command::RouteExplain {
             config_path,
             path,
@@ -176,7 +180,11 @@ enum Command {
         as_json: bool,
         strict: bool,
     },
-    Doctor(PathBuf),
+    Doctor {
+        config_path: PathBuf,
+        probe_upstream: bool,
+        as_json: bool,
+    },
     RouteExplain {
         config_path: PathBuf,
         path: String,
@@ -218,6 +226,8 @@ fn parse_command(args: Vec<String>) -> Command {
         }
         Some("doctor") => {
             let mut config_path = default_config();
+            let mut probe_upstream = false;
+            let mut as_json = false;
             let mut i = 1;
             while i < args.len() {
                 if args[i] == "--config" {
@@ -226,12 +236,20 @@ fn parse_command(args: Vec<String>) -> Command {
                         i += 2;
                         continue;
                     }
+                } else if args[i] == "--probe-upstream" {
+                    probe_upstream = true;
+                } else if args[i] == "--json" {
+                    as_json = true;
                 } else {
                     config_path = PathBuf::from(&args[i]);
                 }
                 i += 1;
             }
-            Command::Doctor(config_path)
+            Command::Doctor {
+                config_path,
+                probe_upstream,
+                as_json,
+            }
         }
         Some("route-explain") => {
             let path = args.get(1).cloned().unwrap_or_else(|| "/".to_string());
@@ -283,7 +301,7 @@ fn parse_command(args: Vec<String>) -> Command {
 
 fn print_help() {
     println!(
-        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>]                  Run local environment checks\n  route-explain <path> [method] [options]            Explain route match result\n    options: --config <path> --header \"key:value\" [--json] [--verbose]\n  help                                               Show help"
+        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Run local environment checks\n  route-explain <path> [method] [options]            Explain route match result\n    options: --config <path> --header \"key:value\" [--json] [--verbose]\n  help                                               Show help"
     );
 }
 
@@ -642,22 +660,46 @@ fn header_constraints_cover(
     }
 }
 
-async fn doctor(config_path: PathBuf) -> anyhow::Result<ExitCode> {
-    println!("Doctor checks for {}", config_path.display());
+async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> anyhow::Result<ExitCode> {
+    if !as_json {
+        println!("Doctor checks for {}", config_path.display());
+    }
 
     if !config_path.exists() {
-        println!(" - config file: FAIL (not found)");
+        if as_json {
+            println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+                "diagnostic_version": "1.0",
+                "status": "fail",
+                "config_path": config_path.display().to_string(),
+                "error": "config file not found"
+            }))?);
+        } else {
+            println!(" - config file: FAIL (not found)");
+        }
         return Ok(ExitCode::from(1));
     }
-    println!(" - config file: OK");
+    if !as_json {
+        println!(" - config file: OK");
+    }
 
     let config = match load_config(&config_path) {
         Ok(c) => {
-            println!(" - config parse: OK");
+            if !as_json {
+                println!(" - config parse: OK");
+            }
             c
         }
         Err(e) => {
-            println!(" - config parse: FAIL ({e})");
+            if as_json {
+                println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+                    "diagnostic_version": "1.0",
+                    "status": "fail",
+                    "config_path": config_path.display().to_string(),
+                    "error": format!("config parse failed: {e}")
+                }))?);
+            } else {
+                println!(" - config parse: FAIL ({e})");
+            }
             return Ok(ExitCode::from(1));
         }
     };
@@ -665,58 +707,251 @@ async fn doctor(config_path: PathBuf) -> anyhow::Result<ExitCode> {
     match StdTcpListener::bind(format!("{}:{}", config.server.host, config.server.port)) {
         Ok(listener) => {
             drop(listener);
-            println!(" - listen addr: OK ({}:{})", config.server.host, config.server.port);
+            if !as_json {
+                println!(" - listen addr: OK ({}:{})", config.server.host, config.server.port);
+            }
         }
         Err(e) => {
-            println!(
-                " - listen addr: FAIL ({}:{} unavailable: {})",
-                config.server.host, config.server.port, e
-            );
+            if as_json {
+                println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+                    "diagnostic_version": "1.0",
+                    "status": "fail",
+                    "config_path": config_path.display().to_string(),
+                    "error": format!("listen addr unavailable: {e}")
+                }))?);
+            } else {
+                println!(
+                    " - listen addr: FAIL ({}:{} unavailable: {})",
+                    config.server.host, config.server.port, e
+                );
+            }
             return Ok(ExitCode::from(1));
         }
     }
 
     let resolver = match build_resolver(&config).await {
         Ok(resolver) => {
-            println!(" - registry init: OK");
+            if !as_json {
+                println!(" - registry init: OK");
+            }
             resolver
         }
         Err(e) => {
-            println!(" - registry init: FAIL ({e})");
-            println!("Doctor result: FAIL");
+            if as_json {
+                println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+                    "diagnostic_version": "1.0",
+                    "status": "fail",
+                    "config_path": config_path.display().to_string(),
+                    "error": format!("registry init failed: {e}")
+                }))?);
+            } else {
+                println!(" - registry init: FAIL ({e})");
+                println!("Doctor result: FAIL");
+            }
             return Ok(ExitCode::from(1));
         }
     };
 
     let mut has_unhealthy = false;
     let report = resolver.health_report().await;
+    let mut registry_health_json: Vec<serde_json::Value> = Vec::new();
     if report.is_empty() {
-        println!(" - registry health: SKIP (no registry configured)");
+        if !as_json {
+            println!(" - registry health: SKIP (no registry configured)");
+        }
     } else {
-        println!(" - registry health:");
+        if !as_json {
+            println!(" - registry health:");
+        }
         for (priority, kind, health) in report {
             match health {
                 service_router::registry::RegistryHealth::Healthy => {
-                    println!("   - [{}] {}: healthy", priority, kind);
+                    registry_health_json.push(serde_json::json!({"priority": priority, "kind": kind, "status": "healthy"}));
+                    if !as_json {
+                        println!("   - [{}] {}: healthy", priority, kind);
+                    }
                 }
                 service_router::registry::RegistryHealth::Degraded(msg) => {
-                    println!("   - [{}] {}: degraded ({})", priority, kind, msg);
+                    registry_health_json.push(serde_json::json!({"priority": priority, "kind": kind, "status": "degraded", "message": msg}));
+                    if !as_json {
+                        println!("   - [{}] {}: degraded ({})", priority, kind, msg);
+                    }
                 }
                 service_router::registry::RegistryHealth::Unhealthy(msg) => {
                     has_unhealthy = true;
-                    println!("   - [{}] {}: unhealthy ({})", priority, kind, msg);
+                    registry_health_json.push(serde_json::json!({"priority": priority, "kind": kind, "status": "unhealthy", "message": msg}));
+                    if !as_json {
+                        println!("   - [{}] {}: unhealthy ({})", priority, kind, msg);
+                    }
                 }
             }
         }
     }
 
+    let mut upstream_probe_json: Vec<serde_json::Value> = Vec::new();
+    let mut probe_failures = 0usize;
+    if probe_upstream {
+        if !as_json {
+            println!(" - upstream probe:");
+        }
+        for route in &config.routes {
+            if let Some(url) = &route.upstream_url {
+                match parse_host_port_from_url(url) {
+                    Ok((host, port)) => {
+                        let reachable = probe_tcp(&host, port).await;
+                        upstream_probe_json.push(serde_json::json!({
+                            "route_id": route.id,
+                            "target_type": "upstream_url",
+                            "host": host,
+                            "port": port,
+                            "reachable": reachable
+                        }));
+                        if reachable {
+                            if !as_json {
+                                println!("   - route {} direct {}:{} reachable", route.id, host, port);
+                            }
+                        } else {
+                            probe_failures += 1;
+                            if !as_json {
+                                println!("   - route {} direct {}:{} unreachable", route.id, host, port);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        probe_failures += 1;
+                        upstream_probe_json.push(serde_json::json!({
+                            "route_id": route.id,
+                            "target_type": "upstream_url",
+                            "reachable": false,
+                            "error": e.to_string()
+                        }));
+                        if !as_json {
+                            println!("   - route {} direct URL parse failed: {}", route.id, e);
+                        }
+                    }
+                }
+            } else if let Some(service_id) = &route.service_id {
+                match resolver.resolve(service_id).await {
+                    Ok(instances) if instances.is_empty() => {
+                        probe_failures += 1;
+                        upstream_probe_json.push(serde_json::json!({
+                            "route_id": route.id,
+                            "target_type": "service_id",
+                            "service_id": service_id,
+                            "reachable": false,
+                            "error": "resolved 0 instances"
+                        }));
+                        if !as_json {
+                            println!("   - route {} service {} resolved 0 instances", route.id, service_id);
+                        }
+                    }
+                    Ok(instances) => {
+                        let mut ok_any = false;
+                        for inst in instances.iter().take(3) {
+                            if probe_tcp(&inst.host, inst.port).await {
+                                ok_any = true;
+                                if !as_json {
+                                    println!(
+                                        "   - route {} service {} instance {}:{} reachable",
+                                        route.id, service_id, inst.host, inst.port
+                                    );
+                                }
+                                break;
+                            }
+                        }
+                        upstream_probe_json.push(serde_json::json!({
+                            "route_id": route.id,
+                            "target_type": "service_id",
+                            "service_id": service_id,
+                            "resolved_instances": instances.len(),
+                            "reachable": ok_any
+                        }));
+                        if !ok_any {
+                            probe_failures += 1;
+                            if !as_json {
+                                println!(
+                                    "   - route {} service {} unresolved reachable instances",
+                                    route.id, service_id
+                                );
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        probe_failures += 1;
+                        upstream_probe_json.push(serde_json::json!({
+                            "route_id": route.id,
+                            "target_type": "service_id",
+                            "service_id": service_id,
+                            "reachable": false,
+                            "error": e.to_string()
+                        }));
+                        if !as_json {
+                            println!(
+                                "   - route {} service {} resolve failed: {}",
+                                route.id, service_id, e
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        if probe_failures > 0 {
+            if !as_json {
+                println!(" - upstream probe result: FAIL ({} issue(s))", probe_failures);
+            }
+            has_unhealthy = true;
+        } else if !as_json {
+            println!(" - upstream probe result: PASS");
+        }
+    }
+
+    if as_json {
+        println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+            "diagnostic_version": "1.0",
+            "status": if has_unhealthy { "fail" } else { "pass" },
+            "config_path": config_path.display().to_string(),
+            "probe_upstream_enabled": probe_upstream,
+            "registry_health": registry_health_json,
+            "upstream_probe": upstream_probe_json
+        }))?);
+    }
+
     if has_unhealthy {
-        println!("Doctor result: FAIL");
+        if !as_json {
+            println!("Doctor result: FAIL");
+        }
         Ok(ExitCode::from(1))
     } else {
-        println!("Doctor result: PASS");
+        if !as_json {
+            println!("Doctor result: PASS");
+        }
         Ok(ExitCode::SUCCESS)
     }
+}
+
+fn parse_host_port_from_url(url: &str) -> anyhow::Result<(String, u16)> {
+    let parsed = reqwest::Url::parse(url)
+        .map_err(|e| anyhow::anyhow!("invalid URL '{}': {}", url, e))?;
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| anyhow::anyhow!("missing host in URL '{}'", url))?
+        .to_string();
+    let port = parsed
+        .port_or_known_default()
+        .ok_or_else(|| anyhow::anyhow!("missing port and scheme default for '{}'", url))?;
+    Ok((host, port))
+}
+
+async fn probe_tcp(host: &str, port: u16) -> bool {
+    let addr = format!("{}:{}", host, port);
+    matches!(
+        tokio::time::timeout(
+            tokio::time::Duration::from_secs(2),
+            tokio::net::TcpStream::connect(addr)
+        )
+        .await,
+        Ok(Ok(_))
+    )
 }
 
 #[cfg(test)]

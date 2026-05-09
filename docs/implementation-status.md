@@ -75,6 +75,8 @@
 - 最新验证：
   - `cargo check` 通过
   - `cargo test -- --nocapture` 通过（23 passed）
+  - 新增 P1 进展：`doctor --probe-upstream` 可探测上游连通性（直连 URL + registry 解析实例）
+  - 新增 P1 进展：`doctor --json` 输出结构化诊断（含 registry health 与 upstream probe 结果）
 
 ## 下一个迭代建议（按优先级）
 
