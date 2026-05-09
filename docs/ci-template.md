@@ -81,6 +81,8 @@ Add **`cache:` for `target/`** on long-running pipelines if runners allow it.
 
 ## Upstream TCP probe (dockerized)
 
+Workflow `.github/workflows/release-acceptance.yml` runs **only on manual trigger** (`workflow_dispatch`): it starts the same compose-backed mock upstreams (unless `skip_compose`), then runs `bash docs/release-acceptance.sh` so `check-config` / `doctor` / probe / `route-explain` JSON land in the `release-acceptance-json` artifact.
+
 Workflow `.github/workflows/doctor-probe.yml` runs **only on manual trigger** (`workflow_dispatch`).
 
 It now boots local mock upstreams via Docker Compose (`.github/compose/doctor-probe.compose.yml`) before probing:

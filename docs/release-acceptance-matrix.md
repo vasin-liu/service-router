@@ -15,6 +15,8 @@ PowerShell (Windows):
 powershell -ExecutionPolicy Bypass -File docs/release-acceptance.ps1
 ```
 
+GitHub Actions: run **Actions → release-acceptance → Run workflow** (see `.github/workflows/release-acceptance.yml`; downloads `release-acceptance-json` artifact).
+
 ## 1) Global Gates (all profiles)
 
 Run once per build artifact:
