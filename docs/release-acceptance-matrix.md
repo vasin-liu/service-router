@@ -28,6 +28,14 @@ cargo test -- --nocapture
 
 Pass when both commands exit `0`.
 
+When the router process is running (e.g. after rollout smoke), optionally assert readiness:
+
+```bash
+curl -sf "http://127.0.0.1:<port>/ready"
+```
+
+Expect HTTP **200** and JSON `"status":"ready"` when at least one registry is healthy or degraded. HTTP **503** with `"status":"not_ready"` means every registry reported unhealthy — do not send production traffic until registries recover or configuration is fixed.
+
 ## 2) Profile Matrix
 
 | Profile | Config | Required secrets/env | Primary purpose |

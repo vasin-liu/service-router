@@ -6,12 +6,15 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Documentation: `docs/diagnostic-codes.md` (stable proxy metrics / doctor / route-explain codes) and `docs/operations-runbook.md` (readiness, rollback via hot-reload, triage checklist).
 - Mock registry simulation hooks: `error_services`, `health_behavior` (healthy/degraded/unhealthy).
 - Sample config `config/mock-scenarios-sample.yaml` for empty-list and error pathways.
 - `GET /metrics` JSON snapshot: `route_hits` per rule id, `failure_reasons` by stable code (`docs/metrics-json.md`).
 
 ### Changed
 
+- README: index entries for `docs/diagnostic-codes.md` and `docs/operations-runbook.md`.
+- `GET /ready`: aggregates per-registry health via `MultiRegistryResolver::health_report()`; returns **503** when every registry is `unhealthy`, with JSON `registry_health` rows matching `doctor --json` (breaking for deployments that assumed `/ready` was always 200 with registries configured).
 - README: CLI conventions, exit code table, and mock scenario documentation.
 - `check-config --strict`: shadowing uses router evaluation order (sorted by priority); flags `upstream_url` + `service_id` together on a rule and Prefix matchers whose `strip_prefix` cannot apply.
 - `route-explain` (unmatched): path/method/header-specific suggestion text, copy-pasteable `cargo run …` commands using the active `--config`, `RULE_HEADER_NAME_INVALID` for bad rule header keys, and JSON `remediation_outline` (one entry per suggestion `code`).

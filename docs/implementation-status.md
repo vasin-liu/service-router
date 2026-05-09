@@ -111,6 +111,11 @@
 4. 补充运维视角文档  
    增加部署后巡检、常见告警定位、指标解释与升级回滚建议。
 
+## 最近进展（M2）
+
+- **`/ready`**：已聚合配置的各注册中心 `health()`；与 `doctor --json` 使用相同的 `registry_health` 行结构；仅当**全部**注册中心为 `unhealthy` 时返回 HTTP **503**（`status: not_ready`）。无注册中心配置时行为不变（仍 200，直连路由可用）。
+- **运维与诊断索引**：新增 `docs/diagnostic-codes.md`（指标失败码、doctor 探测码、route-explain 建议码、ready 语义）与 `docs/operations-runbook.md`（探针分工、指标、热更新回滚、通用排障与发布矩阵入口）；README 已挂链。
+
 ## 风险跟踪
 
 - 构建环境风险：MSVC SDK/Windows Kits 未完整可用会阻塞本地验证

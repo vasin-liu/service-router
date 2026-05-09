@@ -9,6 +9,7 @@ use tracing::{debug, info};
 
 use crate::error::ProxyError;
 use crate::proxy::{http_proxy, ws_proxy};
+use crate::registry::{any_registry_operational, registry_health_json_row};
 use crate::server::metrics::{
     failure_code_for_proxy, failure_code_for_registry, render_prometheus,
 };
@@ -106,18 +107,42 @@ pub async fn health_handler() -> impl IntoResponse {
     (StatusCode::OK, Json(json!({ "status": "ok" })))
 }
 
-/// `/ready` — readiness probe; checks whether at least one registry is reachable.
+/// `/ready` — readiness probe; aggregates registry health (same row shape as `doctor --json`).
+///
+/// Returns 503 when every configured registry reports [`crate::registry::RegistryHealth::Unhealthy`].
 pub async fn ready_handler(State(state): State<AppState>) -> impl IntoResponse {
     let config = state.config.load();
     if config.registries.sources.is_empty() {
         // No registries configured — still considered ready (direct URL routing works).
         return (StatusCode::OK, Json(json!({ "status": "ready", "registries": 0 })));
     }
-    // For now just return OK; detailed registry health checks can be added later.
-    (
-        StatusCode::OK,
-        Json(json!({ "status": "ready", "registries": config.registries.sources.len() })),
-    )
+    let resolver = state.resolver.load();
+    let report = resolver.health_report().await;
+    let registry_health: Vec<serde_json::Value> = report
+        .iter()
+        .map(|(p, k, h)| registry_health_json_row(*p, k, h))
+        .collect();
+    let n = registry_health.len();
+    if any_registry_operational(&report) {
+        (
+            StatusCode::OK,
+            Json(json!({
+                "status": "ready",
+                "registries": n,
+                "registry_health": registry_health
+            })),
+        )
+    } else {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({
+                "status": "not_ready",
+                "reason": "all_registries_unhealthy",
+                "registries": n,
+                "registry_health": registry_health
+            })),
+        )
+    }
 }
 
 /// Minimal JSON counters: route hits and failure reasons (B08).

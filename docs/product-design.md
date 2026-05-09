@@ -27,7 +27,7 @@
   - 未实现完整负载均衡策略（当前取实例列表第一个）
   - WebSocket 为“可升级 + 上游连接”骨架，未完成双向完整透传
   - Kubernetes：读取 `Service` TCP `targetPort`，再解析 Core `Endpoints`；空则 EndpointSlice（`kubernetes.io/service-name`）；多端口场景的 Service 语义对齐可作后续增强
-  - `/ready` 暂未执行实际 registry health 聚合检测
+  - `/ready` 调用各注册中心 health 聚合；全部 `unhealthy` 时返回 503，JSON 含 `registry_health`（与 `doctor --json` 同形）
 
 ## 3. 用户与使用场景
 
@@ -86,7 +86,7 @@
   - 路由规则自动重建并热切换
 - 暴露接口：
   - `/health`（存活）
-  - `/ready`（就绪，当前为基础实现）
+  - `/ready`（就绪，聚合 registry health；全不可用时 503）
 
 ## 5. 系统架构设计
 
@@ -133,7 +133,6 @@
 - P1
   - 完整 WebSocket 双向透传（客户端帧与上游帧桥接）
   - 负载均衡策略（轮询、随机、权重、最小连接）
-  - `/ready` 增加真实 registry health 聚合
 - P2
   - 熔断/重试/超时分层策略
   - 路由命中指标、上游耗时指标、错误码指标

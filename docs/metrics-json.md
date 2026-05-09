@@ -2,6 +2,8 @@
 
 In-process counters updated on each proxied request. Poll from automation or scrape into your log/TSDB pipeline.
 
+The same **`failure_reasons` keys** are summarized alongside doctor/route-explain codes in [`diagnostic-codes.md`](./diagnostic-codes.md).
+
 ## Response shape
 
 ```json

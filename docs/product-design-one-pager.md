@@ -38,11 +38,11 @@
 
 - 未提供完整负载均衡策略（当前优先首实例）
 - WebSocket 尚未实现完整双向帧透传
-- `/ready` 暂未聚合注册中心真实健康状态
+- `/ready` 聚合各注册中心的 `health()` 结果；仅当全部报 `unhealthy` 时返回 503
 - Kubernetes：`Service.spec.ports` 约束后端 TCP 端口，再读 `Endpoints` / `EndpointSlice`；就绪与高阶筛选仍可增强
 
 ## 下一步（建议）
 
-- P1：完善 WS 双向代理、引入负载均衡、增强 readiness 真实性
+- P1：完善 WS 双向代理、引入负载均衡（`/ready` 已对接 registry health）
 - P2：加入熔断重试与核心指标
 - P3：Kubernetes 端口/Service 对齐、就绪与标签维度过滤等与大规模集群兼容性增强

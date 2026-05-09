@@ -1010,24 +1010,22 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
         if !as_json {
             println!(" - registry health:");
         }
-        for (priority, kind, health) in report {
-            match health {
-                service_router::registry::RegistryHealth::Healthy => {
-                    registry_health_json.push(serde_json::json!({"priority": priority, "kind": kind, "status": "healthy"}));
-                    if !as_json {
+        for (priority, kind, health) in &report {
+            registry_health_json.push(service_router::registry::registry_health_json_row(
+                *priority, kind, health,
+            ));
+            if matches!(health, service_router::registry::RegistryHealth::Unhealthy(_)) {
+                has_unhealthy = true;
+            }
+            if !as_json {
+                match health {
+                    service_router::registry::RegistryHealth::Healthy => {
                         println!("   - [{}] {}: healthy", priority, kind);
                     }
-                }
-                service_router::registry::RegistryHealth::Degraded(msg) => {
-                    registry_health_json.push(serde_json::json!({"priority": priority, "kind": kind, "status": "degraded", "message": msg}));
-                    if !as_json {
+                    service_router::registry::RegistryHealth::Degraded(msg) => {
                         println!("   - [{}] {}: degraded ({})", priority, kind, msg);
                     }
-                }
-                service_router::registry::RegistryHealth::Unhealthy(msg) => {
-                    has_unhealthy = true;
-                    registry_health_json.push(serde_json::json!({"priority": priority, "kind": kind, "status": "unhealthy", "message": msg}));
-                    if !as_json {
+                    service_router::registry::RegistryHealth::Unhealthy(msg) => {
                         println!("   - [{}] {}: unhealthy ({})", priority, kind, msg);
                     }
                 }

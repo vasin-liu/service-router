@@ -35,6 +35,78 @@ pub enum RegistryHealth {
     Unhealthy(String),
 }
 
+/// JSON row shared by `doctor --json` and `GET /ready` (`priority`, `kind`, `status`, optional `message`).
+pub fn registry_health_json_row(
+    priority: u32,
+    kind: &str,
+    health: &RegistryHealth,
+) -> serde_json::Value {
+    match health {
+        RegistryHealth::Healthy => {
+            serde_json::json!({"priority": priority, "kind": kind, "status": "healthy"})
+        }
+        RegistryHealth::Degraded(msg) => serde_json::json!({
+            "priority": priority,
+            "kind": kind,
+            "status": "degraded",
+            "message": msg
+        }),
+        RegistryHealth::Unhealthy(msg) => serde_json::json!({
+            "priority": priority,
+            "kind": kind,
+            "status": "unhealthy",
+            "message": msg
+        }),
+    }
+}
+
+/// Returns true if at least one registry is healthy or degraded (traffic may still be resolved).
+/// When every registry is [`RegistryHealth::Unhealthy`], readiness should fail (503).
+pub fn any_registry_operational(report: &[(u32, String, RegistryHealth)]) -> bool {
+    report
+        .iter()
+        .any(|(_, _, h)| !matches!(h, RegistryHealth::Unhealthy(_)))
+}
+
+#[cfg(test)]
+mod readiness_tests {
+    use super::*;
+
+    #[test]
+    fn any_registry_operational_false_when_all_unhealthy() {
+        let r = vec![
+            (
+                0,
+                "Nacos".to_string(),
+                RegistryHealth::Unhealthy("down".into()),
+            ),
+            (
+                1,
+                "Eureka".to_string(),
+                RegistryHealth::Unhealthy("down".into()),
+            ),
+        ];
+        assert!(!any_registry_operational(&r));
+    }
+
+    #[test]
+    fn any_registry_operational_true_if_one_degraded() {
+        let r = vec![
+            (
+                0,
+                "Nacos".to_string(),
+                RegistryHealth::Unhealthy("down".into()),
+            ),
+            (
+                1,
+                "Mock".to_string(),
+                RegistryHealth::Degraded("slow".into()),
+            ),
+        ];
+        assert!(any_registry_operational(&r));
+    }
+}
+
 /// Kind / name of a registry, used for logging.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RegistryKind {

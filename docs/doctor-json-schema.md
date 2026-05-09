@@ -111,6 +111,8 @@ When the configured registry for a route is **Kubernetes**, resolving `service_i
 }
 ```
 
+See also [`diagnostic-codes.md`](./diagnostic-codes.md) for stable probe `failure_code` values and proxy metric strings.
+
 ## CI policy suggestions
 
 - Block pipeline when `status == "fail"`.

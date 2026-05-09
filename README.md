@@ -66,6 +66,8 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 
 ## JSON Diagnostics Docs
 
+- `docs/diagnostic-codes.md` — stable strings for metrics, doctor probes, route-explain, `/ready`
+- `docs/operations-runbook.md` — probes, metrics, config rollback, triage (no cluster naming assumptions)
 - `docs/route-explain-json-schema.md`
 - `docs/doctor-json-schema.md`
 - Optional CI: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`, JSON artifacts)
