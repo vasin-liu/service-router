@@ -4,10 +4,22 @@ name: doctor-upstream-probe
 
 on:
   workflow_dispatch:
+    inputs:
+      config_path:
+        description: "Config path for doctor --config"
+        required: false
+        default: "config/mock-config.yaml"
+      compose_file:
+        description: "Docker Compose file for mock upstreams"
+        required: false
+        default: ".github/compose/doctor-probe.compose.yml"
 
 jobs:
   probe:
     runs-on: ubuntu-latest
+    env:
+      DOCTOR_CONFIG: ${{ github.event.inputs.config_path || 'config/mock-config.yaml' }}
+      DOCKER_COMPOSE_FILE: ${{ github.event.inputs.compose_file || '.github/compose/doctor-probe.compose.yml' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,7 +31,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Start mock upstreams (docker compose)
-        run: docker compose -f .github/compose/doctor-probe.compose.yml up -d
+        run: docker compose -f "$DOCKER_COMPOSE_FILE" up -d
 
       - name: Wait for mock ports
         shell: bash
@@ -38,8 +50,8 @@ jobs:
           done
 
       - name: Doctor with upstream probe (mock profile)
-        run: cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json
+        run: cargo run -- doctor --config "$DOCTOR_CONFIG" --probe-upstream --json
 
       - name: Stop mock upstreams
         if: always()
-        run: docker compose -f .github/compose/doctor-probe.compose.yml down -v
+        run: docker compose -f "$DOCKER_COMPOSE_FILE" down -v

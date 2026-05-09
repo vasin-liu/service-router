@@ -93,6 +93,11 @@ docker compose -f .github/compose/doctor-probe.compose.yml down -v
 
 The compose stack binds `127.0.0.1:9000` and `127.0.0.1:9001`, matching `config/mock-config.yaml`, so probe results are deterministic on hosted runners.
 
+`workflow_dispatch` supports optional inputs:
+
+- `config_path` (default `config/mock-config.yaml`)
+- `compose_file` (default `.github/compose/doctor-probe.compose.yml`)
+
 ## Why this baseline
 
 - Catches compile/test regressions early.
