@@ -78,6 +78,7 @@ Recommended stable samples:
 - Mock
   - Must be fully green in every pipeline.
   - Use as release blocker baseline even when external registries are flaky.
+  - Default `config/mock-config.yaml` points both mock services at `127.0.0.1:9001` so `doctor --probe-upstream` only needs one reachable TCP port (see file comment to split ports again for two-upstream compose).
 
 - Nacos
   - Validate both auth and discovery paths.

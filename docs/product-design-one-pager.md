@@ -14,7 +14,7 @@
 
 - 路由规则：`exact/prefix/glob/regex` + method + header
 - 上游目标：`upstream_url` 直连或 `service_id` 动态解析
-- 注册中心：Nacos、Eureka（Kubernetes 为预留 stub）
+- 注册中心：Nacos、Eureka、Kubernetes（通过 Endpoints API 解析实例；可选 `kubeconfig_path`/`kubeconfig_context`）
 - 运行能力：配置热更新、`/health`、`/ready`
 - 协议能力：HTTP 代理（完整），WebSocket（初版）
 
@@ -39,10 +39,10 @@
 - 未提供完整负载均衡策略（当前优先首实例）
 - WebSocket 尚未实现完整双向帧透传
 - `/ready` 暂未聚合注册中心真实健康状态
-- Kubernetes 发现能力未落地
+- Kubernetes 当前基于 Endpoints（v1），尚未接入 EndpointSlice 与更丰富过滤策略
 
 ## 下一步（建议）
 
 - P1：完善 WS 双向代理、引入负载均衡、增强 readiness 真实性
 - P2：加入熔断重试与核心指标
-- P3：完成 Kubernetes Registry 正式实现
+- P3：Kubernetes EndpointSlice / 就绪过滤等与大规模集群兼容性增强

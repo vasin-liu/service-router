@@ -91,7 +91,7 @@ cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json
 docker compose -f .github/compose/doctor-probe.compose.yml down -v
 ```
 
-The compose stack binds `127.0.0.1:9000` and `127.0.0.1:9001`, matching `config/mock-config.yaml`, so probe results are deterministic on hosted runners.
+The compose stack binds `127.0.0.1:9000` and `127.0.0.1:9001`. Mock profile defaults both mock `service_id` targets to `127.0.0.1:9001`, so **`doctor --probe-upstream`** is satisfied once port `9001` is reachable (the workflow still waits on both compose ports).
 
 `workflow_dispatch` supports optional inputs:
 

@@ -17,9 +17,11 @@ registries:
             metadata:
               env: "local"
               version: "v1"
+        # Same port as order-service so `doctor --probe-upstream` passes with one local upstream
+        # on 127.0.0.1:9001. For compose with two echoes (9000/9001), split ports again if needed.
         api-gateway:
           - host: "127.0.0.1"
-            port: 9000
+            port: 9001
 
 routes:
   - id: "orders-api"
