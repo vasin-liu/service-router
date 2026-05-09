@@ -7,6 +7,7 @@ use reqwest::Client;
 use crate::config::model::AppConfig;
 use crate::registry::MultiRegistryResolver;
 use crate::routing::SharedRouter;
+use crate::server::metrics::ProxyMetrics;
 
 /// Shared application state injected into every Axum handler.
 #[derive(Clone)]
@@ -19,6 +20,8 @@ pub struct AppState {
     pub config: Arc<ArcSwap<AppConfig>>,
     /// Shared HTTP client for proxying requests to upstream services.
     pub http_client: Client,
+    /// In-memory request/failure counters (B08).
+    pub metrics: Arc<ProxyMetrics>,
 }
 
 impl AppState {
@@ -27,6 +30,7 @@ impl AppState {
         resolver: Arc<ArcSwap<MultiRegistryResolver>>,
         config: Arc<ArcSwap<AppConfig>>,
         upstream_timeout_secs: u64,
+        metrics: Arc<ProxyMetrics>,
     ) -> Self {
         let http_client = Client::builder()
             .timeout(Duration::from_secs(upstream_timeout_secs))
@@ -38,6 +42,7 @@ impl AppState {
             resolver,
             config,
             http_client,
+            metrics,
         }
     }
 }

@@ -27,7 +27,7 @@
 | B05 | ~~P1~~ **Done** | Mock registry 增加动态场景（空实例/异常状态） | 增强测试覆盖 | `error_services`、显式空列表、`health_behavior`；`config/mock-scenarios-sample.yaml` + 单元测试 |
 | B06 | ~~P1~~ **Done** | 统一 CLI 参数规范与错误码文档 | 降低学习成本 | README：命令说明、路径/flag 惯例、Exit code 表、JSON + 退出码 |
 | B07 | ~~P2~~ **Done** | `route-explain` 增加请求样例回放输入 | 缩短联调链路 | `--request-file` YAML/JSON；`config/route-explain-request-sample.yaml`；JSON `request_file` 字段 |
-| B08 | P2 | 指标输出最小集（规则命中次数、失败原因计数） | 支持运营优化 | 暴露基础统计并可通过日志/接口查看 |
+| B08 | ~~P2~~ **Done** | 指标输出最小集（规则命中次数、失败原因计数） | 支持运营优化 | `GET /metrics` JSON；`docs/metrics-json.md`；`ProxyMetrics` in-process |
 | B09 | P3（暂缓） | CI 中用 Docker Compose 拉起 mock 上游再跑 `doctor --probe-upstream` | 托管环境下探测流水线可预期变绿 | 仅在功能主线告一段落后再评估；不要求近期交付 |
 
 ## 建议 Sprint 拆分（2 周）

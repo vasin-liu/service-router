@@ -88,6 +88,7 @@
 - **B03** CI：`ci.yml` 增加 smoke `route-explain`；根目录 `.gitlab-ci.yml`、`docs/ci-copy-paste.sh`、扩展后的 `docs/ci-template.md`（GitHub/GitLab + 门禁表）。
 - **B04** `doctor --probe-upstream`：对 Nacos/Eureka/K8s 配置地址做 TCP 探测，JSON `registry_endpoint_probe` + `TCP_UNREACHABLE` / `ENDPOINT_PARSE_ERROR`；mock 仅跳过端点探测。
 - **B07** `route-explain --request-file`：从 YAML/JSON 读 `path`/`method`/`headers`；CLI `--header` 覆盖同名键；文档与示例文件已补充。
+- **B08** 指标：`GET /metrics` 返回 `route_hits` / `failure_reasons`；`server/metrics.rs`；失败码与 `ProxyError`/`RegistryError` 对齐。
 
 ## 优先级说明（与路线图一致）
 

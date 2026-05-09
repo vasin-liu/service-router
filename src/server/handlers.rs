@@ -9,6 +9,7 @@ use tracing::{debug, info};
 
 use crate::error::ProxyError;
 use crate::proxy::{http_proxy, ws_proxy};
+use crate::server::metrics::{failure_code_for_proxy, failure_code_for_registry};
 use crate::server::state::AppState;
 
 /// Main proxy handler — routes every incoming request through the routing
@@ -31,12 +32,44 @@ pub async fn proxy_handler(
 
     // Resolve the routing rule.
     let router_snapshot = state.router.load();
-    let rule = router_snapshot
-        .resolve(&path, method.as_str(), req.headers())
-        .ok_or_else(|| {
+    let rule = match router_snapshot.resolve(&path, method.as_str(), req.headers()) {
+        Some(r) => r,
+        None => {
             debug!(path = %path, "No matching route found");
-            ProxyError::NoInstances(path.clone())
-        })?;
+            state.metrics.record_failure("no_matching_route");
+            return Err(ProxyError::NoInstances(path.clone()));
+        }
+    };
+
+    state.metrics.record_route_hit(&rule.id);
+
+    // Determine the base URL of the upstream.
+    let upstream_base = if let Some(url) = &rule.upstream_url {
+        url.clone()
+    } else if let Some(svc_id) = &rule.service_id {
+        let resolver = state.resolver.load();
+        let instances = match resolver.resolve(svc_id.as_str()).await {
+            Ok(i) => i,
+            Err(e) => {
+                state.metrics.record_failure(failure_code_for_registry(&e));
+                return Err(e.into());
+            }
+        };
+        if instances.is_empty() {
+            state.metrics.record_failure("no_instances");
+            return Err(ProxyError::NoInstances(svc_id.clone()));
+        }
+        instances
+            .first()
+            .expect("non-empty instances")
+            .base_url()
+    } else {
+        state.metrics.record_failure("no_instances");
+        return Err(ProxyError::NoInstances(path.clone()));
+    };
+
+    // Rewrite path (strip prefix if configured).
+    let rewritten_path = rule.rewrite_path(&path);
 
     debug!(
         rule_id = %rule.id,
@@ -44,27 +77,7 @@ pub async fn proxy_handler(
         "Matched routing rule"
     );
 
-    // Determine the base URL of the upstream.
-    let upstream_base = if let Some(url) = &rule.upstream_url {
-        url.clone()
-    } else if let Some(svc_id) = &rule.service_id {
-        let resolver = state.resolver.load();
-        let instances = resolver.resolve(svc_id.as_str()).await?;
-
-        // Simple round-robin: pick the first instance for now.
-        // TODO: replace with a proper load balancer in Phase 3.
-        instances
-            .first()
-            .map(|i| i.base_url())
-            .ok_or_else(|| ProxyError::NoInstances(svc_id.clone()))?
-    } else {
-        return Err(ProxyError::NoInstances(path.clone()));
-    };
-
-    // Rewrite path (strip prefix if configured).
-    let rewritten_path = rule.rewrite_path(&path);
-
-    if is_upgrade {
+    let res = if is_upgrade {
         info!(
             upstream = %upstream_base,
             path = %rewritten_path,
@@ -79,7 +92,11 @@ pub async fn proxy_handler(
             "Proxying HTTP request"
         );
         http_proxy::proxy_http(req, &state.http_client, &upstream_base, &rewritten_path).await
-    }
+    };
+    res.map_err(|e| {
+        state.metrics.record_failure(failure_code_for_proxy(&e));
+        e
+    })
 }
 
 /// `/health` — liveness probe.
@@ -99,4 +116,9 @@ pub async fn ready_handler(State(state): State<AppState>) -> impl IntoResponse {
         StatusCode::OK,
         Json(json!({ "status": "ready", "registries": config.registries.sources.len() })),
     )
+}
+
+/// Minimal JSON counters: route hits and failure reasons (B08).
+pub async fn metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
+    (StatusCode::OK, Json(state.metrics.snapshot()))
 }

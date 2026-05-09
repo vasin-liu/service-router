@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 
 - Mock registry simulation hooks: `error_services`, `health_behavior` (healthy/degraded/unhealthy).
 - Sample config `config/mock-scenarios-sample.yaml` for empty-list and error pathways.
+- `GET /metrics` JSON snapshot: `route_hits` per rule id, `failure_reasons` by stable code (`docs/metrics-json.md`).
 
 ### Changed
 
