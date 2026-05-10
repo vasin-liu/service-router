@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Documentation
 
+- Consul deferred: noted in `developer-roadmap-1-2y.md` §4.1, `implementation-status.md` (远期注册中心), `product-design-one-pager.md`, `release-acceptance-matrix.md` (out of scope), `README.md`.
 - `docs/operations-runbook.md`: post-deployment checklist (§7), Prometheus alerting hooks vs `failure_reasons` (§8), binary upgrade notes under config rollback (§3); UTF-8 encoding normalized.
 - `docs/ci-template.md`: document compose-backed `doctor --probe-upstream` steps in `ci.yml`.
 - `docs/implementation-status.md`: refresh “下一阶段建议” after M2 doc/CI closure; point remaining work to env regression, optional K8s scale-up, and decoupled product milestones.

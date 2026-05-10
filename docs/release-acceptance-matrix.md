@@ -45,6 +45,8 @@ Expect HTTP **200** and JSON `"status":"ready"` when at least one registry is he
 | Eureka | env-specific config | Eureka credentials when enabled | Real registry auth + discovery |
 | Kubernetes | env-specific config (`type: kubernetes`) | kubeconfig/token as configured | API health + endpoint discovery |
 
+**Out of scope today:** HashiCorp **Consul** is not a registry type in this codebase; it is tracked as a future extension ([`developer-roadmap-1-2y.md`](./developer-roadmap-1-2y.md) §4.1, [`implementation-status.md`](./implementation-status.md)).
+
 ## 3) Command-Level Acceptance
 
 For each profile, run:

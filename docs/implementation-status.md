@@ -112,6 +112,10 @@
 3. **转发与弹性（独立里程碑）**  
    负载均衡策略、WebSocket 完整性、熔断重试等见 `docs/product-design-one-pager.md` / `docs/developer-roadmap-1-2y.md`，单独评审后排期，不捆绑当前 M2 门禁。（已有：`server.instance_selection` 支持 `first` / `round_robin`，无权重与健康路由。）
 
+## 远期（注册中心扩展，不设固定版本）
+
+- **HashiCorp Consul**：新增 `type: consul` 类注册中心来源；排期在主线四类发现稳定之后，设计文档与里程碑单独开；跟踪入口 **`docs/developer-roadmap-1-2y.md` §4.1**。
+
 ## 最近进展（M2）
 
 - **CI**：主线 `.github/workflows/ci.yml` 在 `route-explain` 之后启动 `doctor-probe.compose.yml`，执行 `doctor --probe-upstream --json`，覆盖 `upstream_probe` / `failure_code` 回归（需 Docker；与手动 `doctor-upstream-probe` 工作流同源）。**GitLab**：`.gitlab-ci.yml` 的 `rust-validate` job 使用 `docker:24-dind` + 相同 compose 探测（需支持 DinD 的 runner）。
