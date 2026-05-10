@@ -62,7 +62,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `config/config.yaml` may require environment variables such as `NACOS_PASSWORD` before checks pass.
 - Eureka note: `registries.sources[].health_path` is optional (default `/apps`) for health probing on non-standard deployments.
 - Nacos note: `server_addr` accepts both base host (`http://host:port`) and suffix form (`http://host:port/nacos`).
-- Kubernetes note: loads `Service` TCP `spec.ports[].targetPort` to narrow backend ports (skips UDP/SCTP for HTTP proxy), then resolves from Core `/api/v1/.../endpoints/{service}` first, then falls back to `/apis/discovery.k8s.io/v1/.../endpointslices?labelSelector=kubernetes.io/service-name%3D{service}` when Core returns empty (if the Service exists; otherwise no filter). Configure `kubeconfig_path` (+ optional `kubeconfig_context`) for external clusters; keep `insecure_skip_tls_verify: false` unless troubleshooting.
+- Kubernetes note: loads `Service` TCP `spec.ports[].targetPort` to narrow backend ports (skips UDP/SCTP for HTTP proxy), then resolves from Core `/api/v1/.../endpoints/{service}` first, then falls back to `/apis/discovery.k8s.io/v1/.../endpointslices?labelSelector=kubernetes.io/service-name%3D{service}` when Core returns empty (if the Service exists; otherwise no filter). EndpointSlice backends with `conditions.ready: false` or `conditions.serving: false` are skipped (unknown/`null` stays eligible). Configure `kubeconfig_path` (+ optional `kubeconfig_context`) for external clusters; keep `insecure_skip_tls_verify: false` unless troubleshooting.
 
 ## Roadmap & product docs
 

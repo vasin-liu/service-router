@@ -528,6 +528,9 @@ struct SliceEndpointConditions {
     /// When `Some(false)`, drop (not ready / terminating).
     #[serde(default)]
     ready: Option<bool>,
+    /// When `Some(false)`, drop (`discovery.k8s.io/v1` — not serving new connections).
+    #[serde(default)]
+    serving: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -546,7 +549,7 @@ fn endpoint_slices_to_instances(list: EndpointSliceList, tcp_filter: &ServiceTcp
             continue;
         }
         for ep in slice.endpoints {
-            if ep.conditions.ready == Some(false) {
+            if ep.conditions.ready == Some(false) || ep.conditions.serving == Some(false) {
                 continue;
             }
             for addr in &ep.addresses {
@@ -742,12 +745,14 @@ mod tests {
                         addresses: vec!["10.1.1.1".to_string()],
                         conditions: SliceEndpointConditions {
                             ready: Some(true),
+                            ..Default::default()
                         },
                     },
                     SliceEndpoint {
                         addresses: vec!["10.1.1.2".to_string()],
                         conditions: SliceEndpointConditions {
                             ready: Some(false),
+                            ..Default::default()
                         },
                     },
                 ],
@@ -778,7 +783,10 @@ mod tests {
             items: vec![EndpointSlice {
                 endpoints: vec![SliceEndpoint {
                     addresses: vec!["fc00::1".to_string()],
-                    conditions: SliceEndpointConditions { ready: None },
+                    conditions: SliceEndpointConditions {
+                        ready: None,
+                        ..Default::default()
+                    },
                 }],
                 ports: vec![SlicePort {
                     port: Some(6443),
@@ -795,12 +803,48 @@ mod tests {
     }
 
     #[test]
+    fn endpoint_slices_to_instances_excludes_serving_false() {
+        let list = EndpointSliceList {
+            items: vec![EndpointSlice {
+                endpoints: vec![
+                    SliceEndpoint {
+                        addresses: vec!["10.2.0.1".into()],
+                        conditions: SliceEndpointConditions {
+                            ready: Some(true),
+                            serving: Some(true),
+                        },
+                    },
+                    SliceEndpoint {
+                        addresses: vec!["10.2.0.2".into()],
+                        conditions: SliceEndpointConditions {
+                            ready: Some(true),
+                            serving: Some(false),
+                        },
+                    },
+                ],
+                ports: vec![SlicePort {
+                    port: Some(8080),
+                    name: None,
+                    protocol: Some("TCP".into()),
+                }],
+            }],
+        };
+        let filter = ServiceTcpFilter::default();
+        let instances = endpoint_slices_to_instances(list, &filter);
+        assert_eq!(instances.len(), 1);
+        assert_eq!(instances[0].host, "10.2.0.1");
+    }
+
+    #[test]
     fn endpoint_slices_respect_named_service_target_filter() {
         let list = EndpointSliceList {
             items: vec![EndpointSlice {
                 endpoints: vec![SliceEndpoint {
                     addresses: vec!["192.168.1.10".into()],
-                    conditions: SliceEndpointConditions { ready: Some(true) },
+                    conditions: SliceEndpointConditions {
+                        ready: Some(true),
+                        ..Default::default()
+                    },
                 }],
                 ports: vec![
                     SlicePort {

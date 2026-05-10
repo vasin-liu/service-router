@@ -52,7 +52,7 @@ When the configured registry for a route is **Kubernetes**, resolving `service_i
 
 1. Load `Service` TCP targets from `spec.ports` (skips `UDP` / `SCTP` for HTTP proxy use).
 2. Query Core `Endpoints`, then `EndpointSlice` if no instances are produced.
-3. Filter backend port rows to those targets (numeric `targetPort` or named port entry match).
+3. Filter backend port rows to those targets (numeric `targetPort` or named port entry match). For EndpointSlice endpoints, omit rows whose conditions show `ready: false` or `serving: false` (`serving` omitted or unknown stays eligible, same as `ready`).
 
 `resolved_instances` is the count of distinct `(host, port)` pairs after that filtering. Each pair is TCP-probed for `reachable` when `--probe-upstream` is set.
 

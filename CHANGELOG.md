@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Kubernetes EndpointSlice parsing: omit backends with `conditions.serving: false` (in addition to `ready: false`); aligns with discovery.k8s.io/v1 readiness for new connections.
+- Doctor schema doc: EndpointSlice row filter notes `serving` alongside `ready`.
+- Operations runbook: short table mapping `failure_reasons` spikes to checks.
+
 ### Documentation
 
 - README: Roadmap & product docs section linking `developer-roadmap` (§4.1 config UI), product design, and implementation status.
