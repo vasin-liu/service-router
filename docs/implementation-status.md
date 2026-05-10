@@ -108,7 +108,7 @@
    统一 Nacos/Eureka/K8s/Mock 四类场景的 smoke/regression 清单，形成可复用发布门禁模板。（GitHub Actions：手动运行 `.github/workflows/release-acceptance.yml` 执行 `docs/release-acceptance.sh` 并上传 `release-acceptance-json`；清单见 `docs/release-acceptance-matrix.md`。）
 
 3. 强化诊断输出一致性  
-   继续收敛 `doctor` / `route-explain` 的 failure code 与 remediation 映射，降低团队排障成本。
+   继续收敛 `doctor` / `route-explain` 的 failure code 与 remediation 映射，降低团队排障成本。（`doctor --probe-upstream` 的 `upstream_probe` 在失败时输出 `failure_code`，与 `GET /metrics` 的 `no_instances` / `registry_*` 等键对齐；`docs/diagnostic-codes.md` 增补 triage 交叉表。）
 
 4. 补充运维视角文档  
    增加部署后巡检、常见告警定位、指标解释与升级回滚建议。

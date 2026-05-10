@@ -22,6 +22,7 @@ use service_router::{
             health_handler, metrics_handler, metrics_prometheus_handler, proxy_handler,
             ready_handler,
         },
+        metrics::failure_code_for_registry,
         AppState, ProxyMetrics,
     },
 };
@@ -1003,13 +1004,17 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                 match parse_host_port_from_url(url) {
                     Ok((host, port)) => {
                         let reachable = probe_tcp(&host, port).await;
-                        upstream_probe_json.push(serde_json::json!({
+                        let mut entry = serde_json::json!({
                             "route_id": route.id,
                             "target_type": "upstream_url",
                             "host": host,
                             "port": port,
                             "reachable": reachable
-                        }));
+                        });
+                        if !reachable {
+                            entry["failure_code"] = serde_json::json!("TCP_UNREACHABLE");
+                        }
+                        upstream_probe_json.push(entry);
                         if reachable {
                             if !as_json {
                                 println!("   - route {} direct {}:{} reachable", route.id, host, port);
@@ -1027,6 +1032,7 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                             "route_id": route.id,
                             "target_type": "upstream_url",
                             "reachable": false,
+                            "failure_code": "ENDPOINT_PARSE_ERROR",
                             "error": e.to_string()
                         }));
                         if !as_json {
@@ -1043,6 +1049,7 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                             "target_type": "service_id",
                             "service_id": service_id,
                             "reachable": false,
+                            "failure_code": "no_instances",
                             "error": "resolved 0 instances"
                         }));
                         if !as_json {
@@ -1063,14 +1070,15 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                                 break;
                             }
                         }
-                        upstream_probe_json.push(serde_json::json!({
+                        let mut entry = serde_json::json!({
                             "route_id": route.id,
                             "target_type": "service_id",
                             "service_id": service_id,
                             "resolved_instances": instances.len(),
                             "reachable": ok_any
-                        }));
+                        });
                         if !ok_any {
+                            entry["failure_code"] = serde_json::json!("TCP_UNREACHABLE");
                             probe_failures += 1;
                             if !as_json {
                                 println!(
@@ -1079,14 +1087,17 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                                 );
                             }
                         }
+                        upstream_probe_json.push(entry);
                     }
                     Err(e) => {
                         probe_failures += 1;
+                        let code = failure_code_for_registry(&e);
                         upstream_probe_json.push(serde_json::json!({
                             "route_id": route.id,
                             "target_type": "service_id",
                             "service_id": service_id,
                             "reachable": false,
+                            "failure_code": code,
                             "error": e.to_string()
                         }));
                         if !as_json {

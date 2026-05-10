@@ -42,6 +42,7 @@ Unreachable or parse failure:
 - `route_id`: string
 - `target_type`: `"upstream_url"` or `"service_id"`
 - `reachable`: boolean
+- When probing failed or the target could not be used: optional **`failure_code`** — `TCP_UNREACHABLE`, `ENDPOINT_PARSE_ERROR`, **`no_instances`** (same string as `GET /metrics` `failure_reasons`), or a **`registry_*`** code from [`diagnostic-codes.md`](./diagnostic-codes.md) when registry resolution fails.
 - Additional fields by target type:
   - `upstream_url`: `host`, `port` or `error`
   - `service_id`: `service_id`, `resolved_instances` or `error`
@@ -105,7 +106,8 @@ When the configured registry for a route is **Kubernetes**, resolving `service_i
       "target_type": "service_id",
       "service_id": "api-gateway",
       "resolved_instances": 1,
-      "reachable": false
+      "reachable": false,
+      "failure_code": "TCP_UNREACHABLE"
     }
   ]
 }
