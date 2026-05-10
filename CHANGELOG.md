@@ -4,12 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- CLI **`config-diff`**: compare two YAML configs after load (`server`, `log_level`, `registries`, routes by `id`); **`--json`** (`diagnostic_version` **1.0**) or **`--markdown`** for PR blurbs; exit **1** on differences.
+- **`tools/emit_diff_rs.py`**: regenerates UTF-8 `src/config/diff.rs` on environments where UTF-16-encoded sources break `rustc` (optional maintenance aid).
+
 ### Documentation
 
-- `docs/m2-release-readiness.md`: maps M2 completion criteria to repo artifacts vs organisation-owned regression; links §**9** archive and baseline script.
-- `implementation-status.md`: **「M2 仓库侧就绪」** table; current-status line distinguishes repo-ready vs full M2 sign-off (three external profiles).
-- `scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1`: local parity with `ci.yml` mock gates; optional Docker probe env (`M2_WITH_DOCKER_PROBE`) for compose + `doctor --probe-upstream`.
-- README: index entry for M2 readiness doc and baseline script.
+- **`implementation-status.md`**: M2 engineering closure statement; **M3** engineering-scope table (FR-5.1 / FR-5.2 shipped in-repo; FR-5.3 / FR-6 deferred with rationale).
+- **`.gitmessage`**: UTF-8 commit template discouraging IDE/tool footers (optional `git config commit.template .gitmessage`).
+- `docs/m2-release-readiness.md`: **Engineering closure (M2)** subsection and criterion mapping.
+- README: **`config-diff`**; optional **`git config commit.template .gitmessage`**.
 - Consul deferred: noted in `developer-roadmap-1-2y.md` §4.1, `implementation-status.md` (远期注册中心), `product-design-one-pager.md`, `release-acceptance-matrix.md` (out of scope), `README.md`.
 - `docs/operations-runbook.md`: post-deployment checklist (§7), Prometheus alerting hooks vs `failure_reasons` (§8), binary upgrade notes under config rollback (§3); UTF-8 encoding normalized.
 - `docs/ci-template.md`: document compose-backed `doctor --probe-upstream` steps in `ci.yml`.

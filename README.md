@@ -34,6 +34,7 @@ Server listens on `127.0.0.1:8080` by default in mock config.
 
 - `run [config]` — omit `config` to use `config/config.yaml`
 - `check-config [<config>] [--json] [--strict]` — any non-flag token is treated as the config path; if you pass multiple, the **last** one wins (flags can be mixed before/after the path depending on iteration order; prefer `[--json] [--strict] config.yaml`). With `--strict`, findings include overshadowing computed in router evaluation order (`priority`, then YAML order ties), simultaneous `upstream_url` + `service_id` on a rule, and Prefix rules whose `strip_prefix` cannot apply to matched paths.
+- `config-diff <left-config> <right-config> [--json | --markdown]` — structural diff after the same load rules as `check-config` (including `${ENV}` expansion). Exit **1** when there are differences (useful for CI gates comparing golden vs candidate YAML).
 - `doctor [<config>] [--config <path>] [--probe-upstream] [--json]` — prefer `--config path` for clarity; a bare path positional is accepted. **`--probe-upstream`** runs TCP checks on remote registry API endpoints (when not mock) and on each route’s upstream URL or registry-resolved instances; see `docs/doctor-json-schema.md` for `registry_endpoint_probe`.
 - `route-explain [path] [method] [--config path] [--request-file path] [--header name:value …] [--json] [--verbose]` — with `--request-file`, load `path` / `method` / `headers` from YAML or `.json` (see `docs/route-explain-json-schema.md`, sample `config/route-explain-request-sample.yaml`); CLI `--header` overrides file keys. Unmatched runs print per-rule reasons and suggestions; text mode ends with a de-duplicated “Suggested actions” block; `--json` adds `remediation_outline` and optional `request_file`.
 
@@ -41,8 +42,8 @@ Server listens on `127.0.0.1:8080` by default in mock config.
 
 | Exit | When |
 |:-----|:-----|
-| `0` | Command succeeded (`run` exited cleanly, `help`, checks passed, `route-explain` matched a route, `doctor` overall PASS) |
-| `1` | Any failure handled in-process: invalid/missing config, init errors, `--strict` findings, unmatched `route-explain`, upstream/registry probe failures in `doctor`, top-level anyhow error |
+| `0` | Command succeeded (`run` exited cleanly, `help`, checks passed, `route-explain` matched a route, `doctor` overall PASS, **`config-diff` finds no differences**) |
+| `1` | Any failure handled in-process: invalid/missing config, init errors, `--strict` findings, unmatched `route-explain`, upstream/registry probe failures in `doctor`, **`config-diff` finds differences**, top-level anyhow error |
 
 Unknown subcommands print usage and exit `0` (same as explicit `help`).
 
@@ -74,6 +75,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/product-design.md` — fuller design and improvement backlog
 - `docs/implementation-status.md` — milestone alignment (M1/M2) and what shipped
 - `docs/m2-release-readiness.md` — M2 completion criteria vs repo evidence; **`bash scripts/verify-m2-baseline.sh`** or **`powershell -File scripts/verify-m2-baseline.ps1`** for Mock baseline (optional **`M2_WITH_DOCKER_PROBE`** / **`$env:M2_WITH_DOCKER_PROBE='1'`** to mirror CI compose probe)
+- Optional Git commit template (no IDE footers): **`git config commit.template .gitmessage`** — see `.gitmessage`
 
 ## JSON Diagnostics Docs
 

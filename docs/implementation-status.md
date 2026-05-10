@@ -2,9 +2,10 @@
 
 ## 当前状态
 
-- 状态：M1 核心目标已完成；**M2 仓库侧工程门禁与文档索引已齐**（见下方「M2 仓库侧就绪」与 **`docs/m2-release-readiness.md`**）
-- 已完成里程碑：M1（开发者最小可用工具链）
-- 当前阶段目标：M2（稳定性增强与规模化接入）；**全线签署 M2** 尚需团队在目标环境完成 **Nacos / Eureka / Kubernetes** 三类矩阵回归并归档 **`release-acceptance-matrix.md`** §**9**（Mock 已由 CI + `scripts/verify-m2-baseline.sh` 覆盖）
+- 状态：**M2（工程侧）已封板**；主线研发重心转入 **M3（协作与扩展，对齐 PRD FR-5 / FR-6 的工程切片）**
+- 已完成里程碑：M1（开发者最小可用工具链）、**M2（稳定性 / 诊断 / 发布门禁 — 仓库可复核）**
+- 当前阶段目标：**M3** — 协作向能力（配置对比、评审摘要等）与远期扩展接口铺垫；全量 PRD 指标（插件生态占比等）仍以 **`docs/product-prd-developer.md`** 为准、单独度量
+- **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + `scripts/verify-m2-baseline.*`）
 
 ## 本次已落地
 
@@ -147,3 +148,16 @@
 | Mock 注册中心门禁 | `.github/workflows/ci.yml`（含 compose + `doctor --probe-upstream`）、`docs/ci-copy-paste.sh`、`scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1` |
 
 **待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 **`docs/m2-release-readiness.md`**。
+
+## 完成定义（M3，工程侧切片）
+
+对齐 **`docs/product-prd-developer.md`** 中 M3（FR-5、FR-6 初版）在本仓库的**可交付子集**（非 PRD 全部业务指标）：
+
+| 条目 | 状态 | 说明 |
+|:---|:---|:---|
+| FR-5.1 配置结构化对比 | 已提供 | CLI **`config-diff <左> <右> [--json \| --markdown]`**：加载两份 YAML（含 env 展开）、对比 `server` / `log_level` / `registries` / 按 `id` 的 `routes`；有差异时退出码 **1** |
+| FR-5.2 变更说明 / 评审辅助 | 已提供 | 同上 **`--markdown`**，便于粘贴 PR 描述 |
+| FR-5.3 快照 / 复现链接 | 未实现 | 保留为后续迭代（可与 Git 提交元数据或外部工单系统结合，不单点绑定本仓库） |
+| FR-6 插件 / 扩展生态 | 未启动 | 接口形态需单独设计评审后再编码；当前里程碑不阻塞 FR-5 |
+
+**「M3 工程达成」最低标准（本仓库）**：**FR-5.1 + FR-5.2** 可在文档与 CI 构建中验证；FR-5.3 / FR-6 明确列入上表以免范围漂移。

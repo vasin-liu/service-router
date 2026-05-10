@@ -60,7 +60,21 @@ async fn run() -> anyhow::Result<ExitCode> {
             request_file,
             as_json,
             verbose,
-        } => route_explain(config_path, path, method, headers, request_file, as_json, verbose),
+        } => route_explain(
+            config_path,
+            path,
+            method,
+            headers,
+            request_file,
+            as_json,
+            verbose,
+        ),
+        Command::ConfigDiff {
+            left,
+            right,
+            as_json,
+            markdown,
+        } => config_diff(left, right, as_json, markdown),
         Command::Help => {
             print_help();
             Ok(ExitCode::SUCCESS)
@@ -69,22 +83,26 @@ async fn run() -> anyhow::Result<ExitCode> {
 }
 
 async fn run_server(config_path: PathBuf) -> anyhow::Result<ExitCode> {
-
     // --- Load initial config ---
-    let config = load_config(&config_path)
-        .map_err(|e| anyhow::anyhow!("Failed to load config from {}: {}", config_path.display(), e))?;
+    let config = load_config(&config_path).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to load config from {}: {}",
+            config_path.display(),
+            e
+        )
+    })?;
 
     // --- Set up logging ---
     let log_level = config.log_level.clone();
     tracing_subscriber::registry()
-        .with(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new(&log_level)),
-        )
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&log_level)))
         .with(fmt::layer())
         .init();
 
-    info!("service-router starting — config: {}", config_path.display());
+    info!(
+        "service-router starting — config: {}",
+        config_path.display()
+    );
 
     // --- Shared config slot (hot-reload) ---
     let config_slot = Arc::new(ArcSwap::from_pointee(config.clone()));
@@ -223,6 +241,12 @@ enum Command {
         as_json: bool,
         verbose: bool,
     },
+    ConfigDiff {
+        left: PathBuf,
+        right: PathBuf,
+        as_json: bool,
+        markdown: bool,
+    },
     Help,
 }
 
@@ -345,6 +369,31 @@ fn parse_command(args: Vec<String>) -> Command {
                 verbose,
             }
         }
+        Some("config-diff") => {
+            let mut as_json = false;
+            let mut markdown = false;
+            let mut positionals: Vec<PathBuf> = Vec::new();
+            for arg in args.iter().skip(1) {
+                if arg == "--json" {
+                    as_json = true;
+                } else if arg == "--markdown" {
+                    markdown = true;
+                } else if !arg.starts_with('-') {
+                    positionals.push(PathBuf::from(arg));
+                }
+            }
+            if positionals.len() < 2 {
+                eprintln!("Usage: config-diff <left-config> <right-config> [--json|--markdown]");
+                Command::Help
+            } else {
+                Command::ConfigDiff {
+                    left: positionals[0].clone(),
+                    right: positionals[1].clone(),
+                    as_json,
+                    markdown,
+                }
+            }
+        }
         Some("-h") | Some("--help") | Some("help") => Command::Help,
         Some(other) => {
             eprintln!("Unknown command: {other}");
@@ -355,13 +404,61 @@ fn parse_command(args: Vec<String>) -> Command {
 
 fn print_help() {
     println!(
-        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  help                                               Show help"
+        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  config-diff <left> <right> [--json|--markdown]   Structural diff of two YAML configs (after env expansion); exit 1 if different\n  help                                               Show help"
     );
 }
 
-async fn check_config(config_path: PathBuf, as_json: bool, strict: bool) -> anyhow::Result<ExitCode> {
-    let config = load_config(&config_path)
-        .map_err(|e| anyhow::anyhow!("Failed to load config from {}: {}", config_path.display(), e))?;
+fn config_diff(
+    left_path: PathBuf,
+    right_path: PathBuf,
+    as_json: bool,
+    markdown: bool,
+) -> anyhow::Result<ExitCode> {
+    if as_json && markdown {
+        anyhow::bail!("use either --json or --markdown, not both");
+    }
+    let left = load_config(&left_path).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to load left config from {}: {}",
+            left_path.display(),
+            e
+        )
+    })?;
+    let right = load_config(&right_path).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to load right config from {}: {}",
+            right_path.display(),
+            e
+        )
+    })?;
+    let report = service_router::config::diff_app_configs(
+        &left,
+        &right,
+        &left_path.display().to_string(),
+        &right_path.display().to_string(),
+    );
+    if as_json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else if markdown {
+        println!("{}", report.format_markdown());
+    } else {
+        print!("{}", report.format_text());
+    }
+    Ok(ExitCode::from(if report.identical { 0 } else { 1 }))
+}
+
+async fn check_config(
+    config_path: PathBuf,
+    as_json: bool,
+    strict: bool,
+) -> anyhow::Result<ExitCode> {
+    let config = load_config(&config_path).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to load config from {}: {}",
+            config_path.display(),
+            e
+        )
+    })?;
     service_router::routing::RouterSnapshot::from_config(&config)
         .map_err(|e| anyhow::anyhow!("Failed to compile routing rules: {e}"))?;
     let resolver = build_resolver(&config).await?;
@@ -427,21 +524,19 @@ struct RouteRequestSample {
 }
 
 fn load_route_request_sample(path: &Path) -> anyhow::Result<RouteRequestSample> {
-    let raw =
-        std::fs::read_to_string(path).map_err(|e| anyhow::anyhow!("read {}: {e}", path.display()))?;
+    let raw = std::fs::read_to_string(path)
+        .map_err(|e| anyhow::anyhow!("read {}: {e}", path.display()))?;
     let ext = path
         .extension()
         .and_then(|e| e.to_str())
         .unwrap_or("")
         .to_ascii_lowercase();
     if ext == "json" {
-        serde_json::from_str(&raw).map_err(|e| {
-            anyhow::anyhow!("parse {} as JSON: {e}", path.display())
-        })
+        serde_json::from_str(&raw)
+            .map_err(|e| anyhow::anyhow!("parse {} as JSON: {e}", path.display()))
     } else {
-        serde_yaml::from_str(&raw).map_err(|e| {
-            anyhow::anyhow!("parse {} as YAML: {e}", path.display())
-        })
+        serde_yaml::from_str(&raw)
+            .map_err(|e| anyhow::anyhow!("parse {} as YAML: {e}", path.display()))
     }
 }
 
@@ -457,9 +552,7 @@ fn route_explain(
     let request_file_for_json = request_file.as_ref().map(|p| p.display().to_string());
     let (path, method, headers) = if let Some(ref rf) = request_file {
         let sample = load_route_request_sample(rf)?;
-        let method = sample
-            .method
-            .unwrap_or_else(|| "GET".to_string());
+        let method = sample.method.unwrap_or_else(|| "GET".to_string());
         let mut merged = sample.headers;
         for (k, v) in headers {
             merged.insert(k, v);
@@ -470,8 +563,13 @@ fn route_explain(
         (path, method, headers)
     };
 
-    let config = load_config(&config_path)
-        .map_err(|e| anyhow::anyhow!("Failed to load config from {}: {}", config_path.display(), e))?;
+    let config = load_config(&config_path).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to load config from {}: {}",
+            config_path.display(),
+            e
+        )
+    })?;
     let snapshot = service_router::routing::RouterSnapshot::from_config(&config)
         .map_err(|e| anyhow::anyhow!("Failed to compile routing rules: {e}"))?;
 
@@ -590,8 +688,12 @@ fn route_explain(
             " - {}: path={}, method={}, headers={} | {} | suggestion: {}",
             item.get("rule_id").and_then(|v| v.as_str()).unwrap_or("-"),
             item.get("path").and_then(|v| v.as_bool()).unwrap_or(false),
-            item.get("method").and_then(|v| v.as_bool()).unwrap_or(false),
-            item.get("headers").and_then(|v| v.as_bool()).unwrap_or(false),
+            item.get("method")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false),
+            item.get("headers")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false),
             reasons,
             suggestions
         );
@@ -629,9 +731,7 @@ fn merge_remediation_outline(diagnostics: &[serde_json::Value]) -> Vec<serde_jso
     out
 }
 
-fn describe_path_expectation(
-    compiled: &service_router::routing::matcher::CompiledPath,
-) -> String {
+fn describe_path_expectation(compiled: &service_router::routing::matcher::CompiledPath) -> String {
     use service_router::routing::matcher::CompiledPath;
     match compiled {
         CompiledPath::Exact(v) => format!("exact '{}'", v),
@@ -700,7 +800,11 @@ fn explain_rule_mismatch(
             .as_ref()
             .map(|m| m.join(","))
             .unwrap_or_else(|| "*".to_string());
-        reasons.push(format!("method '{}' not in [{}]", method.to_uppercase(), allowed));
+        reasons.push(format!(
+            "method '{}' not in [{}]",
+            method.to_uppercase(),
+            allowed
+        ));
         let sample_method = rule
             .methods
             .as_ref()
@@ -777,19 +881,26 @@ fn explain_rule_mismatch(
     (path_ok, method_ok, headers_ok, reasons, suggestions)
 }
 
-async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> anyhow::Result<ExitCode> {
+async fn doctor(
+    config_path: PathBuf,
+    probe_upstream: bool,
+    as_json: bool,
+) -> anyhow::Result<ExitCode> {
     if !as_json {
         println!("Doctor checks for {}", config_path.display());
     }
 
     if !config_path.exists() {
         if as_json {
-            println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-                "diagnostic_version": "1.0",
-                "status": "fail",
-                "config_path": config_path.display().to_string(),
-                "error": "config file not found"
-            }))?);
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "diagnostic_version": "1.0",
+                    "status": "fail",
+                    "config_path": config_path.display().to_string(),
+                    "error": "config file not found"
+                }))?
+            );
         } else {
             println!(" - config file: FAIL (not found)");
         }
@@ -808,12 +919,15 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
         }
         Err(e) => {
             if as_json {
-                println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-                    "diagnostic_version": "1.0",
-                    "status": "fail",
-                    "config_path": config_path.display().to_string(),
-                    "error": format!("config parse failed: {e}")
-                }))?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "diagnostic_version": "1.0",
+                        "status": "fail",
+                        "config_path": config_path.display().to_string(),
+                        "error": format!("config parse failed: {e}")
+                    }))?
+                );
             } else {
                 println!(" - config parse: FAIL ({e})");
             }
@@ -825,17 +939,23 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
         Ok(listener) => {
             drop(listener);
             if !as_json {
-                println!(" - listen addr: OK ({}:{})", config.server.host, config.server.port);
+                println!(
+                    " - listen addr: OK ({}:{})",
+                    config.server.host, config.server.port
+                );
             }
         }
         Err(e) => {
             if as_json {
-                println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-                    "diagnostic_version": "1.0",
-                    "status": "fail",
-                    "config_path": config_path.display().to_string(),
-                    "error": format!("listen addr unavailable: {e}")
-                }))?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "diagnostic_version": "1.0",
+                        "status": "fail",
+                        "config_path": config_path.display().to_string(),
+                        "error": format!("listen addr unavailable: {e}")
+                    }))?
+                );
             } else {
                 println!(
                     " - listen addr: FAIL ({}:{} unavailable: {})",
@@ -855,12 +975,15 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
         }
         Err(e) => {
             if as_json {
-                println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-                    "diagnostic_version": "1.0",
-                    "status": "fail",
-                    "config_path": config_path.display().to_string(),
-                    "error": format!("registry init failed: {e}")
-                }))?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "diagnostic_version": "1.0",
+                        "status": "fail",
+                        "config_path": config_path.display().to_string(),
+                        "error": format!("registry init failed: {e}")
+                    }))?
+                );
             } else {
                 println!(" - registry init: FAIL ({e})");
                 println!("Doctor result: FAIL");
@@ -884,7 +1007,10 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
             registry_health_json.push(service_router::registry::registry_health_json_row(
                 *priority, kind, health,
             ));
-            if matches!(health, service_router::registry::RegistryHealth::Unhealthy(_)) {
+            if matches!(
+                health,
+                service_router::registry::RegistryHealth::Unhealthy(_)
+            ) {
                 has_unhealthy = true;
             }
             if !as_json {
@@ -924,7 +1050,8 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                     RegistryConfig::Nacos(c) => (
                         "Nacos",
                         c.priority,
-                        parse_host_port_for_probe(&c.server_addr).map(|x| (c.server_addr.clone(), x)),
+                        parse_host_port_for_probe(&c.server_addr)
+                            .map(|x| (c.server_addr.clone(), x)),
                     ),
                     RegistryConfig::Eureka(c) => (
                         "Eureka",
@@ -934,7 +1061,8 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                     RegistryConfig::Kubernetes(c) => (
                         "Kubernetes",
                         c.priority,
-                        parse_host_port_for_probe(&c.api_server_url).map(|x| (c.api_server_url.clone(), x)),
+                        parse_host_port_for_probe(&c.api_server_url)
+                            .map(|x| (c.api_server_url.clone(), x)),
                     ),
                     RegistryConfig::Mock(_) => continue,
                 };
@@ -1017,12 +1145,18 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                         upstream_probe_json.push(entry);
                         if reachable {
                             if !as_json {
-                                println!("   - route {} direct {}:{} reachable", route.id, host, port);
+                                println!(
+                                    "   - route {} direct {}:{} reachable",
+                                    route.id, host, port
+                                );
                             }
                         } else {
                             probe_failures += 1;
                             if !as_json {
-                                println!("   - route {} direct {}:{} unreachable", route.id, host, port);
+                                println!(
+                                    "   - route {} direct {}:{} unreachable",
+                                    route.id, host, port
+                                );
                             }
                         }
                     }
@@ -1053,7 +1187,10 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
                             "error": "resolved 0 instances"
                         }));
                         if !as_json {
-                            println!("   - route {} service {} resolved 0 instances", route.id, service_id);
+                            println!(
+                                "   - route {} service {} resolved 0 instances",
+                                route.id, service_id
+                            );
                         }
                     }
                     Ok(instances) => {
@@ -1124,15 +1261,18 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
     }
 
     if as_json {
-        println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-            "diagnostic_version": "1.0",
-            "status": if has_unhealthy { "fail" } else { "pass" },
-            "config_path": config_path.display().to_string(),
-            "probe_upstream_enabled": probe_upstream,
-            "registry_health": registry_health_json,
-            "registry_endpoint_probe": registry_endpoint_probe_json,
-            "upstream_probe": upstream_probe_json
-        }))?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({
+                "diagnostic_version": "1.0",
+                "status": if has_unhealthy { "fail" } else { "pass" },
+                "config_path": config_path.display().to_string(),
+                "probe_upstream_enabled": probe_upstream,
+                "registry_health": registry_health_json,
+                "registry_endpoint_probe": registry_endpoint_probe_json,
+                "upstream_probe": upstream_probe_json
+            }))?
+        );
     }
 
     if has_unhealthy {
@@ -1149,8 +1289,8 @@ async fn doctor(config_path: PathBuf, probe_upstream: bool, as_json: bool) -> an
 }
 
 fn parse_host_port_from_url(url: &str) -> anyhow::Result<(String, u16)> {
-    let parsed = reqwest::Url::parse(url)
-        .map_err(|e| anyhow::anyhow!("invalid URL '{}': {}", url, e))?;
+    let parsed =
+        reqwest::Url::parse(url).map_err(|e| anyhow::anyhow!("invalid URL '{}': {}", url, e))?;
     let host = parsed
         .host_str()
         .ok_or_else(|| anyhow::anyhow!("missing host in URL '{}'", url))?
@@ -1200,7 +1340,10 @@ mod tests {
     use service_router::config::model::{PathMatcher, RoutingRule};
     use service_router::routing::CompiledRoutingRule;
 
-    use super::{explain_rule_mismatch, load_route_request_sample, merge_remediation_outline, parse_host_port_for_probe};
+    use super::{
+        explain_rule_mismatch, load_route_request_sample, merge_remediation_outline,
+        parse_host_port_for_probe,
+    };
 
     #[test]
     fn explain_rule_mismatch_reports_method_and_header_reason() {
@@ -1224,7 +1367,9 @@ mod tests {
         assert!(!method_ok);
         assert!(!headers_ok);
         assert!(reasons.iter().any(|r| r.contains("method 'POST' not in")));
-        assert!(reasons.iter().any(|r| r.contains("missing required header")));
+        assert!(reasons
+            .iter()
+            .any(|r| r.contains("missing required header")));
         assert!(suggestions.iter().any(|s| {
             s.get("code")
                 .and_then(|v| v.as_str())
@@ -1260,9 +1405,9 @@ mod tests {
         assert!(!path_ok);
         assert!(reasons.iter().any(|r| r.contains("prefix")));
         assert!(reasons.iter().any(|r| r.contains("/shop")));
-        assert!(suggestions.iter().any(|s| {
-            s.get("code").and_then(|v| v.as_str()) == Some("PATH_MISMATCH")
-        }));
+        assert!(suggestions
+            .iter()
+            .any(|s| { s.get("code").and_then(|v| v.as_str()) == Some("PATH_MISMATCH") }));
     }
 
     #[test]
@@ -1273,7 +1418,10 @@ mod tests {
                 value: "/".to_string(),
             },
             methods: None,
-            headers: Some(HashMap::from([("not a token".to_string(), "v".to_string())])),
+            headers: Some(HashMap::from([(
+                "not a token".to_string(),
+                "v".to_string(),
+            )])),
             service_id: Some("svc".to_string()),
             upstream_url: None,
             strip_prefix: None,
@@ -1320,11 +1468,7 @@ mod tests {
     fn load_route_request_sample_reads_yaml_tempfile() {
         let dir = std::env::temp_dir();
         let p = dir.join("route-explain-req-test.yaml");
-        std::fs::write(
-            &p,
-            "path: /z\nmethod: PUT\nheaders:\n  h: \"v\"\n",
-        )
-        .unwrap();
+        std::fs::write(&p, "path: /z\nmethod: PUT\nheaders:\n  h: \"v\"\n").unwrap();
         let s = load_route_request_sample(&p).unwrap();
         assert_eq!(s.path, "/z");
         assert_eq!(s.method.as_deref(), Some("PUT"));
@@ -1336,11 +1480,7 @@ mod tests {
     fn load_route_request_sample_reads_json_tempfile() {
         let dir = std::env::temp_dir();
         let p = dir.join("route-explain-req-test.json");
-        std::fs::write(
-            &p,
-            r#"{"path":"/a","method":"DELETE","headers":{"X":"y"}}"#,
-        )
-        .unwrap();
+        std::fs::write(&p, r#"{"path":"/a","method":"DELETE","headers":{"X":"y"}}"#).unwrap();
         let s = load_route_request_sample(&p).unwrap();
         assert_eq!(s.path, "/a");
         assert_eq!(s.method.as_deref(), Some("DELETE"));
