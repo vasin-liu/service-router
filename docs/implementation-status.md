@@ -105,7 +105,7 @@
    在 EndpointSlice 回退基础上补充与 Service 端口的对齐、就绪/标签细粒度筛选，提升大规模集群稳定性。（已实现：`endpoint_slice_label_selector` 在 EndpointSlice 列表调用中与 `kubernetes.io/service-name` AND 组合；Core Endpoints 路径不变。）
 
 2. 完善发布验收与回归矩阵  
-   统一 Nacos/Eureka/K8s/Mock 四类场景的 smoke/regression 清单，形成可复用发布门禁模板。
+   统一 Nacos/Eureka/K8s/Mock 四类场景的 smoke/regression 清单，形成可复用发布门禁模板。（GitHub Actions：手动运行 `.github/workflows/release-acceptance.yml` 执行 `docs/release-acceptance.sh` 并上传 `release-acceptance-json`；清单见 `docs/release-acceptance-matrix.md`。）
 
 3. 强化诊断输出一致性  
    继续收敛 `doctor` / `route-explain` 的 failure code 与 remediation 映射，降低团队排障成本。

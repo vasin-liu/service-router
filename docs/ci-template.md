@@ -85,7 +85,7 @@ Add **`cache:` for `target/`** on long-running pipelines if runners allow it.
 
 ### `release-acceptance` (full JSON artifact set)
 
-Workflow `.github/workflows/release-acceptance.yml` runs **only on manual trigger** (`workflow_dispatch`): it starts the compose-backed mock upstreams (unless `skip_compose`), waits on `9000`/`9001`, runs `bash docs/release-acceptance.sh`, and uploads **`release-acceptance-json`** (files under `artifacts/release-acceptance/`).
+Workflow `.github/workflows/release-acceptance.yml` runs **only on manual trigger** (`workflow_dispatch`): it starts the compose-backed mock upstreams unless **`skip_compose`** is `yes`, waits on `9000`/`9001`, runs `bash docs/release-acceptance.sh`, and uploads **`release-acceptance-json`** (files under `artifacts/release-acceptance/`). With **`skip_compose: yes`**, compose is skipped and `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` is set so `doctor --probe-upstream` does not fail the job when no TCP upstream is listening. JSON artifacts upload on **`always()`** (partial outputs when a gate fails).
 
 ### `doctor-upstream-probe` (doctor only)
 
@@ -99,7 +99,7 @@ docker compose -f .github/compose/doctor-probe.compose.yml down -v
 
 The compose stack binds `127.0.0.1:9000` and `127.0.0.1:9001`. Mock profile defaults both mock `service_id` targets to `127.0.0.1:9001`, so **`doctor --probe-upstream`** is satisfied once port `9001` is reachable (the workflow still waits on both compose ports).
 
-Both workflows expose `workflow_dispatch` inputs such as `config_path` and `compose_file` (defaults as in each YAML).
+Both workflows expose `workflow_dispatch` inputs such as `config_path` and `compose_file` (defaults as in each YAML). **`release-acceptance`** also exposes **`skip_compose`** (`no` / `yes`).
 
 When `doctor-probe` fails, the workflow uploads `doctor-probe-docker-diagnostics` containing:
 

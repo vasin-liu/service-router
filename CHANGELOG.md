@@ -18,6 +18,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- GitHub Actions: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`) runs `docs/release-acceptance.sh` with optional compose-backed mock upstreams, uploads JSON artifacts (`release-acceptance-json`), optional `skip_compose` (`yes` skips Docker and relaxes probe failure); aligns docs/README references that previously described a missing workflow.
 - Kubernetes config: optional `endpoint_slice_label_selector` — comma-separated label requirements AND-ed with `kubernetes.io/service-name=<service_id>` when listing EndpointSlices (Core `Endpoints` discovery unchanged).
 - `check-config --strict` structured findings: `StrictFinding` (`code`, `message`, optional `details`) in `src/config/strict_check.rs`; generator script `tools/emit_strict_check.mjs`; schema doc `docs/check-config-strict-schema.md`.
 - Documentation: `docs/diagnostic-codes.md` (stable proxy metrics / doctor / route-explain codes) and `docs/operations-runbook.md` (readiness, rollback via hot-reload, triage checklist).
@@ -51,7 +52,6 @@ All notable changes to this project are documented in this file.
 - Kubernetes discovery loads `Service.spec.ports` and filters Core/Slice backend ports to TCP `targetPort` (numeric or named), reducing cross-product noise for multi-port Services.
 - Kubernetes port handling skips `SCTP` alongside `UDP` for Service targets and endpoint rows (HTTP proxy scope).
 - `docs/doctor-json-schema.md` documents how Kubernetes resolution affects `upstream_probe` for `service_id`.
-- GitHub Actions: `release-acceptance` manual workflow (`.github/workflows/release-acceptance.yml`) runs `docs/release-acceptance.sh` with optional compose-backed mock upstreams and uploads JSON artifacts.
 - GitLab CI: optional manual job `release-acceptance-manual` runs the same release script and saves JSON artifacts (`allow_failure: true`; `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` without Docker compose).
 - Docs: `product-design.md` / `product-design-one-pager.md` aligned with Kubernetes Endpoints-based discovery and next-step EndpointSlice work.
 - Mock profile: `api-gateway` mock instance now uses `127.0.0.1:9001` (same as `order-service`) so `doctor --probe-upstream` passes with a single local upstream; CI template note updated accordingly.
