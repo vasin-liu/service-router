@@ -15,7 +15,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
-- Kubernetes registry: `debug!` logs on resolve path (Core Endpoints vs EndpointSlice fallback, per-`service_id` counts) when `RUST_LOG=service_router::registry::k8s=debug`; `docs/operations-runbook.md` §6 notes how to enable.
+- Kubernetes registry: `debug!` logs on resolve path (Core Endpoints vs EndpointSlice fallback, per-`service_id` counts) when `RUST_LOG=service_router::registry::k8s=debug`; `trace!` logs each discovery GET URL (Service, Endpoints, EndpointSlice list); `docs/operations-runbook.md` §6 notes `debug` vs `trace`.
 - `KubernetesConfig` / `K8sAuth` rustdoc: remove outdated stub wording (registry is implemented).
 - CI: `.github/workflows/ci.yml` runs Docker Compose mock upstreams then `doctor --probe-upstream --json` after smoke `route-explain`, matching release acceptance networking gates for mock profile.
 - GitLab CI: `.gitlab-ci.yml` `rust-validate` adds Docker-in-Docker and the same compose + `doctor --probe-upstream` sequence (`after_script` tears down compose).

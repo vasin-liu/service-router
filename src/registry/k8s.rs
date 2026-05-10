@@ -3,7 +3,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::time::Duration;
-use tracing::debug;
+use tracing::{debug, trace};
 
 use crate::config::model::KubernetesConfig;
 use crate::error::RegistryError;
@@ -99,6 +99,7 @@ impl K8sRegistry {
     /// (numeric or port name), reducing spurious combinations when a Service exposes multiple ports.
     async fn fetch_service_tcp_filter(&self, namespace: &str, name: &str) -> Result<ServiceTcpFilter, RegistryError> {
         let url = self.service_url(namespace, name);
+        trace!(%url, "k8s: GET Service (TCP port filter)");
         let req = self.with_auth(self.http.get(url.clone()));
         let resp = req.send().await?;
 
@@ -132,6 +133,7 @@ impl K8sRegistry {
         tcp_filter: &ServiceTcpFilter,
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
         let url = self.endpoint_url(namespace, name);
+        trace!(%url, "k8s: GET Endpoints");
         let req = self.with_auth(self.http.get(url.clone()));
         let resp = req.send().await?;
 
@@ -141,6 +143,7 @@ impl K8sRegistry {
             return Err(RegistryError::AuthFailed);
         }
         if resp.status() == reqwest::StatusCode::NOT_FOUND {
+            trace!(%url, "k8s: Core Endpoints 404 (empty)");
             return Ok(vec![]);
         }
         if !resp.status().is_success() {
@@ -165,6 +168,7 @@ impl K8sRegistry {
         tcp_filter: &ServiceTcpFilter,
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
         let url = self.endpoint_slices_list_url(namespace, service_name);
+        trace!(%url, "k8s: GET EndpointSlice list");
         let req = self.with_auth(self.http.get(url.clone()));
         let resp = req.send().await?;
 
