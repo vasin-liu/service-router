@@ -4,8 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Documentation
+
+- README: Roadmap & product docs section linking `developer-roadmap` (§4.1 config UI), product design, and implementation status.
+
 ### Added
 
+- `check-config --strict` structured findings: `StrictFinding` (`code`, `message`, optional `details`) in `src/config/strict_check.rs`; generator script `tools/emit_strict_check.mjs`; schema doc `docs/check-config-strict-schema.md`.
 - Documentation: `docs/diagnostic-codes.md` (stable proxy metrics / doctor / route-explain codes) and `docs/operations-runbook.md` (readiness, rollback via hot-reload, triage checklist).
 - Mock registry simulation hooks: `error_services`, `health_behavior` (healthy/degraded/unhealthy).
 - Sample config `config/mock-scenarios-sample.yaml` for empty-list and error pathways.

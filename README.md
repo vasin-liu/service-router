@@ -64,6 +64,13 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - Nacos note: `server_addr` accepts both base host (`http://host:port`) and suffix form (`http://host:port/nacos`).
 - Kubernetes note: loads `Service` TCP `spec.ports[].targetPort` to narrow backend ports (skips UDP/SCTP for HTTP proxy), then resolves from Core `/api/v1/.../endpoints/{service}` first, then falls back to `/apis/discovery.k8s.io/v1/.../endpointslices?labelSelector=kubernetes.io/service-name%3D{service}` when Core returns empty (if the Service exists; otherwise no filter). Configure `kubeconfig_path` (+ optional `kubeconfig_context`) for external clusters; keep `insecure_skip_tls_verify: false` unless troubleshooting.
 
+## Roadmap & product docs
+
+- `docs/developer-roadmap-1-2y.md` — developer-focused 1–2 year roadmap; **§4.1** records long-term **config UI** (GUI/Web, local-first) without blocking the YAML + CLI path
+- `docs/product-design-one-pager.md` — short product summary and near-term vs **long-term** (config UI) bullets
+- `docs/product-design.md` — fuller design and improvement backlog
+- `docs/implementation-status.md` — milestone alignment (M1/M2) and what shipped
+
 ## JSON Diagnostics Docs
 
 - `docs/diagnostic-codes.md` — stable strings for metrics, doctor probes, route-explain, `/ready`
