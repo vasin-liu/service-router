@@ -3,6 +3,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::time::Duration;
+use tracing::debug;
 
 use crate::config::model::KubernetesConfig;
 use crate::error::RegistryError;
@@ -202,14 +203,36 @@ impl ServiceRegistry for K8sRegistry {
         service_id: &str,
     ) -> Result<Vec<ServiceInstance>, RegistryError> {
         let namespace = self.config.namespace.as_deref().unwrap_or("default");
+        debug!(
+            service_id = %service_id,
+            namespace = %namespace,
+            "k8s: resolving instances"
+        );
         let tcp_filter = self.fetch_service_tcp_filter(namespace, service_id).await?;
         let from_core = self
             .fetch_core_endpoints(namespace, service_id, &tcp_filter)
             .await?;
         if !from_core.is_empty() {
+            debug!(
+                service_id = %service_id,
+                namespace = %namespace,
+                count = from_core.len(),
+                source = "core_endpoints",
+                "k8s: upstream instances from Core Endpoints"
+            );
             return Ok(from_core);
         }
-        self.fetch_endpoint_slices(namespace, service_id, &tcp_filter).await
+        let from_slices = self
+            .fetch_endpoint_slices(namespace, service_id, &tcp_filter)
+            .await?;
+        debug!(
+            service_id = %service_id,
+            namespace = %namespace,
+            count = from_slices.len(),
+            source = "endpoint_slices",
+            "k8s: upstream instances from EndpointSlice (Core Endpoints had none)"
+        );
+        Ok(from_slices)
     }
 
     async fn health(&self) -> RegistryHealth {

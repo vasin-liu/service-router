@@ -66,6 +66,7 @@ Until team standards exist:
 
 - Point `service-router` at one namespace via the Kubernetes registry block (`namespace:` in YAML); validate discovery against **that** namespace only.
 - Confirm `doctor --json` reports Kubernetes registry **healthy** and that `route-explain` for a known `service_id` shows a match when the backing Service has endpoints.
+- **Discovery tracing**: enable debug logs for the Kubernetes registry resolver, e.g. RUST_LOG=service_router::registry::k8s=debug — logs include service_id, namespace, instance count, and whether backends came from **Core Endpoints** or **EndpointSlice** fallback.
 - If readiness flaps, inspect `registry_health` from **`GET /ready`** side-by-side with `kubectl get endpoints` / `endpointslices` for the same Service name — mismatches are usually RBAC, wrong cluster context, or wrong Service name in routes.
 
 Further product context: [`product-design.md`](./product-design.md), [`implementation-status.md`](./implementation-status.md).
