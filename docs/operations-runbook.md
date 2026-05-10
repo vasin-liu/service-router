@@ -14,9 +14,9 @@ Wire the orchestrator so **liveness** uses `/health` and **readiness** uses `/re
 ## 2. Metrics
 
 - `GET /metrics` — JSON snapshot (`route_hits`, `failure_reasons`). See [`metrics-json.md`](./metrics-json.md).
-- `GET /metrics/prometheus` — Prometheus text exposition.
+- `GET /metrics/prometheus` — Prometheus text exposition (`service_router_route_hits_total`, `service_router_failures_total`).
 
-Stable failure reason strings are listed in [`diagnostic-codes.md`](./diagnostic-codes.md).
+Stable failure reason strings are listed in [`diagnostic-codes.md`](./diagnostic-codes.md). For alert ideas tied to those counters, see [§8](#8-alerting-hooks-prometheus).
 
 If counters climb during an incident:
 
@@ -30,17 +30,19 @@ If counters climb during an incident:
 
 Rising `registry_all_failed`, `registry_auth_failed`, or `no_instances` usually precede user-visible errors.
 
-## 3. Config change and rollback
+## 3. Config change, rollback, and binary upgrade
 
 The server watches the config file’s directory and reloads on write (see `src/config/watcher.rs`). If reload fails, the **previous** config and resolver stay active.
 
-**Rollback without redeploying the binary:**
+**Rollback config without redeploying the binary:**
 
 1. Restore the known-good YAML on disk (same path as process startup).
 2. Ensure the write triggers the watcher (save / atomic replace).
 3. Confirm `/ready` returns **200** (or acceptable degraded state) and spot-check a representative route with `route-explain`.
 
 For a bad change already loaded: keep the last revision in version control or artifact storage next to the binary.
+
+**Binary upgrade (rolling deploy):** ship a new `service-router` artifact; keep the **previous binary** and **last-known-good config** tarball adjacent for fast rollback. After processes restart, run the [§7](#7-post-deployment-checklist) checklist. Config hot-reload does **not** replace a binary upgrade — both layers change independently.
 
 ## 4. Structured checks before escalation
 
@@ -67,3 +69,30 @@ Until team standards exist:
 - If readiness flaps, inspect `registry_health` from **`GET /ready`** side-by-side with `kubectl get endpoints` / `endpointslices` for the same Service name — mismatches are usually RBAC, wrong cluster context, or wrong Service name in routes.
 
 Further product context: [`product-design.md`](./product-design.md), [`implementation-status.md`](./implementation-status.md).
+
+## 7. Post-deployment checklist
+
+Run within minutes of a **rollout**, **binary upgrade**, or **config hot-reload**:
+
+1. **`GET /health`** → 200.
+2. **`GET /ready`** → 200 unless every registry is intentionally offline (then 503 is expected until at least one registry recovers).
+3. **CLI gates** (same `--config` as the running process): `check-config … --strict` exit 0; `doctor --json` has `status: "pass"`.
+4. **Traffic spot-check**: one `route-explain` for a critical rule id, or a single synthetic request through the load balancer.
+5. **Metrics baseline**: glance at `route_hits` and `failure_reasons` in `GET /metrics`; compare rates to pre-change only when investigating regressions (counters reset on process restart).
+
+## 8. Alerting hooks (Prometheus)
+
+`GET /metrics/prometheus` exposes `service_router_failures_total{reason="…"}` with the same **`reason`** strings as JSON `failure_reasons`. Useful starting points:
+
+| Symptom intent | What to watch | First response |
+|:---------------|:--------------|:---------------|
+| Routing misconfiguration | Rise in `no_matching_route` | Verify deployed route table; `route-explain` with real paths/methods. |
+| Empty discovery | Rise in `no_instances` or `registry_all_failed` | Registry / cluster registration; `doctor --probe-upstream --json`. |
+| Auth / tokens | `registry_auth_failed` | Refresh Nacos/Eureka/kube credentials in config or secrets store. |
+| Cannot reach instance hosts | `upstream_connection` | Network policy, upstream pods, target port; probe paths in [`diagnostic-codes.md`](./diagnostic-codes.md). |
+
+Example expression (tune thresholds for your environment): `sum(rate(service_router_failures_total{reason="no_instances"}[5m])) > 0`.
+
+---
+
+For a single-page map between metrics, `doctor`, and `route-explain` codes, use [`diagnostic-codes.md`](./diagnostic-codes.md).

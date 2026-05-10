@@ -111,7 +111,7 @@
    继续收敛 `doctor` / `route-explain` 的 failure code 与 remediation 映射，降低团队排障成本。（`doctor --probe-upstream` 的 `upstream_probe` 在失败时输出 `failure_code`，与 `GET /metrics` 的 `no_instances` / `registry_*` 等键对齐；`docs/diagnostic-codes.md` 增补 triage 交叉表。）
 
 4. 补充运维视角文档  
-   增加部署后巡检、常见告警定位、指标解释与升级回滚建议。
+   增加部署后巡检、常见告警定位、指标解释与升级回滚建议。（`docs/operations-runbook.md`：§7 发布后巡检、§8 Prometheus 告警与 `failure_reasons` 对照、§3 二进制升级与热加载说明；文件编码统一为 UTF-8。）
 
 ## 最近进展（M2）
 

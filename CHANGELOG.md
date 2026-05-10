@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Documentation
+
+- `docs/operations-runbook.md`: post-deployment checklist (§7), Prometheus alerting hooks vs `failure_reasons` (§8), binary upgrade notes under config rollback (§3); UTF-8 encoding normalized.
+
 ### Changed
 
 - `doctor --probe-upstream --json` / `upstream_probe` rows: when a probe or resolution fails, include stable **`failure_code`** (`TCP_UNREACHABLE`, `ENDPOINT_PARSE_ERROR`, `no_instances`, or `registry_*` from `metrics::failure_code_for_registry`) so automation can align with `GET /metrics` `failure_reasons`.
