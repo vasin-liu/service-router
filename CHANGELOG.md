@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 ### Documentation
 
 - README: Roadmap & product docs section linking `developer-roadmap` (§4.1 config UI), product design, and implementation status.
+- Roadmap: `docs/developer-roadmap-1-2y.md` §4.2 — keep explicit proxy-port entry (model A); treat transparent/local port relay into the proxy (model B) as long-term optional. Product one-pager, `product-design.md`, `implementation-status` cross-reference.
 
 ### Added
 

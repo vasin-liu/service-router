@@ -66,8 +66,8 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 
 ## Roadmap & product docs
 
-- `docs/developer-roadmap-1-2y.md` — developer-focused 1–2 year roadmap; **§4.1** records long-term **config UI** (GUI/Web, local-first) without blocking the YAML + CLI path
-- `docs/product-design-one-pager.md` — short product summary and near-term vs **long-term** (config UI) bullets
+- `docs/developer-roadmap-1-2y.md` — developer-focused 1–2 year roadmap; **§4.1** long-term **config UI**; **§4.2** optional **traffic entry B** (port relay / OS forward into proxy) while keeping **explicit proxy port (A)** as default
+- `docs/product-design-one-pager.md` — short product summary and near-term vs **long-term** bullets (config UI + optional entry B)
 - `docs/product-design.md` — fuller design and improvement backlog
 - `docs/implementation-status.md` — milestone alignment (M1/M2) and what shipped
 
