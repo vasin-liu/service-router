@@ -33,13 +33,19 @@ bash docs/ci-copy-paste.sh
 
 ## GitHub Actions (this repo)
 
-`.github/workflows/ci.yml` mirrors the table above:
+`.github/workflows/ci.yml` mirrors the table above and adds a **compose-backed upstream probe**:
 
 1. `cargo check`
 2. `cargo test -- --nocapture`
 3. `check-config … --json --strict`
 4. `doctor --config … --json`
 5. `route-explain … --json` (smoke; non-zero exit on no match)
+6. `docker compose -f .github/compose/doctor-probe.compose.yml up -d`
+7. Wait until TCP `127.0.0.1:9000` and `:9001` accept connections (bash `/dev/tcp` loop)
+8. `doctor --config … --probe-upstream --json` (validates `upstream_probe` / `failure_code` paths against mock TCP echoes)
+9. `docker compose … down -v` (`always()`)
+
+Requires Docker on the runner (default `ubuntu-latest` provides it). The manual **`doctor-upstream-probe`** workflow uses the same compose file for ad-hoc runs.
 
 ### Drop-in excerpt for another repository
 

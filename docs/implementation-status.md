@@ -115,6 +115,7 @@
 
 ## 最近进展（M2）
 
+- **CI**：主线 `.github/workflows/ci.yml` 在 `route-explain` 之后启动 `doctor-probe.compose.yml`，执行 `doctor --probe-upstream --json`，覆盖 `upstream_probe` / `failure_code` 回归（需 Docker；与手动 `doctor-upstream-probe` 工作流同源）。
 - **`/ready`**：已聚合配置的各注册中心 `health()`；与 `doctor --json` 使用相同的 `registry_health` 行结构；仅当**全部**注册中心为 `unhealthy` 时返回 HTTP **503**（`status: not_ready`）。无注册中心配置时行为不变（仍 200，直连路由可用）。
 - **运维与诊断索引**：新增 `docs/diagnostic-codes.md`（指标失败码、doctor 探测码、route-explain 建议码、ready 语义）与 `docs/operations-runbook.md`（探针分工、指标、热更新回滚、通用排障与发布矩阵入口）；README 已挂链。
 - **`check-config --strict`**：`strict_findings` 已结构化（稳定 `code` + 可选 `details`），逻辑在 `src/config/strict_check.rs`；契约见 `docs/check-config-strict-schema.md`。
