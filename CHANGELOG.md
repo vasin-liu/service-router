@@ -8,9 +8,11 @@ All notable changes to this project are documented in this file.
 
 - `docs/operations-runbook.md`: post-deployment checklist (§7), Prometheus alerting hooks vs `failure_reasons` (§8), binary upgrade notes under config rollback (§3); UTF-8 encoding normalized.
 - `docs/ci-template.md`: document compose-backed `doctor --probe-upstream` steps in `ci.yml`.
+- `docs/implementation-status.md`: refresh “下一阶段建议” after M2 doc/CI closure; point remaining work to env regression, optional K8s scale-up, and decoupled product milestones.
 
 ### Changed
 
+- `KubernetesConfig` / `K8sAuth` rustdoc: remove outdated stub wording (registry is implemented).
 - CI: `.github/workflows/ci.yml` runs Docker Compose mock upstreams then `doctor --probe-upstream --json` after smoke `route-explain`, matching release acceptance networking gates for mock profile.
 - GitLab CI: `.gitlab-ci.yml` `rust-validate` adds Docker-in-Docker and the same compose + `doctor --probe-upstream` sequence (`after_script` tears down compose).
 - `doctor --probe-upstream --json` / `upstream_probe` rows: when a probe or resolution fails, include stable **`failure_code`** (`TCP_UNREACHABLE`, `ENDPOINT_PARSE_ERROR`, `no_instances`, or `registry_*` from `metrics::failure_code_for_registry`) so automation can align with `GET /metrics` `failure_reasons`.

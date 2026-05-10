@@ -137,7 +137,7 @@ pub struct BasicAuth {
     pub password: String,
 }
 
-/// Kubernetes service discovery (stub — reserved for future implementation).
+/// Kubernetes registry: Core `Endpoints`, fallback `EndpointSlice`, optional kubeconfig/TLS/auth.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct KubernetesConfig {
@@ -169,7 +169,7 @@ fn default_k8s_api_server() -> String {
     "https://kubernetes.default.svc".to_string()
 }
 
-/// K8s auth stub.
+/// Optional bearer token authentication for the Kubernetes API (`token` or `token_file`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct K8sAuth {

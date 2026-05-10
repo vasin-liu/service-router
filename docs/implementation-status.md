@@ -101,17 +101,16 @@
 
 ## 下一阶段建议（按优先级）
 
-1. 增强 Kubernetes 发现能力与过滤策略  
-   在 EndpointSlice 回退基础上补充与 Service 端口的对齐、就绪/标签细粒度筛选，提升大规模集群稳定性。（已实现：`endpoint_slice_label_selector` 在 EndpointSlice 列表调用中与 `kubernetes.io/service-name` AND 组合；Core Endpoints 路径不变。）
+**M2 主线（文档/门禁/诊断）上述 §1–§4 已闭环**：EndpointSlice 可选 `endpoint_slice_label_selector`、`release-acceptance.yml` + 矩阵文档、`upstream_probe` / `failure_code` 与 metrics 对齐、`operations-runbook` 巡检与告警章节、GitHub/GitLab CI 含 compose + `doctor --probe-upstream`。
 
-2. 完善发布验收与回归矩阵  
-   统一 Nacos/Eureka/K8s/Mock 四类场景的 smoke/regression 清单，形成可复用发布门禁模板。（GitHub Actions：手动运行 `.github/workflows/release-acceptance.yml` 执行 `docs/release-acceptance.sh` 并上传 `release-acceptance-json`；清单见 `docs/release-acceptance-matrix.md`。）
+1. **环境与回归沉淀（M2 完成定义）**  
+   在 **Mock / Nacos / Eureka / Kubernetes** 真实或准生产配置下各跑一轮 `release-acceptance-matrix.md` 门禁，归档 JSON 产物与结论（团队流程项）。
 
-3. 强化诊断输出一致性  
-   继续收敛 `doctor` / `route-explain` 的 failure code 与 remediation 映射，降低团队排障成本。（`doctor --probe-upstream` 的 `upstream_probe` 在失败时输出 `failure_code`，与 `GET /metrics` 的 `no_instances` / `registry_*` 等键对齐；`docs/diagnostic-codes.md` 增补 triage 交叉表。）
+2. **Kubernetes 规模化（按需迭代）**  
+   在现有 Service 端口过滤、EndpointSlice `ready`/`serving`、列表标签筛选基础上，按集群需要扩展（观察性、多集群上下文等）；保持可配置、可单测。
 
-4. 补充运维视角文档  
-   增加部署后巡检、常见告警定位、指标解释与升级回滚建议。（`docs/operations-runbook.md`：§7 发布后巡检、§8 Prometheus 告警与 `failure_reasons` 对照、§3 二进制升级与热加载说明；文件编码统一为 UTF-8。）
+3. **转发与弹性（独立里程碑）**  
+   负载均衡策略、WebSocket 完整性、熔断重试等见 `docs/product-design-one-pager.md` / `docs/developer-roadmap-1-2y.md`，单独评审后排期，不捆绑当前 M2 门禁。
 
 ## 最近进展（M2）
 
