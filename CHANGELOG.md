@@ -9,6 +9,8 @@ All notable changes to this project are documented in this file.
 - `docs/operations-runbook.md`: post-deployment checklist (§7), Prometheus alerting hooks vs `failure_reasons` (§8), binary upgrade notes under config rollback (§3); UTF-8 encoding normalized.
 - `docs/ci-template.md`: document compose-backed `doctor --probe-upstream` steps in `ci.yml`.
 - `docs/implementation-status.md`: refresh “下一阶段建议” after M2 doc/CI closure; point remaining work to env regression, optional K8s scale-up, and decoupled product milestones.
+- `docs/release-acceptance-matrix.md`: §9 regression archive summary table (M2 / audit trail) and cross-link from implementation-status.
+- README: index note for release-acceptance §9 archive template.
 
 ### Changed
 

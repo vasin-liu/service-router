@@ -137,3 +137,23 @@ Retention recommendation: keep at least last 10 release candidates.
 - `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL` (`0` by default; set `1` to keep collecting artifacts when `doctor --probe-upstream` fails)
 
 `docs/release-acceptance.ps1` reads the same environment variables.
+
+## 9) Regression archive summary (for M2 / audit trail)
+
+Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or `docs/` archive folder alongside the JSON files from §7.
+
+| Field | Example |
+|:------|:--------|
+| **Date / TZ** | `2026-05-10 Europe/Oslo` |
+| **Git** | commit SHA / tag building the binary under test |
+| **Router binary** | `service-router 0.1.0` or build ID |
+| **Profile** | `Mock` / `Nacos` / `Eureka` / `Kubernetes` |
+| **Config** | path or name only (no secrets); note env placeholders resolved |
+| **Global gates** | §1: `cargo check` / `cargo test` — pass / fail |
+| **CLI gates** | §3: `check-config --strict`, `doctor`, `doctor --probe-upstream` — pass / fail |
+| **Route smoke** | §4: `route-explain` path/method — matched yes/no |
+| **Artifacts dir** | e.g. `artifacts/release-acceptance/` or CI artifact name |
+| **Deviations** | e.g. `ALLOW_PROBE_FAIL=1`, flaky registry, known issue link |
+| **Sign-off** | name or team |
+
+**Minimum for M2 “四类回归”闭链:** at least one archived row for **Mock** (automation-friendly) and, when available, one row per additional registry type you deploy against. Linking the **release-acceptance** workflow artifact or the local `release-acceptance.sh` output directory satisfies the “JSON 产物” part of the release gate.
