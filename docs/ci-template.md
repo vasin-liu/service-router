@@ -72,7 +72,9 @@ Keep **paths** aligned with where you copied `mock-config.yaml` (or your profile
 
 ## GitLab CI
 
-The included **`.gitlab-ci.yml`** mirrors the baseline in a `rust:1-bookworm` job: compile, test, `check-config --strict`, `doctor`, `route-explain`. Copy that file into a consumer repo or paste the `script:` block:
+The included **`.gitlab-ci.yml`** mirrors **GitHub `ci.yml`**: same Rust gates, then **`docker:24-dind`**, `docker compose -f .github/compose/doctor-probe.compose.yml`, wait on ports **9000/9001**, and **`doctor --probe-upstream --json`**. The job installs Docker CLI + Compose plugin via `apt` and sets `DOCKER_HOST=tcp://docker:2375` with empty `DOCKER_TLS_CERTDIR` (matches GitLab’s common non-TLS DinD recipe). **Requires a runner that allows the DinD service** (privileged).
+
+Copy that file into a consumer repo or paste the `script:` block:
 
 ```yaml
 script:
@@ -81,6 +83,7 @@ script:
   - cargo run -- check-config config/mock-config.yaml --json --strict
   - cargo run -- doctor --config config/mock-config.yaml --json
   - cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
+  # plus compose + doctor --probe-upstream — see `.gitlab-ci.yml` in this repo
 ```
 
 Optional manual job **`release-acceptance-manual`** (stage `release`) runs **`docs/release-acceptance.sh`** and uploads JSON from `artifacts/release-acceptance/`. It sets `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` so `doctor --probe-upstream` does not fail the job when no mock TCP upstream is listening; for compose-backed probes (like GitHub’s `release-acceptance` workflow), use a runner with [Docker-in-Docker](https://docs.gitlab.com/ci/docker/using_docker_build/) and mirror `.github/workflows/release-acceptance.yml`.

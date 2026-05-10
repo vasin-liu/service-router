@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - CI: `.github/workflows/ci.yml` runs Docker Compose mock upstreams then `doctor --probe-upstream --json` after smoke `route-explain`, matching release acceptance networking gates for mock profile.
+- GitLab CI: `.gitlab-ci.yml` `rust-validate` adds Docker-in-Docker and the same compose + `doctor --probe-upstream` sequence (`after_script` tears down compose).
 - `doctor --probe-upstream --json` / `upstream_probe` rows: when a probe or resolution fails, include stable **`failure_code`** (`TCP_UNREACHABLE`, `ENDPOINT_PARSE_ERROR`, `no_instances`, or `registry_*` from `metrics::failure_code_for_registry`) so automation can align with `GET /metrics` `failure_reasons`.
 - `docs/diagnostic-codes.md`: triage cross-reference table and `upstream_probe` code list; file encoding normalized to UTF-8 for reliable viewing.
 - `docs/doctor-json-schema.md`: document optional `failure_code` on `upstream_probe` items.

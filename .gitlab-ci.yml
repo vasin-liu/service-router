@@ -1,14 +1,24 @@
 # Copy-paste baseline for GitLab CI. Adjust image version or cache as needed for your runners.
+# The main check job uses Docker-in-Docker (same compose stack as `.github/workflows/ci.yml`).
+# Requires a runner that allows the `docker:24-dind` service (privileged executor).
 stages:
   - check
   - release
 
 variables:
   CARGO_TERM_COLOR: never
+  DEBIAN_FRONTEND: noninteractive
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
 
 rust-validate:
   stage: check
   image: rust:1-bookworm
+  services:
+    - docker:24-dind
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends docker.io docker-compose-plugin ca-certificates
+    - docker info
   script:
     - rustc --version
     - cargo --version
@@ -18,6 +28,24 @@ rust-validate:
     - cargo run -- check-config config/mock-config.yaml --json --strict
     - cargo run -- doctor --config config/mock-config.yaml --json
     - cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
+    # Compose-backed upstream probe (parity with GitHub ci.yml)
+    - docker compose -f .github/compose/doctor-probe.compose.yml up -d
+    - |
+      for p in 9000 9001; do
+        for i in $(seq 1 20); do
+          if (echo > /dev/tcp/127.0.0.1/$p) >/dev/null 2>&1; then
+            break
+          fi
+          sleep 1
+          if [ "$i" -eq 20 ]; then
+            echo "port $p did not become reachable"
+            exit 1
+          fi
+        done
+      done
+    - cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json
+  after_script:
+    - docker compose -f .github/compose/doctor-probe.compose.yml down -v || true
 
 # Optional: full gates + JSON artifacts (same script as GitHub release-acceptance workflow).
 # Without compose, TCP probes may fail; ALLOW_PROBE_FAIL keeps the job usable for artifact collection.
