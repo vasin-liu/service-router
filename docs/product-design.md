@@ -24,7 +24,7 @@
   - 支持本地调试与线上发现共存（直连 + 注册发现）
   - 提供可热更新的路由能力
 - 当前边界
-  - 未实现完整负载均衡策略（当前取实例列表第一个）
+  - 负载均衡：`server.instance_selection` 可为 `first`（默认）或 `round_robin`；尚未支持权重、地域、最小连接等完整策略
   - WebSocket 为“可升级 + 上游连接”骨架，未完成双向完整透传
   - Kubernetes：读取 `Service` TCP `targetPort`，再解析 Core `Endpoints`；空则 EndpointSlice（`kubernetes.io/service-name`）；多端口场景的 Service 语义对齐可作后续增强
   - `/ready` 调用各注册中心 health 聚合；全部 `unhealthy` 时返回 503，JSON 含 `registry_health`（与 `doctor --json` 同形）

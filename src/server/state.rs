@@ -1,7 +1,9 @@
 use std::sync::Arc;
+use std::sync::atomic::AtomicUsize;
 use std::time::Duration;
 
 use arc_swap::ArcSwap;
+use dashmap::DashMap;
 use reqwest::Client;
 
 use crate::config::model::AppConfig;
@@ -22,6 +24,8 @@ pub struct AppState {
     pub http_client: Client,
     /// In-memory request/failure counters (B08).
     pub metrics: Arc<ProxyMetrics>,
+    /// Per-`service_id` counter for [`crate::config::model::InstanceSelection::RoundRobin`].
+    pub instance_rr_counters: Arc<DashMap<String, AtomicUsize>>,
 }
 
 impl AppState {
@@ -43,6 +47,7 @@ impl AppState {
             config,
             http_client,
             metrics,
+            instance_rr_counters: Arc::new(DashMap::new()),
         }
     }
 }

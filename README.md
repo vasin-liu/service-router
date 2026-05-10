@@ -56,6 +56,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 
 ## Config Notes
 
+- **`server.instance_selection`**: `first` (default) uses the first resolved instance for `service_id`; `round_robin` rotates per service id (in-memory counter; hot-reload can change mode).
 - Default config path: `config/config.yaml`
 - Mock development config: `config/mock-config.yaml`
 - Mock behaviors sample: `config/mock-scenarios-sample.yaml` (patterns for empty/error/health overrides)

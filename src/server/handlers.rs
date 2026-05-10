@@ -4,12 +4,15 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use dashmap::DashMap;
 use serde_json::json;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tracing::{debug, info};
 
+use crate::config::model::InstanceSelection;
 use crate::error::ProxyError;
 use crate::proxy::{http_proxy, ws_proxy};
-use crate::registry::{any_registry_operational, registry_health_json_row};
+use crate::registry::{any_registry_operational, registry_health_json_row, ServiceInstance};
 use crate::server::metrics::{
     failure_code_for_proxy, failure_code_for_registry, render_prometheus,
 };
@@ -62,10 +65,14 @@ pub async fn proxy_handler(
             state.metrics.record_failure("no_instances");
             return Err(ProxyError::NoInstances(svc_id.clone()));
         }
-        instances
-            .first()
-            .expect("non-empty instances")
-            .base_url()
+        let selection = state.config.load().server.instance_selection;
+        select_service_instance(
+            &instances,
+            svc_id.as_str(),
+            selection,
+            &state.instance_rr_counters,
+        )
+        .base_url()
     } else {
         state.metrics.record_failure("no_instances");
         return Err(ProxyError::NoInstances(path.clone()));
@@ -159,4 +166,101 @@ pub async fn metrics_prometheus_handler(State(state): State<AppState>) -> impl I
     );
     let body = render_prometheus(&state.metrics.snapshot());
     (StatusCode::OK, headers, body)
+}
+
+fn select_service_instance<'a>(
+    instances: &'a [ServiceInstance],
+    svc_id: &str,
+    selection: InstanceSelection,
+    rr: &DashMap<String, AtomicUsize>,
+) -> &'a ServiceInstance {
+    debug_assert!(!instances.is_empty());
+    match selection {
+        InstanceSelection::First => instances.first().expect("non-empty instances"),
+        InstanceSelection::RoundRobin => {
+            let idx = rr
+                .entry(svc_id.to_string())
+                .or_insert_with(|| AtomicUsize::new(0))
+                .fetch_add(1, Ordering::Relaxed);
+            &instances[idx % instances.len()]
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn round_robin_rotates_per_service_id() {
+        let instances = vec![
+            ServiceInstance {
+                host: "10.0.0.1".into(),
+                port: 1,
+                metadata: HashMap::new(),
+            },
+            ServiceInstance {
+                host: "10.0.0.2".into(),
+                port: 2,
+                metadata: HashMap::new(),
+            },
+        ];
+        let m = DashMap::new();
+        assert_eq!(
+            select_service_instance(
+                &instances,
+                "svc",
+                InstanceSelection::RoundRobin,
+                &m
+            )
+            .host,
+            "10.0.0.1"
+        );
+        assert_eq!(
+            select_service_instance(
+                &instances,
+                "svc",
+                InstanceSelection::RoundRobin,
+                &m
+            )
+            .host,
+            "10.0.0.2"
+        );
+        assert_eq!(
+            select_service_instance(
+                &instances,
+                "svc",
+                InstanceSelection::RoundRobin,
+                &m
+            )
+            .host,
+            "10.0.0.1"
+        );
+    }
+
+    #[test]
+    fn first_is_stable() {
+        let instances = vec![
+            ServiceInstance {
+                host: "a".into(),
+                port: 1,
+                metadata: HashMap::new(),
+            },
+            ServiceInstance {
+                host: "b".into(),
+                port: 2,
+                metadata: HashMap::new(),
+            },
+        ];
+        let m = DashMap::new();
+        assert_eq!(
+            select_service_instance(&instances, "svc", InstanceSelection::First, &m).host,
+            "a"
+        );
+        assert_eq!(
+            select_service_instance(&instances, "svc", InstanceSelection::First, &m).host,
+            "a"
+        );
+    }
 }

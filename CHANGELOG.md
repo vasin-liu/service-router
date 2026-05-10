@@ -32,6 +32,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **`server.instance_selection`**: `first` (default, prior behaviour) or `round_robin` when a `service_id` resolves to multiple instances; per-service atomic counter in `AppState`.
 - GitHub Actions: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`) runs `docs/release-acceptance.sh` with optional compose-backed mock upstreams, uploads JSON artifacts (`release-acceptance-json`), optional `skip_compose` (`yes` skips Docker and relaxes probe failure); aligns docs/README references that previously described a missing workflow.
 - Kubernetes config: optional `endpoint_slice_label_selector` — comma-separated label requirements AND-ed with `kubernetes.io/service-name=<service_id>` when listing EndpointSlices (Core `Endpoints` discovery unchanged).
 - `check-config --strict` structured findings: `StrictFinding` (`code`, `message`, optional `details`) in `src/config/strict_check.rs`; generator script `tools/emit_strict_check.mjs`; schema doc `docs/check-config-strict-schema.md`.

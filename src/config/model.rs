@@ -33,6 +33,9 @@ pub struct ServerConfig {
     /// Timeout in seconds for upstream connections.
     #[serde(default = "default_upstream_timeout")]
     pub upstream_timeout_secs: u64,
+    /// When a route uses `service_id` and the registry returns multiple instances.
+    #[serde(default)]
+    pub instance_selection: InstanceSelection,
 }
 
 impl Default for ServerConfig {
@@ -41,6 +44,7 @@ impl Default for ServerConfig {
             host: default_host(),
             port: default_port(),
             upstream_timeout_secs: default_upstream_timeout(),
+            instance_selection: InstanceSelection::default(),
         }
     }
 }
@@ -48,6 +52,17 @@ impl Default for ServerConfig {
 fn default_host() -> String { "0.0.0.0".to_string() }
 fn default_port() -> u16 { 8080 }
 fn default_upstream_timeout() -> u64 { 30 }
+
+/// How to choose one upstream when a `service_id` resolves to multiple instances.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum InstanceSelection {
+    /// Always use the first instance in resolver order (previous behaviour).
+    #[default]
+    First,
+    /// Rotate among instances per `service_id` using an in-memory counter.
+    RoundRobin,
+}
 
 // ---------------------------------------------------------------------------
 // Registry configuration
