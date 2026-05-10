@@ -8,6 +8,19 @@ use crate::config::model::KubernetesConfig;
 use crate::error::RegistryError;
 use crate::registry::{RegistryHealth, RegistryKind, ServiceInstance, ServiceRegistry};
 
+/// EndpointSlice list `labelSelector`: mandatory service-name plus optional AND requirements.
+fn build_endpoint_slice_label_selector(service_name: &str, extra: Option<&str>) -> String {
+    let mut s = format!("kubernetes.io/service-name={}", service_name);
+    if let Some(x) = extra {
+        let t = x.trim();
+        if !t.is_empty() {
+            s.push(',');
+            s.push_str(t);
+        }
+    }
+    s
+}
+
 pub struct K8sRegistry {
     config: KubernetesConfig,
     http: Client,
@@ -61,7 +74,7 @@ impl K8sRegistry {
             self.config.api_server_url.trim_end_matches('/'),
             namespace
         );
-        let selector = format!("kubernetes.io/service-name={}", service_name);
+        let selector = build_endpoint_slice_label_selector(service_name, self.config.endpoint_slice_label_selector.as_deref());
         let query = url::form_urlencoded::Serializer::new(String::new())
             .append_pair("labelSelector", &selector)
             .finish();
@@ -868,5 +881,32 @@ mod tests {
         let instances = endpoint_slices_to_instances(list, &filter);
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].port, 8443);
+    }
+
+    #[test]
+    fn build_endpoint_slice_label_selector_service_only() {
+        assert_eq!(
+            build_endpoint_slice_label_selector("my-svc", None),
+            "kubernetes.io/service-name=my-svc"
+        );
+    }
+
+    #[test]
+    fn build_endpoint_slice_label_selector_appends_extra() {
+        assert_eq!(
+            build_endpoint_slice_label_selector(
+                "my-svc",
+                Some("topology.kubernetes.io/zone=us-east-1a"),
+            ),
+            "kubernetes.io/service-name=my-svc,topology.kubernetes.io/zone=us-east-1a"
+        );
+    }
+
+    #[test]
+    fn build_endpoint_slice_label_selector_trims_whitespace_extra() {
+        assert_eq!(
+            build_endpoint_slice_label_selector("x", Some("  ")),
+            "kubernetes.io/service-name=x"
+        );
     }
 }

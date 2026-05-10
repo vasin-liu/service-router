@@ -64,7 +64,7 @@
 - 已实现：
   - Nacos：支持鉴权、token 获取与定时刷新、401/403 重试
   - Eureka：支持 Basic Auth，服务名转大写查询
-  - Kubernetes：Core `GET .../endpoints/{name}`；若为空则 `GET .../endpointslices?labelSelector=kubernetes.io/service-name%3D{name}`；支持 `kubeconfig_path`/`kubeconfig_context`、`auth.token`/`token_file`、`insecure_skip_tls_verify`
+  - Kubernetes：Core `GET .../endpoints/{name}`；若为空则 `GET .../endpointslices?labelSelector=...`（含 `kubernetes.io/service-name={name}`，可选 `endpoint_slice_label_selector` AND 追加）；支持 `kubeconfig_path`/`kubeconfig_context`、`auth.token`/`token_file`、`insecure_skip_tls_verify`
 - 后续增强：
   - Kubernetes：与 Service 声明端口的精确匹配、更细的就绪/标签过滤
 

@@ -102,7 +102,7 @@
 ## 下一阶段建议（按优先级）
 
 1. 增强 Kubernetes 发现能力与过滤策略  
-   在 EndpointSlice 回退基础上补充与 Service 端口的对齐、就绪/标签细粒度筛选，提升大规模集群稳定性。
+   在 EndpointSlice 回退基础上补充与 Service 端口的对齐、就绪/标签细粒度筛选，提升大规模集群稳定性。（已实现：`endpoint_slice_label_selector` 在 EndpointSlice 列表调用中与 `kubernetes.io/service-name` AND 组合；Core Endpoints 路径不变。）
 
 2. 完善发布验收与回归矩阵  
    统一 Nacos/Eureka/K8s/Mock 四类场景的 smoke/regression 清单，形成可复用发布门禁模板。

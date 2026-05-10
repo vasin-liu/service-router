@@ -8,7 +8,8 @@ All notable changes to this project are documented in this file.
 
 - Kubernetes EndpointSlice parsing: omit backends with `conditions.serving: false` (in addition to `ready: false`); aligns with discovery.k8s.io/v1 readiness for new connections.
 - Doctor schema doc: EndpointSlice row filter notes `serving` alongside `ready`.
-- Operations runbook: short table mapping `failure_reasons` spikes to checks.
+- Operations runbook: short table mapping `failure_reasons` spikes to checks; file normalized to UTF-8.
+- README / product one-pager: Kubernetes EndpointSlice `serving: false` omission documented.
 
 ### Documentation
 
@@ -17,6 +18,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Kubernetes config: optional `endpoint_slice_label_selector` — comma-separated label requirements AND-ed with `kubernetes.io/service-name=<service_id>` when listing EndpointSlices (Core `Endpoints` discovery unchanged).
 - `check-config --strict` structured findings: `StrictFinding` (`code`, `message`, optional `details`) in `src/config/strict_check.rs`; generator script `tools/emit_strict_check.mjs`; schema doc `docs/check-config-strict-schema.md`.
 - Documentation: `docs/diagnostic-codes.md` (stable proxy metrics / doctor / route-explain codes) and `docs/operations-runbook.md` (readiness, rollback via hot-reload, triage checklist).
 - Mock registry simulation hooks: `error_services`, `health_behavior` (healthy/degraded/unhealthy).

@@ -39,7 +39,7 @@
 - 未提供完整负载均衡策略（当前优先首实例）
 - WebSocket 尚未实现完整双向帧透传
 - `/ready` 聚合各注册中心的 `health()` 结果；仅当全部报 `unhealthy` 时返回 503
-- Kubernetes：`Service.spec.ports` 约束后端 TCP 端口，再读 `Endpoints` / `EndpointSlice`；Slice 跳过 `ready`/`serving` 为 false 的端点；标签等高阶筛选仍可增强
+- Kubernetes：`Service.spec.ports` 约束后端 TCP 端口，再读 `Endpoints` / `EndpointSlice`；Slice 跳过 `ready`/`serving` 为 false 的端点；EndpointSlice 列表支持可选 `endpoint_slice_label_selector` 与 `kubernetes.io/service-name` AND 组合
 
 ## 下一步（建议）
 

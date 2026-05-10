@@ -51,7 +51,7 @@ Unreachable or parse failure:
 When the configured registry for a route is **Kubernetes**, resolving `service_id` uses the same logic as proxy discovery:
 
 1. Load `Service` TCP targets from `spec.ports` (skips `UDP` / `SCTP` for HTTP proxy use).
-2. Query Core `Endpoints`, then `EndpointSlice` if no instances are produced.
+2. Query Core `Endpoints`, then `EndpointSlice` if no instances are produced. The EndpointSlice API list uses `labelSelector=kubernetes.io/service-name=<service_id>` plus any optional `endpoint_slice_label_selector` from config (comma-separated `key=value`, AND-ed with the service-name requirement).
 3. Filter backend port rows to those targets (numeric `targetPort` or named port entry match). For EndpointSlice endpoints, omit rows whose conditions show `ready: false` or `serving: false` (`serving` omitted or unknown stays eligible, same as `ready`).
 
 `resolved_instances` is the count of distinct `(host, port)` pairs after that filtering. Each pair is TCP-probed for `reachable` when `--probe-upstream` is set.

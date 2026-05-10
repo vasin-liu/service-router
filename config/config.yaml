@@ -58,6 +58,8 @@ registries:
     #     kubeconfig_path: "/path/to/kubeconfig.yaml"
     #     kubeconfig_context: "kubernetes-admin@cluster"
     #     insecure_skip_tls_verify: false
+    #     # Optional: AND with kubernetes.io/service-name on EndpointSlice list only (Core Endpoints unchanged):
+    #     # endpoint_slice_label_selector: "topology.kubernetes.io/zone=us-east-1a"
 
 # -------------------------------------------------------------------
 # Routing rules — evaluated in order; first match wins

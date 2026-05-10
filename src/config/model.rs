@@ -157,6 +157,11 @@ pub struct KubernetesConfig {
     /// If true, disable TLS certificate validation for Kubernetes API calls.
     #[serde(default)]
     pub insecure_skip_tls_verify: bool,
+    /// Comma-separated `key=value` label requirements AND-ed with
+    /// `kubernetes.io/service-name=<service_id>` when listing **EndpointSlices** only.
+    /// Core `Endpoints` discovery is unchanged. Example: `topology.kubernetes.io/zone=us-east-1a`.
+    #[serde(default)]
+    pub endpoint_slice_label_selector: Option<String>,
     pub auth: Option<K8sAuth>,
 }
 
