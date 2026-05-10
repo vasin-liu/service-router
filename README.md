@@ -73,6 +73,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/product-design-one-pager.md` — short product summary and near-term vs **long-term** bullets (config UI + optional entry B)
 - `docs/product-design.md` — fuller design and improvement backlog
 - `docs/implementation-status.md` — milestone alignment (M1/M2) and what shipped
+- `docs/m2-release-readiness.md` — M2 completion criteria vs repo evidence; **`bash scripts/verify-m2-baseline.sh`** or **`powershell -File scripts/verify-m2-baseline.ps1`** for Mock baseline (optional **`M2_WITH_DOCKER_PROBE`** / **`$env:M2_WITH_DOCKER_PROBE='1'`** to mirror CI compose probe)
 
 ## JSON Diagnostics Docs
 

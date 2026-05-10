@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file.
 
 ### Documentation
 
+- `docs/m2-release-readiness.md`: maps M2 completion criteria to repo artifacts vs organisation-owned regression; links §**9** archive and baseline script.
+- `implementation-status.md`: **「M2 仓库侧就绪」** table; current-status line distinguishes repo-ready vs full M2 sign-off (three external profiles).
+- `scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1`: local parity with `ci.yml` mock gates; optional Docker probe env (`M2_WITH_DOCKER_PROBE`) for compose + `doctor --probe-upstream`.
+- README: index entry for M2 readiness doc and baseline script.
 - Consul deferred: noted in `developer-roadmap-1-2y.md` §4.1, `implementation-status.md` (远期注册中心), `product-design-one-pager.md`, `release-acceptance-matrix.md` (out of scope), `README.md`.
 - `docs/operations-runbook.md`: post-deployment checklist (§7), Prometheus alerting hooks vs `failure_reasons` (§8), binary upgrade notes under config rollback (§3); UTF-8 encoding normalized.
 - `docs/ci-template.md`: document compose-backed `doctor --probe-upstream` steps in `ci.yml`.

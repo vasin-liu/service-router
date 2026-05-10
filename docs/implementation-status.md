@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-- 状态：M1 核心目标已完成，可进入稳定推广阶段
+- 状态：M1 核心目标已完成；**M2 仓库侧工程门禁与文档索引已齐**（见下方「M2 仓库侧就绪」与 **`docs/m2-release-readiness.md`**）
 - 已完成里程碑：M1（开发者最小可用工具链）
-- 当前阶段目标：M2（稳定性增强与规模化接入）
+- 当前阶段目标：M2（稳定性增强与规模化接入）；**全线签署 M2** 尚需团队在目标环境完成 **Nacos / Eureka / Kubernetes** 三类矩阵回归并归档 **`release-acceptance-matrix.md`** §**9**（Mock 已由 CI + `scripts/verify-m2-baseline.sh` 覆盖）
 
 ## 本次已落地
 
@@ -135,3 +135,15 @@
 - 在真实环境下完成 Nacos/Eureka/K8s/Mock 四类配置的回归检查并沉淀报告
 - 关键诊断命令具备稳定 JSON 契约与 failure code 文档
 - 发布前后具备统一巡检步骤与可执行回滚预案
+
+### M2 仓库侧就绪（工程可验收）
+
+下列条目由本仓库直接满足（无需外部集群即可复核文档与 Mock 门禁）：
+
+| M2 完成定义条目 | 仓库证据 |
+|:---|:---|
+| 关键诊断命令 JSON 契约与 failure code | `docs/diagnostic-codes.md`、`docs/doctor-json-schema.md`、`docs/route-explain-json-schema.md`、`docs/check-config-strict-schema.md`、`docs/metrics-json.md` |
+| 发布前后巡检与回滚 | `docs/operations-runbook.md`、`docs/release-acceptance-matrix.md` §**9** |
+| Mock 注册中心门禁 | `.github/workflows/ci.yml`（含 compose + `doctor --probe-upstream`）、`docs/ci-copy-paste.sh`、`scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1` |
+
+**待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 **`docs/m2-release-readiness.md`**。
