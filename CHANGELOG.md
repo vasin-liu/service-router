@@ -30,7 +30,8 @@ All notable changes to this project are documented in this file.
 - **`.github/workflows/release-acceptance.yml`**: header comment lists artifact bundle; **README** Quick Start adds optional **`config-snapshot`**; **`release-acceptance-matrix.md`** notes **`release-acceptance-json`** includes **`config-snapshot.json`**.
 - **`ci-template.md`**, **`.gitlab-ci.yml`**, **`config-snapshot-workflow.md`**: spell out **`release-acceptance`** / manual job artifact filenames (incl. **`config-snapshot.json`**).
 - **`docs/regression-archive/`**: README lists five JSON files + GitHub **`release-acceptance-json`** / GitLab paths; §9 template adds file checklist.
-- **`m2-release-readiness.md`**: optional JSON bundle subsection lists five §7 filenames + **`RUN_GLOBAL=0`** examples; **`verify-m2-baseline.*`** prints a tip to run **`release-acceptance`** for artifacts.
+- **`m2-release-readiness.md`**: optional JSON bundle subsection lists five §7 filenames + **`RUN_GLOBAL=0`** examples; **`verify-m2-baseline.*`** prints a tip to run **`release-acceptance`** for artifacts; anchor **`#m2-json-bundle-s9`** for deep links.
+- **`implementation-status.md`**: Markdown links to **`m2-release-readiness.md#m2-json-bundle-s9`** from current状态、M2 表与待业务侧完成段落。
 - **`plugin-extension.md`**: FR-6 config-only slice (`response_headers`) vs future dynamic plugins; link **ADR 001**.
 - **`route-explain-json-schema.md`**: matched envelope **`response_headers`** field.
 - **`diagnostic-codes.md`**: note on matched **`response_headers`**.

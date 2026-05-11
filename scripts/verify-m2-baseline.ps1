@@ -53,4 +53,4 @@ if ($env:M2_WITH_DOCKER_PROBE -eq '1') {
 }
 
 Write-Host '[m2-baseline] OK'
-Write-Host '[m2-baseline] tip: for §7 JSON artifacts, set SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 and run docs/release-acceptance.ps1 (see docs/m2-release-readiness.md)'
+Write-Host '[m2-baseline] tip: for §7 JSON artifacts, set SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 and run docs/release-acceptance.ps1 (see docs/m2-release-readiness.md#m2-json-bundle-s9)'
