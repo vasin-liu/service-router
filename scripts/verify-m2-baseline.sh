@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# M2 engineering baseline: mirrors GitHub ci.yml mock profile gates (build, unit tests,
-# check-config --strict, doctor --json, route-explain smoke, config-snapshot).
+# M2 engineering baseline: mirrors GitHub ci.yml mock profile gates (text encoding,
+# build, unit tests, check-config --strict, doctor --json, route-explain smoke,
+# config-snapshot).
 # Optional: set M2_WITH_DOCKER_PROBE=1 to run compose + doctor --probe-upstream (needs Docker).
 # For five JSON files under artifacts/release-acceptance/ (§9 archive), run docs/release-acceptance.sh
 # afterward (see docs/m2-release-readiness.md).
@@ -16,6 +17,9 @@ echo "[m2-baseline] cargo test"
 cargo test -- --nocapture
 
 CONFIG="${SERVICE_ROUTER_CONFIG:-config/mock-config.yaml}"
+
+echo "[m2-baseline] text encoding check"
+python scripts/check-text-encoding.py
 
 echo "[m2-baseline] check-config --strict (${CONFIG})"
 cargo run -- check-config "${CONFIG}" --json --strict

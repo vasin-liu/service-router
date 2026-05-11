@@ -85,6 +85,7 @@ Copy that file into a consumer repo or paste the `script:` block:
 
 ```yaml
 script:
+  - python3 scripts/check-text-encoding.py
   - cargo check
   - cargo test -- --nocapture
   - cargo run -- check-config config/mock-config.yaml --json --strict

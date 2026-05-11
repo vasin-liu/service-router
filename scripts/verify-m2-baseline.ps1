@@ -1,4 +1,4 @@
-# M2 engineering baseline: mirrors GitHub ci.yml mock profile gates (includes config-snapshot).
+# M2 engineering baseline: mirrors GitHub ci.yml mock profile gates (includes text encoding + config-snapshot).
 # Optional: $env:M2_WITH_DOCKER_PROBE = '1' for compose + doctor --probe-upstream (needs Docker).
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
@@ -28,6 +28,9 @@ cargo check
 
 Write-Host '[m2-baseline] cargo test'
 cargo test -- --nocapture
+
+Write-Host '[m2-baseline] text encoding check'
+python scripts/check-text-encoding.py
 
 Write-Host "[m2-baseline] check-config --strict ($config)"
 cargo run -- check-config $config --json --strict

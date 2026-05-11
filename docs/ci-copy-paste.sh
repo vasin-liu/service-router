@@ -7,6 +7,7 @@ PROBE_METHOD="${SERVICE_ROUTER_SMOKE_METHOD:-GET}"
 
 cargo check
 cargo test -- --nocapture
+python scripts/check-text-encoding.py
 cargo run -- check-config "${CONFIG}" --json --strict
 cargo run -- doctor --config "${CONFIG}" --json
 cargo run -- route-explain "${PROBE_PATH}" "${PROBE_METHOD}" --config "${CONFIG}" --json

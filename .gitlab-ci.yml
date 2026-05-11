@@ -22,6 +22,7 @@ rust-validate:
   script:
     - rustc --version
     - cargo --version
+    - python3 scripts/check-text-encoding.py
     - cargo check
     - cargo test -- --nocapture
     # Mock profile: deterministic, no external registries
