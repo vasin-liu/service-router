@@ -29,4 +29,4 @@ Top-level shape is defined by `service_router::config_snapshot_export::ConfigSna
 
 ## §9 acceptance bundle (optional)
 
-When you run **`docs/release-acceptance.sh`** / **`.ps1`**, the directory also holds **`check-config.json`**, **`doctor.json`**, **`doctor-probe.json`**, **`route-explain-smoke.json`**, and **`config-snapshot.json`**. To turn those into a single Markdown table for tickets or wikis, use **`python scripts/summarize-section9-release-acceptance.py`** (see **`docs/regression-archive/`** and **`--help`**).
+When you run **`docs/release-acceptance.sh`** / **`.ps1`**, the directory also holds **`check-config.json`**, **`doctor.json`**, **`doctor-probe.json`**, **`route-explain-smoke.json`**, and **`config-snapshot.json`**, plus auto-generated **`section-9-summary.generated.md`**. To regenerate that Markdown with different flags (or if the file is missing), use **`python scripts/summarize-section9-release-acceptance.py`** (see **`docs/regression-archive/`** and **`--help`**).

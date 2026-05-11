@@ -5,7 +5,7 @@
 - 状态：**M2（工程侧）已封板**；主线研发重心转入 **M3（协作与扩展，对齐 PRD FR-5 / FR-6 的工程切片）**
 - 已完成里程碑：M1（开发者最小可用工具链）、**M2（稳定性 / 诊断 / 发布门禁 — 仓库可复核）**
 - 当前阶段目标：**M3** — 协作向能力（配置对比、评审摘要等）与远期扩展接口铺垫；全量 PRD 指标（插件生态占比等）仍以 **`docs/product-prd-developer.md`** 为准、单独度量
-- **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 JSON** 见 [m2-release-readiness.md（§9 JSON 包）](./m2-release-readiness.md#m2-json-bundle-s9)。
+- **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 JSON 包）](./m2-release-readiness.md#m2-json-bundle-s9)。
 
 ## 本次已落地
 
@@ -131,7 +131,7 @@
 | 发布前后巡检与回滚 | `docs/operations-runbook.md`、`docs/release-acceptance-matrix.md` §**9** |
 | Mock 注册中心门禁 | `.github/workflows/ci.yml`（`config-snapshot`、compose + `doctor --probe-upstream`）、`docs/ci-copy-paste.sh`、`scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1`；可选 §7 JSON 包：[m2-release-readiness §9 bundle](./m2-release-readiness.md#m2-json-bundle-s9) |
 
-**待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 [`m2-release-readiness.md`](./m2-release-readiness.md)（Mock 下可选 [五份 JSON 与 CI 对齐](./m2-release-readiness.md#m2-json-bundle-s9)）。
+**待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 [`m2-release-readiness.md`](./m2-release-readiness.md)（Mock 下可选 [五份 JSON + §9 汇总 Markdown 与 CI 对齐](./m2-release-readiness.md#m2-json-bundle-s9)）。
 
 ## 完成定义（M3，工程侧切片）
 
@@ -141,7 +141,7 @@
 |:---|:---|:---|
 | FR-5.1 配置结构化对比 | 已提供 | CLI **`config-diff <左> <右> [--json \| --markdown]`**：加载两份 YAML（含 env 展开）、对比 `server` / `log_level` / `registries` / 按 `id` 的 `routes`；有差异时退出码 **1** |
 | FR-5.2 变更说明 / 评审辅助 | 已提供 | 同上 **`--markdown`**，便于粘贴 PR 描述 |
-| FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、路由 **`response_header_keys`**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**`scripts/summarize-section9-release-acceptance.py`** 可将 **`release-acceptance`** 产出的五份 JSON 汇总为可粘贴的 §9 Markdown（见 **`docs/regression-archive/`**）；**附链 / 在线分享**仍由工单或 Git 另行完成 |
+| FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、路由 **`response_header_keys`**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**`release-acceptance`** 另写出 **`section-9-summary.generated.md`**；**`scripts/summarize-section9-release-acceptance.py`** 可重生成或自定义 §9 粘贴表（见 **`docs/regression-archive/`**）；**附链 / 在线分享**仍由工单或 Git 另行完成 |
 | FR-6 插件 / 扩展生态 | 部分（配置切片） | 无动态插件 / 运行时加载；已提供路由级 **`response_headers`**（仅普通 HTTP）作为内置扩展点，详见 **`docs/plugin-extension.md`**；WebSocket 不应用此项 |
 
 **「M3 工程达成」最低标准（本仓库）**：**FR-5.1～FR-5.3**（工程可交付部分）已齐；**FR-5.3** 的外链托管不属于本仓库。**FR-6**：以配置切片为初版交付，完整插件生态仍为后续里程碑。

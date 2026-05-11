@@ -51,7 +51,8 @@ rust-validate:
 
 # Optional: full gates + JSON artifacts (same script as GitHub release-acceptance workflow).
 # artifacts/release-acceptance/: check-config.json, doctor.json, doctor-probe.json,
-# route-explain-smoke.json, config-snapshot.json (see docs/release-acceptance-matrix.md §7).
+# route-explain-smoke.json, config-snapshot.json, section-9-summary.generated.md
+# (see docs/release-acceptance-matrix.md §7–§9).
 # Without compose, TCP probes may fail; ALLOW_PROBE_FAIL keeps the job usable for artifact collection.
 release-acceptance-manual:
   stage: release

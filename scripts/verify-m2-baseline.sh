@@ -3,8 +3,8 @@
 # build, unit tests, check-config --strict, doctor --json, route-explain smoke,
 # config-snapshot).
 # Optional: set M2_WITH_DOCKER_PROBE=1 to run compose + doctor --probe-upstream (needs Docker).
-# For five JSON files under artifacts/release-acceptance/ (§9 archive), run docs/release-acceptance.sh
-# afterward (see docs/m2-release-readiness.md).
+# For five JSON files + section-9-summary.generated.md under artifacts/release-acceptance/
+# (§9 archive), run docs/release-acceptance.sh afterward (see docs/m2-release-readiness.md).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -55,4 +55,4 @@ if [[ "${M2_WITH_DOCKER_PROBE:-0}" == "1" ]]; then
 fi
 
 echo "[m2-baseline] OK"
-echo "[m2-baseline] tip: for §7 JSON artifacts (release-acceptance), run: SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 bash docs/release-acceptance.sh (see docs/m2-release-readiness.md#m2-json-bundle-s9)"
+echo "[m2-baseline] tip: for §7 JSON + section-9-summary.generated.md (release-acceptance), run: SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 bash docs/release-acceptance.sh (see docs/m2-release-readiness.md#m2-json-bundle-s9)"
