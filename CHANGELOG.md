@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **`scripts/check-text-encoding.py`** + GitHub CI step: fails on NUL bytes in text-like files to prevent accidental UTF-16LE source/doc/script commits.
 - **`docs/regression-archive/`**: §9 summary template + workflow README for M2 audit trail.
 - **`scripts/post-deploy-smoke.sh`** / **`.ps1`**: minimal **`GET /health`** + **`/ready`** after rollout (`SERVICE_ROUTER_BASE_URL`).
 - **`docs/config-snapshot-workflow.md`**, **`docs/next-engineering-priorities.md`**, **`docs/adr/`** (ADR 001: FR-6 dynamic plugins deferred).

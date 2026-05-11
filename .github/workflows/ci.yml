@@ -18,6 +18,9 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
 
+      - name: Text encoding check
+        run: python scripts/check-text-encoding.py
+
       - name: Build and test
         run: |
           cargo check

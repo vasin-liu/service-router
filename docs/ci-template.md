@@ -6,6 +6,7 @@ Use the **same three gates** everywhere: strict config validation, environment/d
 
 | Step | Command | Pass when |
 |:-----|:--------|:----------|
+| Text encoding | `python scripts/check-text-encoding.py` | Exit `0`; catches accidental UTF-16/NUL text files |
 | Build & unit tests | `cargo check`, `cargo test -- --nocapture` | Exit `0` |
 | Strict config | `cargo run -- check-config config/mock-config.yaml --json --strict` | Exit `0`, JSON `strict_passed == true` if you parse it |
 | Doctor | `cargo run -- doctor --config config/mock-config.yaml --json` | Exit `0`, JSON top-level `status` is typically `"pass"` for healthy mock runs |
@@ -36,16 +37,17 @@ bash docs/ci-copy-paste.sh
 
 `.github/workflows/ci.yml` mirrors the table above and adds a **compose-backed upstream probe**:
 
-1. `cargo check`
-2. `cargo test -- --nocapture`
-3. `check-config … --json --strict`
-4. `doctor --config … --json`
-5. `route-explain … --json` (smoke; non-zero exit on no match)
-6. `config-snapshot … -o -` (redacted JSON to stdout)
-7. `docker compose -f .github/compose/doctor-probe.compose.yml up -d`
-8. Wait until TCP `127.0.0.1:9000` and `:9001` accept connections (bash `/dev/tcp` loop)
-9. `doctor --config … --probe-upstream --json` (validates `upstream_probe` / `failure_code` paths against mock TCP echoes)
-10. `docker compose … down -v` (`always()`)
+1. `python scripts/check-text-encoding.py`
+2. `cargo check`
+3. `cargo test -- --nocapture`
+4. `check-config … --json --strict`
+5. `doctor --config … --json`
+6. `route-explain … --json` (smoke; non-zero exit on no match)
+7. `config-snapshot … -o -` (redacted JSON to stdout)
+8. `docker compose -f .github/compose/doctor-probe.compose.yml up -d`
+9. Wait until TCP `127.0.0.1:9000` and `:9001` accept connections (bash `/dev/tcp` loop)
+10. `doctor --config … --probe-upstream --json` (validates `upstream_probe` / `failure_code` paths against mock TCP echoes)
+11. `docker compose … down -v` (`always()`)
 
 Requires Docker on the runner (default `ubuntu-latest` provides it). The manual **`doctor-upstream-probe`** workflow uses the same compose file for ad-hoc runs.
 
@@ -135,6 +137,7 @@ Optional env vars for local run:
 ## Why this baseline
 
 - Catches compile/test regressions early.
+- Catches accidental UTF-16/NUL text files before tooling treats sources or docs as binary.
 - Validates strict route/config checks in a deterministic mock environment.
 - Ensures developer diagnostics commands stay healthy in CI.
 - Smoke `route-explain` proves routing compiles **and** a known-good request still hits an expected rule.
