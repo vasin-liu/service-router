@@ -15,11 +15,11 @@ Tip: **`docs/release-acceptance.sh`** / **`.ps1`** now writes **`section-9-summa
 | **CLI gates** | §3 `check-config --strict`, `doctor`, `doctor --probe-upstream` — pass / fail |
 | **Route smoke** | §4 `route-explain` — matched yes/no (path/method: ___ ) |
 | **Config snapshot** | `config-snapshot.json` present — yes/no (redacted export) |
-| **Artifacts dir** | e.g. `artifacts/release-acceptance/` or CI artifact URL |
+| **Artifacts dir** | e.g. `artifacts/release-acceptance/` or GitHub **`release-acceptance-bundle`** download URL |
 | **Deviations** | e.g. `ALLOW_PROBE_FAIL=1`, flaky registry, issue link |
 | **Sign-off** | |
 
-## Expected artifacts (JSON + Markdown) (`release-acceptance.sh` / `.ps1` or CI `release-acceptance-json`)
+## Expected artifacts (JSON + Markdown) (`release-acceptance.sh` / `.ps1` or GitHub artifact `release-acceptance-bundle`)
 
 Check off each file you attach or link (same names under `artifacts/release-acceptance/`). The five §7 JSON files are required for machine-readable evidence; **`section-9-summary.generated.md`** is the human paste companion from the same run.
 

@@ -55,4 +55,4 @@ if [[ "${M2_WITH_DOCKER_PROBE:-0}" == "1" ]]; then
 fi
 
 echo "[m2-baseline] OK"
-echo "[m2-baseline] tip: for §7 JSON + section-9-summary.generated.md (release-acceptance), run: SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 bash docs/release-acceptance.sh (see docs/m2-release-readiness.md#m2-json-bundle-s9)"
+echo "[m2-baseline] tip: for §7 JSON + section-9-summary.generated.md (release-acceptance), run: SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 bash docs/release-acceptance.sh (see docs/m2-release-readiness.md#m2-release-acceptance-bundle)"

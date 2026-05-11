@@ -112,7 +112,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/operations-runbook.md` — probes, metrics, config rollback, triage (no cluster naming assumptions)
 - `docs/route-explain-json-schema.md`
 - `docs/doctor-json-schema.md`
-- Optional CI: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`; uploads five §7 JSON outputs + **`section-9-summary.generated.md`** under artifact **`release-acceptance-json`** — name is legacy; bundle includes Markdown)
+- Optional CI: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`; uploads artifact **`release-acceptance-bundle`**: five §7 JSON outputs + **`section-9-summary.generated.md`**)
 - `docs/metrics-json.md` — `GET /metrics` JSON + `/metrics/prometheus` text exposition
 - `docs/release-acceptance-matrix.md` — pre-release regression checklist for Mock/Nacos/Eureka/Kubernetes (`bash docs/release-acceptance.sh` or `powershell -File docs/release-acceptance.ps1`); §9 regression archive + **`docs/regression-archive/`**; artifacts include five §7 **`*.json`** (e.g. **`config-snapshot.json`**) plus paste-ready **`section-9-summary.generated.md`**
 - `docs/config-snapshot-workflow.md` — attach redacted JSON to tickets (FR-5.3)

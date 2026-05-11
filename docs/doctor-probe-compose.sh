@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Local helper for B09: boot compose upstreams, run doctor --probe-upstream, tear down.
 # For the full release-acceptance artifact set (five §7 JSON + section-9-summary.generated.md), use
-# docs/release-acceptance.sh — see docs/m2-release-readiness.md#m2-json-bundle-s9.
+# docs/release-acceptance.sh — see docs/m2-release-readiness.md#m2-release-acceptance-bundle.
 set -euo pipefail
 
 CONFIG_PATH="${SERVICE_ROUTER_CONFIG:-config/mock-config.yaml}"

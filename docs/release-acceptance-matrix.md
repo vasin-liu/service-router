@@ -15,7 +15,7 @@ PowerShell (Windows):
 powershell -ExecutionPolicy Bypass -File docs/release-acceptance.ps1
 ```
 
-GitHub Actions: run **Actions → release-acceptance → Run workflow** (see `.github/workflows/release-acceptance.yml`; downloads **`release-acceptance-json`** artifact — name is legacy; includes **`config-snapshot.json`** alongside the other §7 JSON files and **`section-9-summary.generated.md`**).
+GitHub Actions: run **Actions → release-acceptance → Run workflow** (see `.github/workflows/release-acceptance.yml`; download artifact **`release-acceptance-bundle`**: **`config-snapshot.json`**, the other four §7 JSON files, and **`section-9-summary.generated.md`**).
 
 ## 1) Global Gates (all profiles)
 
@@ -160,8 +160,8 @@ Use this short template after running §1–§4 for **each profile** you care ab
 | **CLI gates** | §3: `check-config --strict`, `doctor`, `doctor --probe-upstream` — pass / fail |
 | **Route smoke** | §4: `route-explain` path/method — matched yes/no |
 | **Config snapshot** | `config-snapshot.json` from same run — yes/no (redacted) |
-| **Artifacts dir** | e.g. `artifacts/release-acceptance/` or CI artifact name |
+| **Artifacts dir** | e.g. `artifacts/release-acceptance/` or GitHub artifact **`release-acceptance-bundle`** |
 | **Deviations** | e.g. `ALLOW_PROBE_FAIL=1`, flaky registry, known issue link |
 | **Sign-off** | name or team |
 
-**Minimum for M2 “四类回归”闭链:** at least one archived row for **Mock** (automation-friendly) and, when available, one row per additional registry type you deploy against. Linking the **release-acceptance** workflow artifact or the local `release-acceptance.sh` output directory satisfies the **acceptance 产物** part of the release gate (JSON files plus **`section-9-summary.generated.md`** from the same run).
+**Minimum for M2 “四类回归”闭链:** at least one archived row for **Mock** (automation-friendly) and, when available, one row per additional registry type you deploy against. Linking the GitHub Actions artifact **`release-acceptance-bundle`** or the local `release-acceptance.sh` output directory satisfies the **acceptance 产物** part of the release gate (five §7 JSON files plus **`section-9-summary.generated.md`** from the same run).

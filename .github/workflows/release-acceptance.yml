@@ -1,8 +1,7 @@
-# Full release acceptance matrix (global gates + five §7 CLI JSON files + section-9-summary.generated.md).
+# Release acceptance: global gates + five §7 CLI JSON files + section-9-summary.generated.md.
 # Manual trigger: compose-backed mock upstreams by default; optional skip for config-only runs.
 #
-# Actions artifact name "release-acceptance-json" is legacy (stable URL/habit); the zip is not JSON-only.
-# Bundle under artifacts/release-acceptance/ includes:
+# Uploads Actions artifact "release-acceptance-bundle" = full contents of artifacts/release-acceptance/:
 #   check-config.json, doctor.json, doctor-probe.json, route-explain-smoke.json, config-snapshot.json,
 #   section-9-summary.generated.md
 # (see docs/release-acceptance-matrix.md §7–§9).
@@ -78,11 +77,11 @@ jobs:
         run: bash docs/release-acceptance.sh
 
       # Full set: check-config, doctor, doctor-probe, route-explain-smoke, config-snapshot (redacted), section-9-summary.generated.md.
-      - name: Upload acceptance artifacts (JSON + §9 Markdown)
+      - name: Upload release-acceptance bundle (§7 JSON + §9 Markdown)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: release-acceptance-json
+          name: release-acceptance-bundle
           path: artifacts/release-acceptance/
           if-no-files-found: warn
 

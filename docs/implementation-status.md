@@ -5,7 +5,7 @@
 - 状态：**M2（工程侧）已封板**；主线研发重心转入 **M3（协作与扩展，对齐 PRD FR-5 / FR-6 的工程切片）**
 - 已完成里程碑：M1（开发者最小可用工具链）、**M2（稳定性 / 诊断 / 发布门禁 — 仓库可复核）**
 - 当前阶段目标：**M3** — 协作向能力（配置对比、评审摘要等）与远期扩展接口铺垫；全量 PRD 指标（插件生态占比等）仍以 **`docs/product-prd-developer.md`** 为准、单独度量
-- **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 §7 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 JSON 包）](./m2-release-readiness.md#m2-json-bundle-s9)。
+- **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 §7 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 验收产物包）](./m2-release-readiness.md#m2-release-acceptance-bundle)。
 
 ## 本次已落地
 
@@ -129,9 +129,9 @@
 |:---|:---|
 | 关键诊断命令 JSON 契约与 failure code | `docs/diagnostic-codes.md`、`docs/doctor-json-schema.md`、`docs/route-explain-json-schema.md`、`docs/check-config-strict-schema.md`、`docs/metrics-json.md` |
 | 发布前后巡检与回滚 | `docs/operations-runbook.md`、`docs/release-acceptance-matrix.md` §**9** |
-| Mock 注册中心门禁 | `.github/workflows/ci.yml`（`config-snapshot`、compose + `doctor --probe-upstream`）、`docs/ci-copy-paste.sh`、`scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1`；可选 §7 JSON 包：[m2-release-readiness §9 bundle](./m2-release-readiness.md#m2-json-bundle-s9) |
+| Mock 注册中心门禁 | `.github/workflows/ci.yml`（`config-snapshot`、compose + `doctor --probe-upstream`）、`docs/ci-copy-paste.sh`、`scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1`；可选 §9 验收产物包：[m2-release-readiness](./m2-release-readiness.md#m2-release-acceptance-bundle) |
 
-**待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 [`m2-release-readiness.md`](./m2-release-readiness.md)（Mock 下可选 [五份 §7 JSON + §9 汇总 Markdown 与 CI 对齐](./m2-release-readiness.md#m2-json-bundle-s9)）。
+**待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 [`m2-release-readiness.md`](./m2-release-readiness.md)（Mock 下可选 [五份 §7 JSON + §9 汇总 Markdown 与 CI 对齐](./m2-release-readiness.md#m2-release-acceptance-bundle)）。
 
 ## 完成定义（M3，工程侧切片）
 

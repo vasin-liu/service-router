@@ -4,7 +4,7 @@
 Reads the default directory written by docs/release-acceptance.sh / .ps1:
   artifacts/release-acceptance/
 
-Expected file basenames (same as under CI artifact release-acceptance-json; that artifact name is legacy but the download includes section-9-summary.generated.md):
+Expected file basenames (same as in artifacts/release-acceptance/ from release-acceptance.sh / .ps1, or in the GitHub Actions artifact release-acceptance-bundle):
   check-config.json, doctor.json, doctor-probe.json,
   route-explain-smoke.json, config-snapshot.json
 
@@ -279,7 +279,7 @@ def main() -> int:
         f"| **Deviations** | {deviations or '—'} |",
         f"| **Sign-off** | {sign_off or '—'} |",
         "",
-        "## Expected artifacts (JSON + Markdown)",
+        "## Expected artifacts (JSON + Markdown) (`release-acceptance-bundle` / `release-acceptance.sh` / `.ps1`)",
         "",
     ]
 

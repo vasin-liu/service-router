@@ -34,21 +34,21 @@ All notable changes to this project are documented in this file.
 
 ### Documentation
 
-- **README**、**`ci-template.md`**、**`config-snapshot-workflow.md`**、**`release-acceptance-matrix.md`**、**`m2-release-readiness.md`**、**`implementation-status.md`**、**`regression-archive/`**、**`verify-m2-baseline.sh`**、**`doctor-probe-compose.sh`**、**`summarize-section9-release-acceptance.py`**、**`.github/workflows/release-acceptance.yml`**：统一 **五份 §7 JSON** 表述，并注明 GitHub artifact **`release-acceptance-json`** 为历史命名（产物含 **`section-9-summary.generated.md`**）。
+- **README**、**`ci-template.md`**、**`ci-copy-paste.sh`**、**`config-snapshot-workflow.md`**、**`release-acceptance-matrix.md`**、**`m2-release-readiness.md`**、**`implementation-status.md`**、**`next-engineering-priorities.md`**、**`regression-archive/`**（含 **`section-9-summary-template.md`**）、**`release-acceptance.sh`**、**`verify-m2-baseline.sh`**、**`doctor-probe-compose.sh`**、**`summarize-section9-release-acceptance.py`**、**`.github/workflows/release-acceptance.yml`**、**`.gitlab-ci.yml`**：统一 **五份 §7 JSON + `section-9-summary.generated.md`** 与 GitHub artifact **`release-acceptance-bundle`**；**`m2-release-readiness.md`** 锚点 **`#m2-release-acceptance-bundle`**。
 - **`summarize-section9-release-acceptance.py`**（模块说明 / `--help`）、**`release-acceptance-matrix.md`**（Quick runner）、**`.github/workflows/release-acceptance.yml`**（头部注释）：用 **§7 CLI JSON** 等表述替代易误解的 “JSON artifacts”。
 - **`CHANGELOG.md`**（Unreleased 中 release-acceptance 叙事条目）、**`release-acceptance-matrix.md`**（§7 失败保留物 / §9 归档）、**`m2-release-readiness.md`**（Nacos 行）、**`docs/release-acceptance.sh`** 注释、**`.gitlab-ci.yml`**（`release-acceptance-manual` 注释）：统一 **acceptance 产物**表述（五份 §7 JSON + **`section-9-summary.generated.md`**），避免「仅 JSON」误导。
-- **`docs/ci-template.md`**, **`.github/workflows/release-acceptance.yml`**: wording uses “acceptance artifacts” / upload step reflects JSON + **`section-9-summary.generated.md`** (not JSON-only).
+- **`docs/ci-template.md`**, **`.github/workflows/release-acceptance.yml`**: describe acceptance artifacts as five §7 JSON + **`section-9-summary.generated.md`**; upload artifact **`release-acceptance-bundle`**.
 - **`docs/ci-copy-paste.sh`**, **`docs/doctor-probe-compose.sh`**, **`implementation-status.md` (§下一阶段建议-1)**: point readers to **`release-acceptance`** for **`section-9-summary.generated.md`** with the five §7 JSON files.
 - **`verify-m2-baseline.*`**, **`.gitlab-ci.yml`** (comment), **`implementation-status.md`**, **`config-snapshot-workflow.md`**: tips and links mention **`section-9-summary.generated.md`** next to the five §7 JSON files.
 - **README**: Quick Start optional step **§5** runs **`release-acceptance`** with **`RUN_GLOBAL=0`** and points to **`artifacts/release-acceptance/section-9-summary.generated.md`**; roadmap bullets already note the artifact bundle.
 - **`regression-archive/section-9-summary-template.md`**: checklist heading renamed to **Expected artifacts (JSON + Markdown)**; **`summarize-section9-release-acceptance.py`** docstring / argparse help / generated Markdown section title aligned.
 - **`release-acceptance-matrix.md`**, **`ci-template.md`**, **`config-snapshot-workflow.md`**, **`m2-release-readiness.md`**, **`regression-archive/`**, **`.github/workflows/release-acceptance.yml`**: artifact / bundle descriptions include **`section-9-summary.generated.md`** alongside the five §7 JSON files.
-- **`.github/workflows/release-acceptance.yml`**: header comment lists artifact bundle; **README** Quick Start adds optional **`config-snapshot`**; **`release-acceptance-matrix.md`** notes **`release-acceptance-json`** includes **`config-snapshot.json`**.
+- **`.github/workflows/release-acceptance.yml`**: header comment lists artifact bundle; **README** Quick Start adds optional **`config-snapshot`**; **`release-acceptance-matrix.md`** notes **`release-acceptance-bundle`** includes **`config-snapshot.json`**.
 - **`ci-template.md`**, **`.gitlab-ci.yml`**, **`config-snapshot-workflow.md`**: spell out **`release-acceptance`** / manual job artifact filenames (incl. **`config-snapshot.json`**)；**`config-snapshot-workflow.md`** 增加 §9 五份 §7 JSON → 粘贴表说明。
-- **`implementation-status.md`**（FR-5.3 / M3 表）、**`next-engineering-priorities.md`**：索引 **`summarize-section9-release-acceptance.py`**。
-- **`docs/regression-archive/`**: README lists five §7 JSON files + **`section-9-summary.generated.md`** + GitHub **`release-acceptance-json`** / GitLab paths; §9 template adds file checklist.
-- **`m2-release-readiness.md`**: optional JSON bundle subsection lists five §7 filenames + **`RUN_GLOBAL=0`** examples; **`verify-m2-baseline.*`** prints a tip to run **`release-acceptance`** for artifacts; anchor **`#m2-json-bundle-s9`** for deep links.
-- **`implementation-status.md`**: Markdown links to **`m2-release-readiness.md#m2-json-bundle-s9`** from current状态、M2 表与待业务侧完成段落。
+- **`implementation-status.md`**（FR-5.3 / M3 表）、**`next-engineering-priorities.md`**：索引 **`summarize-section9-release-acceptance.py`**；P1 表述与 **五份 §7 JSON + `section-9-summary.generated.md`** 对齐。
+- **`docs/regression-archive/`**: README lists five §7 JSON files + **`section-9-summary.generated.md`** + GitHub **`release-acceptance-bundle`** / GitLab paths; §9 template adds file checklist.
+- **`m2-release-readiness.md`**: optional release-acceptance bundle subsection lists five §7 filenames + **`RUN_GLOBAL=0`** examples; **`verify-m2-baseline.*`** prints a tip to run **`release-acceptance`** for artifacts; anchor **`#m2-release-acceptance-bundle`** for deep links.
+- **`implementation-status.md`**: Markdown links to **`m2-release-readiness.md#m2-release-acceptance-bundle`** from current状态、M2 表与待业务侧完成段落。
 - **`plugin-extension.md`**: FR-6 config-only slice (`response_headers`) vs future dynamic plugins; link **ADR 001**.
 - **`route-explain-json-schema.md`**: matched envelope **`response_headers`** field.
 - **`diagnostic-codes.md`**: note on matched **`response_headers`**.
@@ -69,6 +69,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- **GitHub Actions** (`.github/workflows/release-acceptance.yml`): workflow upload artifact renamed **`release-acceptance-json`** → **`release-acceptance-bundle`** (zip contents unchanged: five §7 JSON + **`section-9-summary.generated.md`**). **`m2-release-readiness.md`** anchor **`#m2-json-bundle-s9`** → **`#m2-release-acceptance-bundle`**; README, CI docs, regression archive, **`summarize-section9-release-acceptance.py`** docstring, and **`verify-m2-baseline.*`** tips updated.
 - Kubernetes registry: `debug!` logs on resolve path (Core Endpoints vs EndpointSlice fallback, per-`service_id` counts) when `RUST_LOG=service_router::registry::k8s=debug`; `trace!` logs each discovery GET URL (Service, Endpoints, EndpointSlice list); `docs/operations-runbook.md` §6 notes `debug` vs `trace`.
 - `KubernetesConfig` / `K8sAuth` rustdoc: remove outdated stub wording (registry is implemented).
 - CI: `.github/workflows/ci.yml` runs Docker Compose mock upstreams then `doctor --probe-upstream --json` after smoke `route-explain`, matching release acceptance networking gates for mock profile.
@@ -89,7 +90,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - **`server.instance_selection`**: `first` (default, prior behaviour) or `round_robin` when a `service_id` resolves to multiple instances; per-service atomic counter in `AppState`.
-- GitHub Actions: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`) runs `docs/release-acceptance.sh` with optional compose-backed mock upstreams, uploads the release-acceptance bundle (`release-acceptance-json`: five §7 JSON files + `section-9-summary.generated.md`), optional `skip_compose` (`yes` skips Docker and relaxes probe failure); aligns docs/README references that previously described a missing workflow.
+- GitHub Actions: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`) runs `docs/release-acceptance.sh` with optional compose-backed mock upstreams, uploads the release-acceptance bundle (`release-acceptance-bundle`: five §7 JSON files + `section-9-summary.generated.md`), optional `skip_compose` (`yes` skips Docker and relaxes probe failure); aligns docs/README references that previously described a missing workflow.
 - Kubernetes config: optional `endpoint_slice_label_selector` — comma-separated label requirements AND-ed with `kubernetes.io/service-name=<service_id>` when listing EndpointSlices (Core `Endpoints` discovery unchanged).
 - `check-config --strict` structured findings: `StrictFinding` (`code`, `message`, optional `details`) in `src/config/strict_check.rs`; generator script `tools/emit_strict_check.mjs`; schema doc `docs/check-config-strict-schema.md`.
 - Documentation: `docs/diagnostic-codes.md` (stable proxy metrics / doctor / route-explain codes) and `docs/operations-runbook.md` (readiness, rollback via hot-reload, triage checklist).

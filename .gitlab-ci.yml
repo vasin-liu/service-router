@@ -50,8 +50,9 @@ rust-validate:
     - docker compose -f .github/compose/doctor-probe.compose.yml down -v || true
 
 # Optional: full gates + acceptance artifacts (same script as GitHub release-acceptance workflow).
-# artifacts/release-acceptance/: check-config.json, doctor.json, doctor-probe.json,
-# route-explain-smoke.json, config-snapshot.json, section-9-summary.generated.md
+# Publishes artifacts/release-acceptance/ (same layout as GitHub artifact release-acceptance-bundle):
+#   check-config.json, doctor.json, doctor-probe.json, route-explain-smoke.json,
+#   config-snapshot.json, section-9-summary.generated.md
 # (see docs/release-acceptance-matrix.md §7–§9).
 # Without compose, TCP probes may fail; ALLOW_PROBE_FAIL keeps the job usable for artifact collection.
 release-acceptance-manual:
