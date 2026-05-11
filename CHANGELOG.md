@@ -10,7 +10,7 @@ All notable changes to this project are documented in this file.
 - **`scripts/post-deploy-smoke.sh`** / **`.ps1`**: minimal **`GET /health`** + **`/ready`** after rollout (`SERVICE_ROUTER_BASE_URL`).
 - **`docs/config-snapshot-workflow.md`**, **`docs/next-engineering-priorities.md`**, **`docs/adr/`** (ADR 001: FR-6 dynamic plugins deferred).
 - **`release-acceptance.sh`** / **`.ps1`**: emit **`config-snapshot.json`** next to other §7 artifacts.
-- **CI parity**: `.github/workflows/ci.yml`, **`.gitlab-ci.yml`**, **`docs/ci-copy-paste.sh`**, **`scripts/verify-m2-baseline.*`** run **`config-snapshot -o -`** on the mock profile after `route-explain`.
+- **CI parity**: `.github/workflows/ci.yml`, **`.gitlab-ci.yml`**, **`docs/ci-copy-paste.sh`**, **`scripts/verify-m2-baseline.*`** run **`config-snapshot -o -`** on the mock profile after `route-explain`; **`docs/ci-template.md`** updated (table + GitHub/GitLab excerpts + `ci.yml` step list).
 
 - **Library tests** (`routing::matcher`): YAML load + **`RouterSnapshot::from_config`** covers forbidden vs valid **`response_headers`** (same compile path as **`check-config`** / **`run`**).
 
@@ -27,6 +27,7 @@ All notable changes to this project are documented in this file.
 
 ### Documentation
 
+- **`.github/workflows/release-acceptance.yml`**: header comment lists artifact bundle; **README** Quick Start adds optional **`config-snapshot`**; **`release-acceptance-matrix.md`** notes **`release-acceptance-json`** includes **`config-snapshot.json`**.
 - **`plugin-extension.md`**: FR-6 config-only slice (`response_headers`) vs future dynamic plugins; link **ADR 001**.
 - **`route-explain-json-schema.md`**: matched envelope **`response_headers`** field.
 - **`diagnostic-codes.md`**: note on matched **`response_headers`**.

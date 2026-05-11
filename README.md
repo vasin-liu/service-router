@@ -22,7 +22,15 @@ cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml 
 
 Expected: matched rule `orders-api`.
 
-### 3) Run the proxy
+### 3) Redacted config snapshot (optional)
+
+```bash
+cargo run -- config-snapshot --config config/mock-config.yaml -o -
+```
+
+Expected: pretty-printed JSON with `diagnostic_version` **1.0** (no secrets); same step runs in **`.github/workflows/ci.yml`** after `route-explain`.
+
+### 4) Run the proxy
 
 ```bash
 cargo run -- run config/mock-config.yaml
