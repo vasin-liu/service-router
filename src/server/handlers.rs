@@ -197,7 +197,17 @@ fn select_service_instance<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arc_swap::ArcSwap;
     use std::collections::HashMap;
+    use std::sync::Arc;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    use crate::config::model::{
+        AppConfig, PathMatcher, RegistriesConfig, RoutingRule, ServerConfig,
+    };
+    use crate::registry::MultiRegistryResolver;
+    use crate::routing::RouterSnapshot;
+    use crate::server::ProxyMetrics;
 
     #[test]
     fn round_robin_rotates_per_service_id() {
@@ -269,5 +279,77 @@ mod tests {
             select_service_instance(&instances, "svc", InstanceSelection::First, &m).host,
             "a"
         );
+    }
+
+    #[tokio::test]
+    async fn proxy_handler_applies_route_response_headers_end_to_end() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let upstream_addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buf = vec![0u8; 8192];
+            let mut total = 0usize;
+            loop {
+                let n = stream.read(&mut buf[total..]).await.expect("read request");
+                assert!(n > 0, "client closed before headers");
+                total += n;
+                if buf[..total].windows(4).any(|w| w == b"\r\n\r\n") {
+                    break;
+                }
+                assert!(total < buf.len(), "request too large");
+            }
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nX-Upstream: kept\r\nX-Override: upstream\r\n\r\nok",
+                )
+                .await
+                .unwrap();
+        });
+
+        let config = AppConfig {
+            server: ServerConfig::default(),
+            registries: RegistriesConfig::default(),
+            routes: vec![RoutingRule {
+                id: "orders".to_string(),
+                path: PathMatcher::Exact {
+                    value: "/api/orders/123".to_string(),
+                },
+                methods: Some(vec!["GET".to_string()]),
+                headers: None,
+                service_id: None,
+                upstream_url: Some(format!("http://{}", upstream_addr)),
+                strip_prefix: None,
+                response_headers: Some(HashMap::from([
+                    ("x-added".to_string(), "from-route".to_string()),
+                    ("x-override".to_string(), "from-route".to_string()),
+                ])),
+                priority: 10,
+            }],
+            log_level: "info".to_string(),
+        };
+        let state = AppState::new(
+            Arc::new(ArcSwap::from_pointee(
+                RouterSnapshot::from_config(&config).expect("router snapshot"),
+            )),
+            Arc::new(ArcSwap::from_pointee(MultiRegistryResolver::new(
+                Vec::new(),
+                config.registries.query_mode.clone(),
+            ))),
+            Arc::new(ArcSwap::from_pointee(config.clone())),
+            config.server.upstream_timeout_secs,
+            Arc::new(ProxyMetrics::default()),
+        );
+
+        let req = Request::builder()
+            .method("GET")
+            .uri("/api/orders/123")
+            .body(axum::body::Body::empty())
+            .unwrap();
+
+        let resp = proxy_handler(State(state), req).await.expect("proxy response");
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(resp.headers().get("x-upstream").unwrap(), "kept");
+        assert_eq!(resp.headers().get("x-added").unwrap(), "from-route");
+        assert_eq!(resp.headers().get("x-override").unwrap(), "from-route");
     }
 }
