@@ -1,5 +1,9 @@
 # `check-config --strict` JSON findings
 
+## Route compilation (all `check-config` runs)
+
+Before any resolver or strict checks, `check-config` builds the routing snapshot from `routes:` (same step as server startup). That pass rejects invalid globs/regexes and invalid **`response_headers`** (illegal names/values, hop-by-hop / framing headers). On failure the process exits with an error such as **`Failed to compile routing rules:`** — there is no `strict_findings` array for that class of error. See [`plugin-extension.md`](./plugin-extension.md).
+
 When you run `cargo run -- check-config <path> --json --strict`, the summary includes **`strict_findings`**: an array of objects (not plain strings).
 
 Each item:

@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **Library tests** (`routing::matcher`): YAML load + **`RouterSnapshot::from_config`** covers forbidden vs valid **`response_headers`** (same compile path as **`check-config`** / **`run`**).
+
 - **`proxy_http` integration test** (`tokio` + local TCP stub): asserts **`extra_response_headers`** are applied and override same-name upstream headers.
 
 - **`config_snapshot_export`** test: route **`response_header_keys`** in JSON must not echo header **values**.
@@ -24,6 +26,7 @@ All notable changes to this project are documented in this file.
 - **`diagnostic-codes.md`**: note on matched **`response_headers`**.
 - **`ci-template.md`**: smoke `route-explain` row notes mock **`response_headers`** on `orders-api`.
 - **`product-prd-developer.md`**: FR-6 节增加与本仓库 **`response_headers`** 工程切片及 **`plugin-extension.md`** 的对照说明。
+- **`check-config-strict-schema.md`**, **`operations-runbook.md`**, **`plugin-extension.md`**, **README**: clarify that **`check-config` always compiles routes** (including **`response_headers`** validation).
 - **`implementation-status.md`**: M3 table — FR-5.1–FR-5.3 engineering slice (FR-5.3 de-scoped to redacted JSON export; hosted share links out of repo); FR-6 partial row.
 - **`.gitmessage`**: UTF-8 commit template discouraging IDE/tool footers (optional `git config commit.template .gitmessage`).
 - `docs/m2-release-readiness.md`: **Engineering closure (M2)** subsection and criterion mapping.

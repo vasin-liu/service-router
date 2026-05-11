@@ -56,6 +56,8 @@ cargo run -- doctor --config /path/to/config.yaml --probe-upstream --json
 
 Interpret JSON using [`doctor-json-schema.md`](./doctor-json-schema.md). Use `--probe-upstream` when the symptom looks like network or upstream reachability.
 
+**Routing snapshot:** `check-config` always compiles `routes:` (including optional **`response_headers`** on each rule). Invalid values fail before `--strict` findings; behavior matches process startup. Reference: [`plugin-extension.md`](./plugin-extension.md).
+
 ## 5. Release gate
 
 Use [`release-acceptance-matrix.md`](./release-acceptance-matrix.md) and `docs/release-acceptance.sh` (or `.ps1`) before promoting a build.

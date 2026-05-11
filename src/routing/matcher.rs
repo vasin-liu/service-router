@@ -257,4 +257,78 @@ mod tests {
         )]));
         assert!(CompiledRoutingRule::compile(&rule).is_err());
     }
+
+    /// Full config load + `RouterSnapshot::from_config` (same path as `check-config` / `run`).
+    #[test]
+    fn yaml_forbidden_response_header_fails_router_snapshot() {
+        use std::io::Write;
+
+        use crate::config::load_config;
+        use crate::routing::RouterSnapshot;
+
+        let yaml = r#"
+log_level: info
+server:
+  host: "127.0.0.1"
+  port: 8080
+registries:
+  query_mode: priority
+  sources:
+    - type: mock
+      priority: 1
+      services: {}
+routes:
+  - id: bad-rh
+    path:
+      type: exact
+      value: /
+    upstream_url: "http://127.0.0.1:9/"
+    response_headers:
+      Connection: keep-alive
+"#;
+        let mut t = tempfile::NamedTempFile::new().unwrap();
+        write!(t, "{yaml}").unwrap();
+        t.flush().unwrap();
+        let cfg = load_config(t.path()).unwrap();
+        let err = RouterSnapshot::from_config(&cfg).unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("response_headers") || msg.contains("Validation"),
+            "unexpected error: {msg}"
+        );
+    }
+
+    #[test]
+    fn yaml_valid_response_header_compiles_router_snapshot() {
+        use std::io::Write;
+
+        use crate::config::load_config;
+        use crate::routing::RouterSnapshot;
+
+        let yaml = r#"
+log_level: info
+server:
+  host: "127.0.0.1"
+  port: 8080
+registries:
+  query_mode: priority
+  sources:
+    - type: mock
+      priority: 1
+      services: {}
+routes:
+  - id: ok-rh
+    path:
+      type: exact
+      value: /
+    upstream_url: "http://127.0.0.1:9/"
+    response_headers:
+      x-env: prod
+"#;
+        let mut t = tempfile::NamedTempFile::new().unwrap();
+        write!(t, "{yaml}").unwrap();
+        t.flush().unwrap();
+        let cfg = load_config(t.path()).unwrap();
+        RouterSnapshot::from_config(&cfg).expect("valid response_headers should compile");
+    }
 }
