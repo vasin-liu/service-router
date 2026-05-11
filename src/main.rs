@@ -75,6 +75,10 @@ async fn run() -> anyhow::Result<ExitCode> {
             as_json,
             markdown,
         } => config_diff(left, right, as_json, markdown),
+        Command::ConfigSnapshot {
+            config_path,
+            output,
+        } => config_snapshot(config_path, output),
         Command::Help => {
             print_help();
             Ok(ExitCode::SUCCESS)
@@ -247,6 +251,10 @@ enum Command {
         as_json: bool,
         markdown: bool,
     },
+    ConfigSnapshot {
+        config_path: PathBuf,
+        output: Option<PathBuf>,
+    },
     Help,
 }
 
@@ -369,6 +377,34 @@ fn parse_command(args: Vec<String>) -> Command {
                 verbose,
             }
         }
+        Some("config-snapshot") => {
+            let default_config_path = default_config();
+            let mut config_path_set: Option<PathBuf> = None;
+            let mut output: Option<PathBuf> = None;
+            let mut i = 1;
+            while i < args.len() {
+                if args[i] == "--config" {
+                    if let Some(value) = args.get(i + 1) {
+                        config_path_set = Some(PathBuf::from(value));
+                        i += 2;
+                        continue;
+                    }
+                } else if args[i] == "-o" || args[i] == "--output" {
+                    if let Some(value) = args.get(i + 1) {
+                        output = Some(PathBuf::from(value));
+                        i += 2;
+                        continue;
+                    }
+                } else if !args[i].starts_with('-') {
+                    config_path_set = Some(PathBuf::from(&args[i]));
+                }
+                i += 1;
+            }
+            Command::ConfigSnapshot {
+                config_path: config_path_set.unwrap_or(default_config_path),
+                output,
+            }
+        }
         Some("config-diff") => {
             let mut as_json = false;
             let mut markdown = false;
@@ -404,8 +440,30 @@ fn parse_command(args: Vec<String>) -> Command {
 
 fn print_help() {
     println!(
-        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  config-diff <left> <right> [--json|--markdown]   Structural diff of two YAML configs (after env expansion); exit 1 if different\n  help                                               Show help"
+        "service-router commands:\n  run [config]                                       Start proxy server (default)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  config-diff <left> <right> [--json|--markdown]   Structural diff of two YAML configs (after env expansion); exit 1 if different\n  config-snapshot [config] [--config <path>] [-o|--output <path>]  Redacted JSON snapshot for issue/PR attachment (stdout or file; use - for stdout)\n  help                                               Show help"
     );
+}
+
+fn config_snapshot(config_path: PathBuf, output: Option<PathBuf>) -> anyhow::Result<ExitCode> {
+    let config = load_config(&config_path).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to load config from {}: {}",
+            config_path.display(),
+            e
+        )
+    })?;
+    let snap = service_router::config_snapshot_export::build_config_snapshot_export(
+        &config,
+        &config_path,
+    );
+    let json = serde_json::to_string_pretty(&snap)?;
+    match output.as_deref() {
+        Some(p) if p.as_os_str() != "-" => {
+            std::fs::write(p, format!("{json}\n"))?;
+        }
+        _ => println!("{json}"),
+    }
+    Ok(ExitCode::SUCCESS)
 }
 
 fn config_diff(
