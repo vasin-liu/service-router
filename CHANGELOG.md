@@ -33,6 +33,7 @@ All notable changes to this project are documented in this file.
 
 ### Documentation
 
+- **`docs/ci-template.md`**, **`.github/workflows/release-acceptance.yml`**: wording uses “acceptance artifacts” / upload step reflects JSON + **`section-9-summary.generated.md`** (not JSON-only).
 - **`docs/ci-copy-paste.sh`**, **`docs/doctor-probe-compose.sh`**, **`implementation-status.md` (§下一阶段建议-1)**: point readers to **`release-acceptance`** for **`section-9-summary.generated.md`** with the five JSON files.
 - **`verify-m2-baseline.*`**, **`.gitlab-ci.yml`** (comment), **`implementation-status.md`**, **`config-snapshot-workflow.md`**: tips and links mention **`section-9-summary.generated.md`** next to the five JSON files.
 - **README**: Quick Start optional step **§5** runs **`release-acceptance`** with **`RUN_GLOBAL=0`** and points to **`artifacts/release-acceptance/section-9-summary.generated.md`**; roadmap bullets already note the artifact bundle.

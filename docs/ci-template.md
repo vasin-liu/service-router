@@ -95,15 +95,15 @@ script:
   # plus compose + doctor --probe-upstream — see `.gitlab-ci.yml` in this repo
 ```
 
-Optional manual job **`release-acceptance-manual`** (stage `release`) runs **`docs/release-acceptance.sh`** and uploads JSON from `artifacts/release-acceptance/` (**`check-config.json`**, **`doctor.json`**, **`doctor-probe.json`**, **`route-explain-smoke.json`**, **`config-snapshot.json`** — redacted; plus **`section-9-summary.generated.md`**). It sets `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` so `doctor --probe-upstream` does not fail the job when no mock TCP upstream is listening; for compose-backed probes (like GitHub’s `release-acceptance` workflow), use a runner with [Docker-in-Docker](https://docs.gitlab.com/ci/docker/using_docker_build/) and mirror `.github/workflows/release-acceptance.yml`.
+Optional manual job **`release-acceptance-manual`** (stage `release`) runs **`docs/release-acceptance.sh`** and uploads artifacts from `artifacts/release-acceptance/` (**`check-config.json`**, **`doctor.json`**, **`doctor-probe.json`**, **`route-explain-smoke.json`**, **`config-snapshot.json`** — redacted; plus **`section-9-summary.generated.md`**). It sets `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` so `doctor --probe-upstream` does not fail the job when no mock TCP upstream is listening; for compose-backed probes (like GitHub’s `release-acceptance` workflow), use a runner with [Docker-in-Docker](https://docs.gitlab.com/ci/docker/using_docker_build/) and mirror `.github/workflows/release-acceptance.yml`.
 
 Add **`cache:` for `target/`** on long-running pipelines if runners allow it.
 
 ## GitHub manual workflows (compose-backed)
 
-### `release-acceptance` (full JSON artifact set)
+### `release-acceptance` (full acceptance artifact set: JSON + §9 Markdown)
 
-Workflow `.github/workflows/release-acceptance.yml` runs **only on manual trigger** (`workflow_dispatch`): it starts the compose-backed mock upstreams unless **`skip_compose`** is `yes`, waits on `9000`/`9001`, runs `bash docs/release-acceptance.sh`, and uploads **`release-acceptance-json`** (under `artifacts/release-acceptance/`: **`check-config.json`**, **`doctor.json`**, **`doctor-probe.json`**, **`route-explain-smoke.json`**, **`config-snapshot.json`**, **`section-9-summary.generated.md`**). With **`skip_compose: yes`**, compose is skipped and `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` is set so `doctor --probe-upstream` does not fail the job when no TCP upstream is listening. JSON artifacts upload on **`always()`** (partial outputs when a gate fails). Ticket paste notes: [`config-snapshot-workflow.md`](./config-snapshot-workflow.md).
+Workflow `.github/workflows/release-acceptance.yml` runs **only on manual trigger** (`workflow_dispatch`): it starts the compose-backed mock upstreams unless **`skip_compose`** is `yes`, waits on `9000`/`9001`, runs `bash docs/release-acceptance.sh`, and uploads **`release-acceptance-json`** (under `artifacts/release-acceptance/`: **`check-config.json`**, **`doctor.json`**, **`doctor-probe.json`**, **`route-explain-smoke.json`**, **`config-snapshot.json`**, **`section-9-summary.generated.md`**). With **`skip_compose: yes`**, compose is skipped and `SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1` is set so `doctor --probe-upstream` does not fail the job when no TCP upstream is listening. Artifact upload runs on **`always()`** (partial outputs when a gate fails). Ticket paste notes: [`config-snapshot-workflow.md`](./config-snapshot-workflow.md).
 
 ### `doctor-upstream-probe` (doctor only)
 

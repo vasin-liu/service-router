@@ -1,4 +1,4 @@
-# Full release acceptance matrix (global gates + CLI JSON artifacts).
+# Full release acceptance matrix (global gates + CLI JSON artifacts + section-9-summary.generated.md).
 # Manual trigger: compose-backed mock upstreams by default; optional skip for config-only runs.
 #
 # Artifact "release-acceptance-json" (path: artifacts/release-acceptance/) includes:
@@ -77,7 +77,7 @@ jobs:
         run: bash docs/release-acceptance.sh
 
       # Full set: check-config, doctor, doctor-probe, route-explain-smoke, config-snapshot (redacted), section-9-summary.generated.md.
-      - name: Upload JSON artifacts
+      - name: Upload acceptance artifacts (JSON + §9 Markdown)
         if: always()
         uses: actions/upload-artifact@v4
         with:
