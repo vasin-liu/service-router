@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release acceptance runner: executes matrix command gates and stores JSON artifacts.
+# Release acceptance runner: executes matrix command gates and stores JSON outputs plus section-9-summary.generated.md.
 set -euo pipefail
 
 CONFIG_PATH="${SERVICE_ROUTER_CONFIG:-config/mock-config.yaml}"

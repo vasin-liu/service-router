@@ -21,7 +21,7 @@ Treat **M2 as closed for engineering purposes** when:
 | Profile | Automated in repo | Human / environment |
 |:--------|:------------------|:---------------------|
 | **Mock** | Yes: `.github/workflows/ci.yml` runs build, tests, `check-config --strict`, `doctor`, `route-explain`, compose + `doctor --probe-upstream`. Same commands locally: **`bash scripts/verify-m2-baseline.sh`**; optional **`M2_WITH_DOCKER_PROBE=1 bash scripts/verify-m2-baseline.sh`**. | Optional: archive §9 summary from a manual run. |
-| **Nacos** | No live registry in CI. | Run **`docs/release-acceptance-matrix.md`** §3–§4 with your `server_addr` / secrets; store JSON artifacts; fill §**9** summary. |
+| **Nacos** | No live registry in CI. | Run **`docs/release-acceptance-matrix.md`** §3–§4 with your `server_addr` / secrets; store §7 acceptance artifacts (JSON + **`section-9-summary.generated.md`** when using `release-acceptance`); fill §**9** summary. |
 | **Eureka** | No live registry in CI. | Same as Nacos with Eureka credentials and `health_path` as needed. |
 | **Kubernetes** | No cluster in default CI. | Same matrix gates against kubeconfig/API access; see matrix §5; optional **`RUST_LOG=service_router::registry::k8s=debug`** (or **`trace`**) for resolver tracing (`operations-runbook.md` §6). |
 

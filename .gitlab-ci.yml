@@ -49,7 +49,7 @@ rust-validate:
   after_script:
     - docker compose -f .github/compose/doctor-probe.compose.yml down -v || true
 
-# Optional: full gates + JSON artifacts (same script as GitHub release-acceptance workflow).
+# Optional: full gates + acceptance artifacts (same script as GitHub release-acceptance workflow).
 # artifacts/release-acceptance/: check-config.json, doctor.json, doctor-probe.json,
 # route-explain-smoke.json, config-snapshot.json, section-9-summary.generated.md
 # (see docs/release-acceptance-matrix.md §7–§9).

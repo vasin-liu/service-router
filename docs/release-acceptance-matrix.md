@@ -64,7 +64,7 @@ Minimum pass criteria:
 - `doctor --json`: exit `0`, JSON `status == "pass"`.
 - `doctor --probe-upstream --json`: exit `0`, JSON `status == "pass"`.
 
-If a command fails, keep the JSON artifact and classify by:
+If a command fails, keep the §7 artifacts (per-command JSON; the bundled `release-acceptance` runner also writes **`section-9-summary.generated.md`**) and classify by:
 
 - Config/schema issue (strict findings or parse/init failure)
 - Registry auth/TLS issue
@@ -147,7 +147,7 @@ Retention recommendation: keep at least last 10 release candidates.
 
 ## 9) Regression archive summary (for M2 / audit trail)
 
-Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or a **private** archive (do not commit secrets); store §7 JSON artifacts next to the summary. Prefer the auto-generated **`section-9-summary.generated.md`** from the same `release-acceptance` run (or re-run **`python scripts/summarize-section9-release-acceptance.py`** — see `--help`). Manual stub: [`docs/regression-archive/section-9-summary-template.md`](./regression-archive/section-9-summary-template.md). Workflow index: [`docs/regression-archive/README.md`](./regression-archive/README.md).
+Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or a **private** archive (do not commit secrets); store §7 artifacts (JSON files; prefer **`section-9-summary.generated.md`** from the same `release-acceptance` run) next to the summary. You can also re-run **`python scripts/summarize-section9-release-acceptance.py`** (see `--help`). Manual stub: [`docs/regression-archive/section-9-summary-template.md`](./regression-archive/section-9-summary-template.md). Workflow index: [`docs/regression-archive/README.md`](./regression-archive/README.md).
 
 | Field | Example |
 |:------|:--------|
@@ -164,4 +164,4 @@ Use this short template after running §1–§4 for **each profile** you care ab
 | **Deviations** | e.g. `ALLOW_PROBE_FAIL=1`, flaky registry, known issue link |
 | **Sign-off** | name or team |
 
-**Minimum for M2 “四类回归”闭链:** at least one archived row for **Mock** (automation-friendly) and, when available, one row per additional registry type you deploy against. Linking the **release-acceptance** workflow artifact or the local `release-acceptance.sh` output directory satisfies the “JSON 产物” part of the release gate (prefer including **`section-9-summary.generated.md`** from the same run).
+**Minimum for M2 “四类回归”闭链:** at least one archived row for **Mock** (automation-friendly) and, when available, one row per additional registry type you deploy against. Linking the **release-acceptance** workflow artifact or the local `release-acceptance.sh` output directory satisfies the **acceptance 产物** part of the release gate (JSON files plus **`section-9-summary.generated.md`** from the same run).
