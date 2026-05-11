@@ -10,3 +10,4 @@ cargo test -- --nocapture
 cargo run -- check-config "${CONFIG}" --json --strict
 cargo run -- doctor --config "${CONFIG}" --json
 cargo run -- route-explain "${PROBE_PATH}" "${PROBE_METHOD}" --config "${CONFIG}" --json
+cargo run -- config-snapshot --config "${CONFIG}" -o -

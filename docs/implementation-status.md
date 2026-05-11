@@ -129,7 +129,7 @@
 |:---|:---|
 | 关键诊断命令 JSON 契约与 failure code | `docs/diagnostic-codes.md`、`docs/doctor-json-schema.md`、`docs/route-explain-json-schema.md`、`docs/check-config-strict-schema.md`、`docs/metrics-json.md` |
 | 发布前后巡检与回滚 | `docs/operations-runbook.md`、`docs/release-acceptance-matrix.md` §**9** |
-| Mock 注册中心门禁 | `.github/workflows/ci.yml`（含 compose + `doctor --probe-upstream`）、`docs/ci-copy-paste.sh`、`scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1` |
+| Mock 注册中心门禁 | `.github/workflows/ci.yml`（`config-snapshot`、compose + `doctor --probe-upstream`）、`docs/ci-copy-paste.sh`、`scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1` |
 
 **待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 **`docs/m2-release-readiness.md`**。
 

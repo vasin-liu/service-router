@@ -32,6 +32,9 @@ jobs:
       - name: Smoke route-explain (mock profile — expect match)
         run: cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
 
+      - name: Mock profile config-snapshot (redacted JSON to stdout)
+        run: cargo run -- config-snapshot --config config/mock-config.yaml -o -
+
       - name: Start mock upstreams (doctor --probe-upstream)
         run: docker compose -f .github/compose/doctor-probe.compose.yml up -d
 

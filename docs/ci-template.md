@@ -11,6 +11,7 @@ Use the **same three gates** everywhere: strict config validation, environment/d
 | Doctor | `cargo run -- doctor --config config/mock-config.yaml --json` | Exit `0`, JSON top-level `status` is typically `"pass"` for healthy mock runs |
 | Doctor + network | `cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json` | Exit `0` if no TCP/registry/upstream failures; JSON includes `registry_endpoint_probe` (remote registries) and `upstream_probe` |
 | Smoke (route explain) | `cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json` | Exit `0`, JSON `matched == true` against mock profile; sample `orders-api` includes `response_headers` so JSON may show a non-null `response_headers` object |
+| Redacted snapshot | `cargo run -- config-snapshot --config config/mock-config.yaml -o -` | Exit `0`; stdout is pretty-printed JSON (`diagnostic_version` **1.0**); same command used in `.github/workflows/ci.yml` |
 
 The smoke route matches `orders-api` in `config/mock-config.yaml`; change path/method if your golden config differs (`SERVICE_ROUTER_*` vars in the shell snippet below).
 
@@ -40,10 +41,11 @@ bash docs/ci-copy-paste.sh
 3. `check-config … --json --strict`
 4. `doctor --config … --json`
 5. `route-explain … --json` (smoke; non-zero exit on no match)
-6. `docker compose -f .github/compose/doctor-probe.compose.yml up -d`
-7. Wait until TCP `127.0.0.1:9000` and `:9001` accept connections (bash `/dev/tcp` loop)
-8. `doctor --config … --probe-upstream --json` (validates `upstream_probe` / `failure_code` paths against mock TCP echoes)
-9. `docker compose … down -v` (`always()`)
+6. `config-snapshot … -o -` (redacted JSON to stdout)
+7. `docker compose -f .github/compose/doctor-probe.compose.yml up -d`
+8. Wait until TCP `127.0.0.1:9000` and `:9001` accept connections (bash `/dev/tcp` loop)
+9. `doctor --config … --probe-upstream --json` (validates `upstream_probe` / `failure_code` paths against mock TCP echoes)
+10. `docker compose … down -v` (`always()`)
 
 Requires Docker on the runner (default `ubuntu-latest` provides it). The manual **`doctor-upstream-probe`** workflow uses the same compose file for ad-hoc runs.
 
@@ -68,6 +70,9 @@ Keep **paths** aligned with where you copied `mock-config.yaml` (or your profile
 
 - name: Smoke route-explain
   run: cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
+
+- name: Config snapshot (redacted)
+  run: cargo run -- config-snapshot --config config/mock-config.yaml -o -
 ```
 
 ## GitLab CI
@@ -83,6 +88,7 @@ script:
   - cargo run -- check-config config/mock-config.yaml --json --strict
   - cargo run -- doctor --config config/mock-config.yaml --json
   - cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
+  - cargo run -- config-snapshot --config config/mock-config.yaml -o -
   # plus compose + doctor --probe-upstream — see `.gitlab-ci.yml` in this repo
 ```
 
@@ -132,6 +138,7 @@ Optional env vars for local run:
 - Validates strict route/config checks in a deterministic mock environment.
 - Ensures developer diagnostics commands stay healthy in CI.
 - Smoke `route-explain` proves routing compiles **and** a known-good request still hits an expected rule.
+- `config-snapshot` proves the redacted export path stays buildable on every PR.
 
 ## Optional extension
 

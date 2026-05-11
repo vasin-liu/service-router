@@ -1,4 +1,4 @@
-# M2 engineering baseline: mirrors GitHub ci.yml mock profile gates.
+# M2 engineering baseline: mirrors GitHub ci.yml mock profile gates (includes config-snapshot).
 # Optional: $env:M2_WITH_DOCKER_PROBE = '1' for compose + doctor --probe-upstream (needs Docker).
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
@@ -37,6 +37,9 @@ cargo run -- doctor --config $config --json
 
 Write-Host '[m2-baseline] route-explain smoke'
 cargo run -- route-explain /api/orders/123 GET --config $config --json
+
+Write-Host '[m2-baseline] config-snapshot (stdout)'
+cargo run -- config-snapshot --config $config -o -
 
 if ($env:M2_WITH_DOCKER_PROBE -eq '1') {
     Write-Host '[m2-baseline] docker compose up (doctor-probe.compose.yml)'

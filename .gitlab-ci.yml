@@ -28,6 +28,7 @@ rust-validate:
     - cargo run -- check-config config/mock-config.yaml --json --strict
     - cargo run -- doctor --config config/mock-config.yaml --json
     - cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
+    - cargo run -- config-snapshot --config config/mock-config.yaml -o -
     # Compose-backed upstream probe (parity with GitHub ci.yml)
     - docker compose -f .github/compose/doctor-probe.compose.yml up -d
     - |
