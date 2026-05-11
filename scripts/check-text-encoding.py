@@ -8,6 +8,7 @@ consumers see the files as binary text.
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 import sys
 
 
@@ -37,6 +38,10 @@ SKIP_DIRS = {
 
 
 def iter_text_candidates() -> list[Path]:
+    tracked = git_tracked_files()
+    if tracked is not None:
+        return [p for p in tracked if p.suffix.lower() in TEXT_SUFFIXES]
+
     out: list[Path] = []
     for path in ROOT.rglob("*"):
         if not path.is_file():
@@ -47,6 +52,25 @@ def iter_text_candidates() -> list[Path]:
         if path.suffix.lower() in TEXT_SUFFIXES:
             out.append(path)
     return out
+
+
+def git_tracked_files() -> list[Path] | None:
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=ROOT,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+
+    files = []
+    for raw in proc.stdout.split(b"\0"):
+        if raw:
+            files.append(ROOT / raw.decode("utf-8"))
+    return files
 
 
 def looks_utf16le(data: bytes) -> bool:
