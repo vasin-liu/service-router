@@ -5,7 +5,7 @@
 - 状态：**M2（工程侧）已封板**；主线研发重心转入 **M3（协作与扩展，对齐 PRD FR-5 / FR-6 的工程切片）**
 - 已完成里程碑：M1（开发者最小可用工具链）、**M2（稳定性 / 诊断 / 发布门禁 — 仓库可复核）**
 - 当前阶段目标：**M3** — 协作向能力（配置对比、评审摘要等）与远期扩展接口铺垫；全量 PRD 指标（插件生态占比等）仍以 **`docs/product-prd-developer.md`** 为准、单独度量
-- **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 JSON 包）](./m2-release-readiness.md#m2-json-bundle-s9)。
+- **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 §7 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 JSON 包）](./m2-release-readiness.md#m2-json-bundle-s9)。
 
 ## 本次已落地
 

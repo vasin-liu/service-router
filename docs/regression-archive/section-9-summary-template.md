@@ -1,6 +1,6 @@
 # §9 regression summary (copy below the line into ticket / wiki)
 
-Tip: **`docs/release-acceptance.sh`** / **`.ps1`** now writes **`section-9-summary.generated.md`** in the same directory after the five JSON files. To regenerate or customize flags, run **`python scripts/summarize-section9-release-acceptance.py --help`** (CLI gates and route smoke are inferred from the artifacts; global gates must be passed in or set via `SERVICE_ROUTER_ACCEPTANCE_GLOBAL_GATES`).
+Tip: **`docs/release-acceptance.sh`** / **`.ps1`** now writes **`section-9-summary.generated.md`** in the same directory after the five §7 JSON files. To regenerate or customize flags, run **`python scripts/summarize-section9-release-acceptance.py --help`** (CLI gates and route smoke are inferred from the artifacts; global gates must be passed in or set via `SERVICE_ROUTER_ACCEPTANCE_GLOBAL_GATES`).
 
 ---
 
@@ -21,7 +21,7 @@ Tip: **`docs/release-acceptance.sh`** / **`.ps1`** now writes **`section-9-summa
 
 ## Expected artifacts (JSON + Markdown) (`release-acceptance.sh` / `.ps1` or CI `release-acceptance-json`)
 
-Check off each file you attach or link (same names under `artifacts/release-acceptance/`). The five JSON files are required for machine-readable evidence; **`section-9-summary.generated.md`** is the human paste companion from the same run.
+Check off each file you attach or link (same names under `artifacts/release-acceptance/`). The five §7 JSON files are required for machine-readable evidence; **`section-9-summary.generated.md`** is the human paste companion from the same run.
 
 - [ ] `check-config.json`
 - [ ] `doctor.json`

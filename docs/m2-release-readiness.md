@@ -96,7 +96,7 @@ $env:SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL = '0'
 powershell -NoProfile -ExecutionPolicy Bypass -File docs/release-acceptance.ps1
 ```
 
-Then attach `artifacts/release-acceptance/` (including **`section-9-summary.generated.md`** when the runner completed that step), or the GitHub **`release-acceptance-json`** artifact from a manual **`release-acceptance`** workflow run; use **`regression-archive/section-9-summary-template.md`** only if you need a blank stub. Index: **`regression-archive/README.md`**.
+Then attach `artifacts/release-acceptance/` (including **`section-9-summary.generated.md`** when the runner completed that step), or the GitHub **`release-acceptance-json`** artifact (legacy name; bundle includes Markdown) from a manual **`release-acceptance`** workflow run; use **`regression-archive/section-9-summary-template.md`** only if you need a blank stub. Index: **`regression-archive/README.md`**.
 
 ## Sign-off
 

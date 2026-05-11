@@ -1,7 +1,8 @@
 # Full release acceptance matrix (global gates + five §7 CLI JSON files + section-9-summary.generated.md).
 # Manual trigger: compose-backed mock upstreams by default; optional skip for config-only runs.
 #
-# Artifact "release-acceptance-json" (path: artifacts/release-acceptance/) includes:
+# Actions artifact name "release-acceptance-json" is legacy (stable URL/habit); the zip is not JSON-only.
+# Bundle under artifacts/release-acceptance/ includes:
 #   check-config.json, doctor.json, doctor-probe.json, route-explain-smoke.json, config-snapshot.json,
 #   section-9-summary.generated.md
 # (see docs/release-acceptance-matrix.md §7–§9).

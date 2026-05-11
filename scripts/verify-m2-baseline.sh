@@ -3,7 +3,7 @@
 # build, unit tests, check-config --strict, doctor --json, route-explain smoke,
 # config-snapshot).
 # Optional: set M2_WITH_DOCKER_PROBE=1 to run compose + doctor --probe-upstream (needs Docker).
-# For five JSON files + section-9-summary.generated.md under artifacts/release-acceptance/
+# For five §7 JSON outputs + section-9-summary.generated.md under artifacts/release-acceptance/
 # (§9 archive), run docs/release-acceptance.sh afterward (see docs/m2-release-readiness.md).
 set -euo pipefail
 

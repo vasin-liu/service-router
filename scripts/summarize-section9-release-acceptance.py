@@ -4,7 +4,7 @@
 Reads the default directory written by docs/release-acceptance.sh / .ps1:
   artifacts/release-acceptance/
 
-Expected inputs (same names as CI bundle release-acceptance-json):
+Expected file basenames (same as under CI artifact release-acceptance-json; that artifact name is legacy but the download includes section-9-summary.generated.md):
   check-config.json, doctor.json, doctor-probe.json,
   route-explain-smoke.json, config-snapshot.json
 

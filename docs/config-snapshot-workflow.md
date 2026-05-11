@@ -21,7 +21,7 @@ cargo run -- config-snapshot --config config/mock-config.yaml -o -
 
 ## Automation
 
-`docs/release-acceptance.sh` (and **`.ps1`**) write **`config-snapshot.json`** next to other acceptance artifacts (see **`release-acceptance-matrix.md`** §7) and emit **`section-9-summary.generated.md`**. The same directory (five JSON + that Markdown file) is bundled as the **`release-acceptance-json`** artifact in **`.github/workflows/release-acceptance.yml`** and the GitLab **`release-acceptance-manual`** job (see **`ci-template.md`**).
+`docs/release-acceptance.sh` (and **`.ps1`**) write **`config-snapshot.json`** next to other acceptance artifacts (see **`release-acceptance-matrix.md`** §7) and emit **`section-9-summary.generated.md`**. The same directory (five §7 JSON files + that Markdown file) is bundled as the **`release-acceptance-json`** artifact in **`.github/workflows/release-acceptance.yml`** and the GitLab **`release-acceptance-manual`** job (see **`ci-template.md`**). The GitHub artifact name is legacy but the download includes the Markdown file.
 
 ## Schema
 

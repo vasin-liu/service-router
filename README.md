@@ -38,9 +38,9 @@ cargo run -- run config/mock-config.yaml
 
 Server listens on `127.0.0.1:8080` by default in mock config.
 
-### 5) Release acceptance JSON + §9 paste (optional)
+### 5) Release acceptance (§7 JSON + §9) (optional)
 
-Collect the same **five JSON** files CI uses for §9 evidence, plus a generated Markdown table:
+Collect the same **five §7 JSON** outputs CI uses for §9 evidence, plus the generated Markdown table:
 
 ```bash
 SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 bash docs/release-acceptance.sh
@@ -112,9 +112,9 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/operations-runbook.md` — probes, metrics, config rollback, triage (no cluster naming assumptions)
 - `docs/route-explain-json-schema.md`
 - `docs/doctor-json-schema.md`
-- Optional CI: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`; uploads five JSON + **`section-9-summary.generated.md`** under **`release-acceptance-json`**)
+- Optional CI: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`; uploads five §7 JSON outputs + **`section-9-summary.generated.md`** under artifact **`release-acceptance-json`** — name is legacy; bundle includes Markdown)
 - `docs/metrics-json.md` — `GET /metrics` JSON + `/metrics/prometheus` text exposition
-- `docs/release-acceptance-matrix.md` — pre-release regression checklist for Mock/Nacos/Eureka/Kubernetes (`bash docs/release-acceptance.sh` or `powershell -File docs/release-acceptance.ps1`); §9 regression archive + **`docs/regression-archive/`**; artifacts include five **`*.json`** (e.g. **`config-snapshot.json`**) plus paste-ready **`section-9-summary.generated.md`**
+- `docs/release-acceptance-matrix.md` — pre-release regression checklist for Mock/Nacos/Eureka/Kubernetes (`bash docs/release-acceptance.sh` or `powershell -File docs/release-acceptance.ps1`); §9 regression archive + **`docs/regression-archive/`**; artifacts include five §7 **`*.json`** (e.g. **`config-snapshot.json`**) plus paste-ready **`section-9-summary.generated.md`**
 - `docs/config-snapshot-workflow.md` — attach redacted JSON to tickets (FR-5.3)
 - `docs/next-engineering-priorities.md` — P0/P2 follow-ups after M3 slice
 - `docs/adr/` — lightweight ADRs (e.g. FR-6 dynamic plugins deferred)

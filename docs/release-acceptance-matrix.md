@@ -15,7 +15,7 @@ PowerShell (Windows):
 powershell -ExecutionPolicy Bypass -File docs/release-acceptance.ps1
 ```
 
-GitHub Actions: run **Actions → release-acceptance → Run workflow** (see `.github/workflows/release-acceptance.yml`; downloads **`release-acceptance-json`** artifact, including **`config-snapshot.json`** alongside the other §7 JSON files and **`section-9-summary.generated.md`**).
+GitHub Actions: run **Actions → release-acceptance → Run workflow** (see `.github/workflows/release-acceptance.yml`; downloads **`release-acceptance-json`** artifact — name is legacy; includes **`config-snapshot.json`** alongside the other §7 JSON files and **`section-9-summary.generated.md`**).
 
 ## 1) Global Gates (all profiles)
 
@@ -126,7 +126,7 @@ Store these per profile for each release candidate:
 - `doctor-probe.json`
 - `route-explain-smoke.json`
 - `config-snapshot.json` (redacted routing/registry summary; written by `release-acceptance.sh` / `.ps1` since this repo revision)
-- `section-9-summary.generated.md` (paste-ready §9 table from the five JSON files; same runner)
+- `section-9-summary.generated.md` (paste-ready §9 table from the five §7 JSON files; same runner)
 
 Retention recommendation: keep at least last 10 release candidates.
 
