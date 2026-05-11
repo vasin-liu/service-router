@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **`scripts/summarize-section9-release-acceptance.py`**: builds a paste-ready §9 Markdown summary table from `artifacts/release-acceptance/*.json` (CLI/route inference; global gates via flag or env); documented in **`docs/regression-archive/`** and **`release-acceptance-matrix.md`**.
 - **`scripts/check-text-encoding.py`** + GitHub CI step: checks Git-tracked text-like files (fallback: directory scan) and fails on NUL bytes to prevent accidental UTF-16LE source/doc/script commits; failure output includes a UTF-16LE-to-UTF-8 repair example.
 - **CI parity**: GitLab, `docs/ci-copy-paste.sh`, and `scripts/verify-m2-baseline.*` also run the text encoding guard.
 - **Release acceptance parity**: `docs/release-acceptance.sh` / `.ps1` run the text encoding guard as part of global gates; matrix docs list it.

@@ -145,7 +145,7 @@ Retention recommendation: keep at least last 10 release candidates.
 
 ## 9) Regression archive summary (for M2 / audit trail)
 
-Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or a **private** archive (do not commit secrets); store §7 JSON artifacts next to the summary. Copy-paste stub: [`docs/regression-archive/section-9-summary-template.md`](./regression-archive/section-9-summary-template.md). Workflow index: [`docs/regression-archive/README.md`](./regression-archive/README.md).
+Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or a **private** archive (do not commit secrets); store §7 JSON artifacts next to the summary. Copy-paste stub: [`docs/regression-archive/section-9-summary-template.md`](./regression-archive/section-9-summary-template.md). Workflow index: [`docs/regression-archive/README.md`](./regression-archive/README.md). Optional: **`python scripts/summarize-section9-release-acceptance.py`** emits a Markdown table from the five JSON files (see `--help`).
 
 | Field | Example |
 |:------|:--------|

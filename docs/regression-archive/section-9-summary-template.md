@@ -1,5 +1,7 @@
 # §9 regression summary (copy below the line into ticket / wiki)
 
+Tip: after `release-acceptance` writes JSON under `artifacts/release-acceptance/`, run **`python scripts/summarize-section9-release-acceptance.py --help`** to print a filled table (CLI gates and route smoke are inferred from the artifacts; global gates must be passed in or set via `SERVICE_ROUTER_ACCEPTANCE_GLOBAL_GATES`).
+
 ---
 
 | Field | Value |
