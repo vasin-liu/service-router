@@ -57,4 +57,12 @@ if ($LASTEXITCODE -ne 0) {
     throw "config-snapshot failed with exit code $LASTEXITCODE"
 }
 
+Write-Host "[release-acceptance] section-9 summary (markdown)"
+$summaryPath = Join-Path $ArtifactDir "section-9-summary.generated.md"
+$summary = & python scripts/summarize-section9-release-acceptance.py --artifacts-dir $ArtifactDir
+if ($LASTEXITCODE -ne 0) {
+    throw "section-9 summary generation failed with exit code $LASTEXITCODE"
+}
+$summary | Out-File -FilePath $summaryPath -Encoding utf8
+
 Write-Host "[release-acceptance] done"

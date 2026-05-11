@@ -48,4 +48,9 @@ cargo run -- route-explain "${SMOKE_PATH}" "${SMOKE_METHOD}" --config "${CONFIG_
 echo "[release-acceptance] config-snapshot (redacted)"
 cargo run -- config-snapshot --config "${CONFIG_PATH}" -o "${ARTIFACT_DIR}/config-snapshot.json"
 
+echo "[release-acceptance] section-9 summary (markdown)"
+python scripts/summarize-section9-release-acceptance.py \
+  --artifacts-dir "${ARTIFACT_DIR}" \
+  > "${ARTIFACT_DIR}/section-9-summary.generated.md"
+
 echo "[release-acceptance] done"
