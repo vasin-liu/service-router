@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a §9 regression summary (Markdown) from release-acceptance JSON artifacts.
+"""Build a §9 regression summary (Markdown) from the five release-acceptance CLI JSON files (§7).
 
 Reads the default directory written by docs/release-acceptance.sh / .ps1:
   artifacts/release-acceptance/
@@ -164,13 +164,13 @@ def _config_basename(
 
 def main() -> int:
     p = argparse.ArgumentParser(
-        description="Emit Markdown section-9 summary table from release-acceptance JSON artifacts.",
+        description="Emit Markdown section-9 summary table from release-acceptance CLI JSON inputs (§7).",
     )
     p.add_argument(
         "--artifacts-dir",
         type=Path,
         default=Path(os.environ.get("SERVICE_ROUTER_ACCEPTANCE_OUT", "artifacts/release-acceptance")),
-        help="Directory with the five JSON artifacts (default: SERVICE_ROUTER_ACCEPTANCE_OUT or artifacts/release-acceptance); release-acceptance runners also write section-9-summary.generated.md here.",
+        help="Directory with the five §7 JSON outputs (default: SERVICE_ROUTER_ACCEPTANCE_OUT or artifacts/release-acceptance); release-acceptance runners also write section-9-summary.generated.md here.",
     )
     p.add_argument(
         "--profile",
@@ -244,7 +244,7 @@ def main() -> int:
     global_gates = args.global_gates.strip()
     if not global_gates:
         global_gates = (
-            "_(not in JSON artifacts; set --global-gates or SERVICE_ROUTER_ACCEPTANCE_GLOBAL_GATES)_"
+            "_(not recorded in §7 JSON; set --global-gates or SERVICE_ROUTER_ACCEPTANCE_GLOBAL_GATES)_"
         )
 
     cli_gates = _cli_gates_summary(check_d, check_err, doc_d, doc_err, probe_d, probe_err)

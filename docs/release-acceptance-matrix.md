@@ -3,7 +3,7 @@
 Use this checklist before release cut or environment rollout.  
 Goal: verify the same command contracts across `Mock`, `Nacos`, `Eureka`, and `Kubernetes`.
 
-Quick runner (generates JSON artifacts + **`section-9-summary.generated.md`**):
+Quick runner (writes the five §7 JSON files + **`section-9-summary.generated.md`**):
 
 ```bash
 bash docs/release-acceptance.sh

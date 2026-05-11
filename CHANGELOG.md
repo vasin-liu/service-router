@@ -7,7 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - **`scripts/summarize-section9-release-acceptance.py`**: builds a paste-ready §9 Markdown summary table from `artifacts/release-acceptance/*.json` (CLI/route inference; global gates via flag or env); documented in **`docs/regression-archive/`** and **`release-acceptance-matrix.md`**.
-- **`docs/release-acceptance.sh`** / **`.ps1`**: now auto-generate **`section-9-summary.generated.md`** after producing the five JSON artifacts.
+- **`docs/release-acceptance.sh`** / **`.ps1`**: now auto-generate **`section-9-summary.generated.md`** after producing the five §7 JSON outputs.
 - **`scripts/check-text-encoding.py`** + GitHub CI step: checks Git-tracked text-like files (fallback: directory scan) and fails on NUL bytes to prevent accidental UTF-16LE source/doc/script commits; failure output includes a UTF-16LE-to-UTF-8 repair example.
 - **CI parity**: GitLab, `docs/ci-copy-paste.sh`, and `scripts/verify-m2-baseline.*` also run the text encoding guard.
 - **Release acceptance parity**: `docs/release-acceptance.sh` / `.ps1` run the text encoding guard as part of global gates; matrix docs list it.
@@ -33,6 +33,7 @@ All notable changes to this project are documented in this file.
 
 ### Documentation
 
+- **`summarize-section9-release-acceptance.py`**（模块说明 / `--help`）、**`release-acceptance-matrix.md`**（Quick runner）、**`.github/workflows/release-acceptance.yml`**（头部注释）：用 **§7 CLI JSON** 等表述替代易误解的 “JSON artifacts”。
 - **`CHANGELOG.md`**（Unreleased 中 release-acceptance 叙事条目）、**`release-acceptance-matrix.md`**（§7 失败保留物 / §9 归档）、**`m2-release-readiness.md`**（Nacos 行）、**`docs/release-acceptance.sh`** 注释、**`.gitlab-ci.yml`**（`release-acceptance-manual` 注释）：统一 **acceptance 产物**表述（五份 JSON + **`section-9-summary.generated.md`**），避免「仅 JSON」误导。
 - **`docs/ci-template.md`**, **`.github/workflows/release-acceptance.yml`**: wording uses “acceptance artifacts” / upload step reflects JSON + **`section-9-summary.generated.md`** (not JSON-only).
 - **`docs/ci-copy-paste.sh`**, **`docs/doctor-probe-compose.sh`**, **`implementation-status.md` (§下一阶段建议-1)**: point readers to **`release-acceptance`** for **`section-9-summary.generated.md`** with the five JSON files.
