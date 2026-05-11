@@ -95,9 +95,9 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/operations-runbook.md` — probes, metrics, config rollback, triage (no cluster naming assumptions)
 - `docs/route-explain-json-schema.md`
 - `docs/doctor-json-schema.md`
-- Optional CI: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`, JSON artifacts)
+- Optional CI: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`; uploads five JSON + **`section-9-summary.generated.md`** under **`release-acceptance-json`**)
 - `docs/metrics-json.md` — `GET /metrics` JSON + `/metrics/prometheus` text exposition
-- `docs/release-acceptance-matrix.md` — pre-release regression checklist for Mock/Nacos/Eureka/Kubernetes (`bash docs/release-acceptance.sh` or `powershell -File docs/release-acceptance.ps1`); §9 regression archive + **`docs/regression-archive/`**; artifacts include **`config-snapshot.json`**
+- `docs/release-acceptance-matrix.md` — pre-release regression checklist for Mock/Nacos/Eureka/Kubernetes (`bash docs/release-acceptance.sh` or `powershell -File docs/release-acceptance.ps1`); §9 regression archive + **`docs/regression-archive/`**; artifacts include five **`*.json`** (e.g. **`config-snapshot.json`**) plus paste-ready **`section-9-summary.generated.md`**
 - `docs/config-snapshot-workflow.md` — attach redacted JSON to tickets (FR-5.3)
 - `docs/next-engineering-priorities.md` — P0/P2 follow-ups after M3 slice
 - `docs/adr/` — lightweight ADRs (e.g. FR-6 dynamic plugins deferred)
