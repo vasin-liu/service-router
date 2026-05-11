@@ -22,11 +22,12 @@ GitHub Actions: run **Actions → release-acceptance → Run workflow** (see `.g
 Run once per build artifact:
 
 ```bash
+python scripts/check-text-encoding.py
 cargo check
 cargo test -- --nocapture
 ```
 
-Pass when both commands exit `0`.
+Pass when all commands exit `0`. The encoding check catches accidental UTF-16/NUL text files before Rust, Bash, or Markdown tooling treats them as binary.
 
 When the router process is running (e.g. after rollout smoke), optionally assert readiness:
 

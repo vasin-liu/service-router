@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 
 - **`scripts/check-text-encoding.py`** + GitHub CI step: fails on NUL bytes in text-like files to prevent accidental UTF-16LE source/doc/script commits.
 - **CI parity**: GitLab, `docs/ci-copy-paste.sh`, and `scripts/verify-m2-baseline.*` also run the text encoding guard.
+- **Release acceptance parity**: `docs/release-acceptance.sh` / `.ps1` run the text encoding guard as part of global gates; matrix docs list it.
 - **`docs/regression-archive/`**: §9 summary template + workflow README for M2 audit trail.
 - **`scripts/post-deploy-smoke.sh`** / **`.ps1`**: minimal **`GET /health`** + **`/ready`** after rollout (`SERVICE_ROUTER_BASE_URL`).
 - **`docs/config-snapshot-workflow.md`**, **`docs/next-engineering-priorities.md`**, **`docs/adr/`** (ADR 001: FR-6 dynamic plugins deferred).

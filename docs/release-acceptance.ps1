@@ -32,7 +32,8 @@ Write-Host "[release-acceptance] smoke: $SmokeMethod $SmokePath"
 Write-Host "[release-acceptance] output: $ArtifactDir"
 
 if ($RunGlobal -eq "1") {
-    Write-Host "[release-acceptance] global gates: cargo check + cargo test"
+    Write-Host "[release-acceptance] global gates: text encoding + cargo check + cargo test"
+    python scripts/check-text-encoding.py
     cargo check
     cargo test -- --nocapture
 }

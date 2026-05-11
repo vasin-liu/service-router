@@ -16,7 +16,8 @@ echo "[release-acceptance] smoke: ${SMOKE_METHOD} ${SMOKE_PATH}"
 echo "[release-acceptance] output: ${ARTIFACT_DIR}"
 
 if [[ "${RUN_GLOBAL_GATES}" == "1" ]]; then
-  echo "[release-acceptance] global gates: cargo check + cargo test"
+  echo "[release-acceptance] global gates: text encoding + cargo check + cargo test"
+  python scripts/check-text-encoding.py
   cargo check
   cargo test -- --nocapture
 fi
