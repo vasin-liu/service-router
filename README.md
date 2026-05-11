@@ -38,6 +38,23 @@ cargo run -- run config/mock-config.yaml
 
 Server listens on `127.0.0.1:8080` by default in mock config.
 
+### 5) Release acceptance JSON + §9 paste (optional)
+
+Collect the same **five JSON** files CI uses for §9 evidence, plus a generated Markdown table:
+
+```bash
+SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 bash docs/release-acceptance.sh
+```
+
+Outputs under **`artifacts/release-acceptance/`** (including **`section-9-summary.generated.md`**). Full matrix: **`docs/release-acceptance-matrix.md`** §7–§9.
+
+PowerShell:
+
+```powershell
+$env:SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL = '0'
+powershell -NoProfile -ExecutionPolicy Bypass -File docs/release-acceptance.ps1
+```
+
 ## CLI Commands
 
 - `run [config]` — omit `config` to use `config/config.yaml`
