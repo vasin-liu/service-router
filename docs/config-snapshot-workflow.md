@@ -26,3 +26,7 @@ cargo run -- config-snapshot --config config/mock-config.yaml -o -
 ## Schema
 
 Top-level shape is defined by `service_router::config_snapshot_export::ConfigSnapshotExport` in **`src/lib.rs`** (`diagnostic_version` **1.0**, UUID `snapshot_id`, route **`response_header_keys`** when configured).
+
+## §9 acceptance bundle (optional)
+
+When you run **`docs/release-acceptance.sh`** / **`.ps1`**, the directory also holds **`check-config.json`**, **`doctor.json`**, **`doctor-probe.json`**, **`route-explain-smoke.json`**, and **`config-snapshot.json`**. To turn those into a single Markdown table for tickets or wikis, use **`python scripts/summarize-section9-release-acceptance.py`** (see **`docs/regression-archive/`** and **`--help`**).

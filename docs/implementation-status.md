@@ -141,7 +141,7 @@
 |:---|:---|:---|
 | FR-5.1 配置结构化对比 | 已提供 | CLI **`config-diff <左> <右> [--json \| --markdown]`**：加载两份 YAML（含 env 展开）、对比 `server` / `log_level` / `registries` / 按 `id` 的 `routes`；有差异时退出码 **1** |
 | FR-5.2 变更说明 / 评审辅助 | 已提供 | 同上 **`--markdown`**，便于粘贴 PR 描述 |
-| FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、路由 **`response_header_keys`**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**附链 / 在线分享**仍由工单或 Git 另行完成 |
+| FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、路由 **`response_header_keys`**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**`scripts/summarize-section9-release-acceptance.py`** 可将 **`release-acceptance`** 产出的五份 JSON 汇总为可粘贴的 §9 Markdown（见 **`docs/regression-archive/`**）；**附链 / 在线分享**仍由工单或 Git 另行完成 |
 | FR-6 插件 / 扩展生态 | 部分（配置切片） | 无动态插件 / 运行时加载；已提供路由级 **`response_headers`**（仅普通 HTTP）作为内置扩展点，详见 **`docs/plugin-extension.md`**；WebSocket 不应用此项 |
 
 **「M3 工程达成」最低标准（本仓库）**：**FR-5.1～FR-5.3**（工程可交付部分）已齐；**FR-5.3** 的外链托管不属于本仓库。**FR-6**：以配置切片为初版交付，完整插件生态仍为后续里程碑。
@@ -152,6 +152,7 @@
 |:---|:---|
 | **`config-diff`** | 两份 YAML 经相同加载规则后对比；`--json` / `--markdown`；有差异退出码 **1** |
 | **`config-snapshot`** | 脱敏 JSON；路由行含 **`response_header_keys`**（仅键名）；实现见 `src/lib.rs` `config_snapshot_export` |
+| **`summarize-section9-release-acceptance.py`** | 从 **`artifacts/release-acceptance/*.json`** 生成 §9 粘贴表（CLI/路由烟测推断；全局门禁需 flag/env）；索引 **`docs/regression-archive/`** |
 | **`routes[].response_headers`** | 仅普通 **HTTP** 下游响应追加/覆盖头；编译期校验；**WebSocket** 不应用；详 **`docs/plugin-extension.md`** |
 | **`route-explain`** | 命中 JSON 含 **`response_headers`**；文本命中列出出站头；未命中诊断与 schema 见 **`docs/route-explain-json-schema.md`** |
 | **`check-config`** | **每次**均执行路由编译（与 **`run`** / 热更新一致），非法 **`response_headers`** 在 strict 之前即失败；见 **`docs/check-config-strict-schema.md`** 开篇 |
