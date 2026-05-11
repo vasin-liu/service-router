@@ -131,7 +131,7 @@
 | 发布前后巡检与回滚 | `docs/operations-runbook.md`、`docs/release-acceptance-matrix.md` §**9** |
 | Mock 注册中心门禁 | `.github/workflows/ci.yml`（`config-snapshot`、compose + `doctor --probe-upstream`）、`docs/ci-copy-paste.sh`、`scripts/verify-m2-baseline.sh` / `scripts/verify-m2-baseline.ps1`；可选 §7 JSON 包：[m2-release-readiness §9 bundle](./m2-release-readiness.md#m2-json-bundle-s9) |
 
-**待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 [`m2-release-readiness.md`](./m2-release-readiness.md)（Mock 下可选 [五份 JSON + §9 汇总 Markdown 与 CI 对齐](./m2-release-readiness.md#m2-json-bundle-s9)）。
+**待业务侧完成**：四类中的 **Nacos / Eureka / Kubernetes** 在目标环境的矩阵回归与 §**9** 归档；完整对照表与本地一键命令见 [`m2-release-readiness.md`](./m2-release-readiness.md)（Mock 下可选 [五份 §7 JSON + §9 汇总 Markdown 与 CI 对齐](./m2-release-readiness.md#m2-json-bundle-s9)）。
 
 ## 完成定义（M3，工程侧切片）
 
