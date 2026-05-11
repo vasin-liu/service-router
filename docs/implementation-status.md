@@ -89,13 +89,13 @@
 **M2 主线（文档/门禁/诊断）上述 §1–§4 已闭环**：EndpointSlice 可选 `endpoint_slice_label_selector`、`release-acceptance.yml` + 矩阵文档、`upstream_probe` / `failure_code` 与 metrics 对齐、`operations-runbook` 巡检与告警章节、GitHub/GitLab CI 含 compose + `doctor --probe-upstream`。
 
 1. **环境与回归沉淀（M2 完成定义）**  
-   在 **Mock / Nacos / Eureka / Kubernetes** 真实或准生产配置下各跑一轮 `release-acceptance-matrix.md` 门禁，归档 JSON 产物与结论（团队流程项）。**回归摘要表模板**见同文档 **§9**（与 `release-acceptance.sh` 产出的 `check-config.json` 等配套）。
+   在 **Mock / Nacos / Eureka / Kubernetes** 真实或准生产配置下各跑一轮 **`release-acceptance-matrix.md`** 门禁，归档 JSON 产物与结论（团队流程项）。**§9 模板与流程索引**：**`docs/regression-archive/`**；`docs/release-acceptance.sh` 现已一并写出 **`config-snapshot.json`**（脱敏）。
 
 2. **Kubernetes 规模化（按需迭代）**  
    在现有 Service 端口过滤、EndpointSlice `ready`/`serving`、列表标签筛选基础上，按集群需要扩展（观察性、多集群上下文等）；保持可配置、可单测。
 
 3. **转发与弹性（独立里程碑）**  
-   负载均衡策略、WebSocket 完整性、熔断重试等见 `docs/product-design-one-pager.md` / `docs/developer-roadmap-1-2y.md`，单独评审后排期，不捆绑当前 M2 门禁。（已有：`server.instance_selection` 支持 `first` / `round_robin`，无权重与健康路由。）
+   负载均衡策略、WebSocket 完整性、熔断重试等见 **`docs/product-design-one-pager.md`** / **`docs/developer-roadmap-1-2y.md`**，单独评审后排期，不捆绑当前 M2 门禁。（已有：`server.instance_selection` 支持 `first` / `round_robin`，无权重与健康路由。）一页优先级表：**`docs/next-engineering-priorities.md`**。
 
 ## 远期（注册中心扩展，不设固定版本）
 

@@ -49,4 +49,11 @@ Invoke-CargoCapture -CargoArgs @("run","--","doctor","--config",$ConfigPath,"--p
 Write-Host "[release-acceptance] route-explain smoke"
 Invoke-CargoCapture -CargoArgs @("run","--","route-explain",$SmokePath,$SmokeMethod,"--config",$ConfigPath,"--json") -OutFile "route-explain-smoke.json"
 
+Write-Host "[release-acceptance] config-snapshot (redacted)"
+$snapshotPath = Join-Path $ArtifactDir "config-snapshot.json"
+& cargo @("run","--","config-snapshot","--config",$ConfigPath,"-o",$snapshotPath)
+if ($LASTEXITCODE -ne 0) {
+    throw "config-snapshot failed with exit code $LASTEXITCODE"
+}
+
 Write-Host "[release-acceptance] done"

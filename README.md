@@ -89,7 +89,11 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/doctor-json-schema.md`
 - Optional CI: `.github/workflows/release-acceptance.yml` (`workflow_dispatch`, JSON artifacts)
 - `docs/metrics-json.md` — `GET /metrics` JSON + `/metrics/prometheus` text exposition
-- `docs/release-acceptance-matrix.md` — pre-release regression checklist for Mock/Nacos/Eureka/Kubernetes (`bash docs/release-acceptance.sh` or `powershell -File docs/release-acceptance.ps1`); §9 regression archive summary template
+- `docs/release-acceptance-matrix.md` — pre-release regression checklist for Mock/Nacos/Eureka/Kubernetes (`bash docs/release-acceptance.sh` or `powershell -File docs/release-acceptance.ps1`); §9 regression archive + **`docs/regression-archive/`**; artifacts include **`config-snapshot.json`**
+- `docs/config-snapshot-workflow.md` — attach redacted JSON to tickets (FR-5.3)
+- `docs/next-engineering-priorities.md` — P0/P2 follow-ups after M3 slice
+- `docs/adr/` — lightweight ADRs (e.g. FR-6 dynamic plugins deferred)
+- **`scripts/post-deploy-smoke.sh`** / **`scripts/post-deploy-smoke.ps1`** — `GET /health` + `/ready` against **`SERVICE_ROUTER_BASE_URL`** (default `http://127.0.0.1:8080`)
 - CI copy-paste: `docs/ci-template.md` · `docs/ci-copy-paste.sh` · `docs/doctor-probe-compose.sh`
 
 ## Migrate to Mock Dev Mode

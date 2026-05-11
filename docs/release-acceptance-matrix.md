@@ -124,6 +124,7 @@ Store these per profile for each release candidate:
 - `doctor.json`
 - `doctor-probe.json`
 - `route-explain-smoke.json`
+- `config-snapshot.json` (redacted routing/registry summary; written by `release-acceptance.sh` / `.ps1` since this repo revision)
 
 Retention recommendation: keep at least last 10 release candidates.
 
@@ -131,6 +132,7 @@ Retention recommendation: keep at least last 10 release candidates.
 
 `docs/release-acceptance.sh` supports:
 
+- Produces **`config-snapshot.json`** (redacted) alongside the other §7 files when the script completes successfully.
 - `SERVICE_ROUTER_CONFIG` (default `config/mock-config.yaml`)
 - `SERVICE_ROUTER_SMOKE_PATH` (default `/api/orders/123`)
 - `SERVICE_ROUTER_SMOKE_METHOD` (default `GET`)
@@ -142,7 +144,7 @@ Retention recommendation: keep at least last 10 release candidates.
 
 ## 9) Regression archive summary (for M2 / audit trail)
 
-Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or `docs/` archive folder alongside the JSON files from §7.
+Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or a **private** archive (do not commit secrets); store §7 JSON artifacts next to the summary. Copy-paste stub: [`docs/regression-archive/section-9-summary-template.md`](./regression-archive/section-9-summary-template.md). Workflow index: [`docs/regression-archive/README.md`](./regression-archive/README.md).
 
 | Field | Example |
 |:------|:--------|
@@ -154,6 +156,7 @@ Use this short template after running §1–§4 for **each profile** you care ab
 | **Global gates** | §1: `cargo check` / `cargo test` — pass / fail |
 | **CLI gates** | §3: `check-config --strict`, `doctor`, `doctor --probe-upstream` — pass / fail |
 | **Route smoke** | §4: `route-explain` path/method — matched yes/no |
+| **Config snapshot** | `config-snapshot.json` from same run — yes/no (redacted) |
 | **Artifacts dir** | e.g. `artifacts/release-acceptance/` or CI artifact name |
 | **Deviations** | e.g. `ALLOW_PROBE_FAIL=1`, flaky registry, known issue link |
 | **Sign-off** | name or team |

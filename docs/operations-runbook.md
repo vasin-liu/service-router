@@ -78,7 +78,7 @@ Further product context: [`product-design.md`](./product-design.md), [`implement
 Run within minutes of a **rollout**, **binary upgrade**, or **config hot-reload**:
 
 1. **`GET /health`** → 200.
-2. **`GET /ready`** → 200 unless every registry is intentionally offline (then 503 is expected until at least one registry recovers).
+2. **`GET /ready`** → 200 unless every registry is intentionally offline (then 503 is expected until at least one registry recovers). Quick script (same checks): [`../scripts/post-deploy-smoke.sh`](../scripts/post-deploy-smoke.sh) or **`scripts/post-deploy-smoke.ps1`** with optional **`SERVICE_ROUTER_BASE_URL`**.
 3. **CLI gates** (same `--config` as the running process): `check-config … --strict` exit 0; `doctor --json` has `status: "pass"`.
 4. **Traffic spot-check**: one `route-explain` for a critical rule id, or a single synthetic request through the load balancer.
 5. **Metrics baseline**: glance at `route_hits` and `failure_reasons` in `GET /metrics`; compare rates to pre-change only when investigating regressions (counters reset on process restart).

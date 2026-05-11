@@ -44,4 +44,7 @@ echo "[release-acceptance] route-explain smoke"
 cargo run -- route-explain "${SMOKE_PATH}" "${SMOKE_METHOD}" --config "${CONFIG_PATH}" --json \
   | tee "${ARTIFACT_DIR}/route-explain-smoke.json"
 
+echo "[release-acceptance] config-snapshot (redacted)"
+cargo run -- config-snapshot --config "${CONFIG_PATH}" -o "${ARTIFACT_DIR}/config-snapshot.json"
+
 echo "[release-acceptance] done"

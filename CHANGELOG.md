@@ -6,6 +6,11 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **`docs/regression-archive/`**: §9 summary template + workflow README for M2 audit trail.
+- **`scripts/post-deploy-smoke.sh`** / **`.ps1`**: minimal **`GET /health`** + **`/ready`** after rollout (`SERVICE_ROUTER_BASE_URL`).
+- **`docs/config-snapshot-workflow.md`**, **`docs/next-engineering-priorities.md`**, **`docs/adr/`** (ADR 001: FR-6 dynamic plugins deferred).
+- **`release-acceptance.sh`** / **`.ps1`**: emit **`config-snapshot.json`** next to other §7 artifacts.
+
 - **Library tests** (`routing::matcher`): YAML load + **`RouterSnapshot::from_config`** covers forbidden vs valid **`response_headers`** (same compile path as **`check-config`** / **`run`**).
 
 - **`proxy_http` integration test** (`tokio` + local TCP stub): asserts **`extra_response_headers`** are applied and override same-name upstream headers.
@@ -27,7 +32,9 @@ All notable changes to this project are documented in this file.
 - **`ci-template.md`**: smoke `route-explain` row notes mock **`response_headers`** on `orders-api`.
 - **`product-prd-developer.md`**: FR-6 节增加与本仓库 **`response_headers`** 工程切片及 **`plugin-extension.md`** 的对照说明。
 - **`check-config-strict-schema.md`**, **`operations-runbook.md`**, **`plugin-extension.md`**, **README**: clarify that **`check-config` always compiles routes** (including **`response_headers`** validation).
-- **`implementation-status.md`**: M3 table — FR-5.1–FR-5.3 engineering slice (FR-5.3 de-scoped to redacted JSON export; hosted share links out of repo); FR-6 partial row; **「本次已落地」/「验证结果」/「下一版本迭代进展」** 与当前 CLI 及 **`cargo test`** 对齐；新增 **「M3 已交付能力清单」** 表。
+- **`implementation-status.md`**: M3 table — FR-5.1–FR-5.3 engineering slice (FR-5.3 de-scoped to redacted JSON export; hosted share links out of repo); FR-6 partial row; **「本次已落地」/「验证结果」/「下一版本迭代进展」** 与当前 CLI 及 **`cargo test`** 对齐；新增 **「M3 已交付能力清单」** 表；**「下一阶段建议」** 指向 **`regression-archive/`** 与 **`config-snapshot.json`**。
+- **`next-iteration-backlog.md`**: replaced stale sprint text with post-M3 backlog pointers.
+- **`release-acceptance-matrix.md`**, **`m2-release-readiness.md`**, **`operations-runbook.md`**, **README**: link regression archive, post-deploy smoke, **`config-snapshot`** artifact.
 - **`.gitmessage`**: UTF-8 commit template discouraging IDE/tool footers (optional `git config commit.template .gitmessage`).
 - `docs/m2-release-readiness.md`: **Engineering closure (M2)** subsection and criterion mapping.
 - README: **`config-diff`**; optional **`git config commit.template .gitmessage`**.
