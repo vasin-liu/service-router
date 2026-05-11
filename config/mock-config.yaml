@@ -30,6 +30,9 @@ routes:
       type: prefix
       value: "/api/orders"
     service_id: "order-service"
+    # Example: outbound HTTP response headers (see docs/plugin-extension.md). Ignored for WebSocket.
+    response_headers:
+      x-routed-by: "service-router-mock"
 
   - id: "catch-all"
     priority: 100

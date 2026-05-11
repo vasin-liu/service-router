@@ -675,6 +675,18 @@ fn route_explain(
                 .unwrap_or_else(|| "<missing>".to_string())
         );
         println!("Rewritten path: {}", rule.rewrite_path(&path));
+        if let Some(pairs) = rule.response_headers.as_ref() {
+            if !pairs.is_empty() {
+                println!("Outbound response headers (HTTP only):");
+                for (name, value) in pairs {
+                    let display = value
+                        .to_str()
+                        .map(String::from)
+                        .unwrap_or_else(|_| "<non-utf8>".to_string());
+                    println!("  {}: {}", name, display);
+                }
+            }
+        }
         return Ok(ExitCode::SUCCESS);
     }
 

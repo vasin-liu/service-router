@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **`config_snapshot_export`** test: route **`response_header_keys`** in JSON must not echo header **values**.
+- Mock profile **`config/mock-config.yaml`**: `orders-api` sets example **`response_headers`** for CI smoke / copy-paste demos.
+- **`route-explain`** text mode (matched): prints **Outbound response headers** when the rule defines any.
+
 - Routing rules: optional **`response_headers`** (YAML map); merged onto downstream **HTTP** responses after upstream headers, same-name entries override upstream; forbidden hop-by-hop / framing headers rejected at compile time; **ignored for WebSocket** upgrades (`docs/plugin-extension.md`). **`route-explain --json`** (matched envelope) adds **`response_headers`**; **`config-snapshot`** route rows add **`response_header_keys`** when set.
 - CLI **`config-snapshot`**: emit redacted JSON (`diagnostic_version` **1.0** + UUID `snapshot_id`) for issue/PR paste; **`--output` / `-o`** file or stdout with **`-`**; logic in **`service_router::config_snapshot_export`** (`src/lib.rs`) to avoid UTF-16 source pitfalls on Windows editors.
 - CLI **`config-diff`**: compare two YAML configs after load (`server`, `log_level`, `registries`, routes by `id`); **`--json`** (`diagnostic_version` **1.0**) or **`--markdown`** for PR blurbs; exit **1** on differences.

@@ -10,7 +10,7 @@ Use the **same three gates** everywhere: strict config validation, environment/d
 | Strict config | `cargo run -- check-config config/mock-config.yaml --json --strict` | Exit `0`, JSON `strict_passed == true` if you parse it |
 | Doctor | `cargo run -- doctor --config config/mock-config.yaml --json` | Exit `0`, JSON top-level `status` is typically `"pass"` for healthy mock runs |
 | Doctor + network | `cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json` | Exit `0` if no TCP/registry/upstream failures; JSON includes `registry_endpoint_probe` (remote registries) and `upstream_probe` |
-| Smoke (route explain) | `cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json` | Exit `0`, JSON `matched == true` against mock profile |
+| Smoke (route explain) | `cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json` | Exit `0`, JSON `matched == true` against mock profile; sample `orders-api` includes `response_headers` so JSON may show a non-null `response_headers` object |
 
 The smoke route matches `orders-api` in `config/mock-config.yaml`; change path/method if your golden config differs (`SERVICE_ROUTER_*` vars in the shell snippet below).
 

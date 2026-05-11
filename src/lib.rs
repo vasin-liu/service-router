@@ -273,6 +273,42 @@ routes:
                 assert!(!js.contains("passw99"));
                 assert!(js.contains("\"auth_configured\":true"));
             }
+
+            #[test]
+            fn snapshot_route_lists_response_header_keys_not_values() {
+                let yaml = r#"
+server:
+  host: "127.0.0.1"
+  port: 8080
+registries:
+  sources:
+    - type: mock
+      priority: 1
+      services: {}
+routes:
+  - id: r1
+    path:
+      type: exact
+      value: /
+    upstream_url: "http://127.0.0.1:9/"
+    response_headers:
+      x-gateway: DO_NOT_LEAK_THIS_VALUE
+"#;
+                let mut t = tempfile::NamedTempFile::new().unwrap();
+                write!(t, "{yaml}").unwrap();
+                t.flush().unwrap();
+                let c = load_config(t.path()).unwrap();
+                let s = build_config_snapshot_export(&c, t.path());
+                let js = serde_json::to_string(&s).unwrap();
+                assert!(
+                    js.contains("\"response_header_keys\":[\"x-gateway\"]"),
+                    "expected sorted response_header_keys in snapshot: {js}"
+                );
+                assert!(
+                    !js.contains("DO_NOT_LEAK_THIS_VALUE"),
+                    "snapshot must not echo response header values: {js}"
+                );
+            }
         }
     }
 }
