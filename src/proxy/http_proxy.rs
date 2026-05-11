@@ -112,6 +112,64 @@ fn is_hop_by_hop(name: &str) -> bool {
 mod tests {
     use super::*;
 
+    #[tokio::test]
+    async fn extra_response_headers_merge_and_override_upstream() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buf = vec![0u8; 8192];
+            let mut total = 0usize;
+            loop {
+                let n = stream.read(&mut buf[total..]).await.expect("read");
+                assert!(n > 0, "client closed before headers");
+                total += n;
+                if buf[..total].windows(4).any(|w| w == b"\r\n\r\n") {
+                    break;
+                }
+                assert!(total < buf.len(), "request too large");
+            }
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nX-Merge: upstream\r\nX-Override: old\r\nConnection: close\r\n\r\n",
+                )
+                .await
+                .unwrap();
+        });
+
+        let upstream_base = format!("http://{}", addr);
+        let uri: http::Uri = format!("http://127.0.0.1:{}/incoming", addr.port())
+            .parse()
+            .unwrap();
+        let req = Request::builder()
+            .method("GET")
+            .uri(uri)
+            .body(Body::empty())
+            .unwrap();
+
+        let extra = [
+            (
+                http::HeaderName::from_static("x-added"),
+                http::HeaderValue::from_static("by-proxy"),
+            ),
+            (
+                http::HeaderName::from_static("x-override"),
+                http::HeaderValue::from_static("new"),
+            ),
+        ];
+
+        let client = Client::new();
+        let resp = proxy_http(req, &client, &upstream_base, "/", Some(&extra))
+            .await
+            .unwrap();
+
+        assert_eq!(resp.headers().get("x-merge").unwrap(), "upstream");
+        assert_eq!(resp.headers().get("x-added").unwrap(), "by-proxy");
+        assert_eq!(resp.headers().get("x-override").unwrap(), "new");
+    }
+
     #[test]
     fn test_build_upstream_url_no_query() {
         assert_eq!(
