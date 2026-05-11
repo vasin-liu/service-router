@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- **`scripts/check-text-encoding.py`** + GitHub CI step: fails on NUL bytes in text-like files to prevent accidental UTF-16LE source/doc/script commits.
+- **`scripts/check-text-encoding.py`** + GitHub CI step: fails on NUL bytes in text-like files to prevent accidental UTF-16LE source/doc/script commits; failure output includes a UTF-16LE-to-UTF-8 repair example.
 - **CI parity**: GitLab, `docs/ci-copy-paste.sh`, and `scripts/verify-m2-baseline.*` also run the text encoding guard.
 - **Release acceptance parity**: `docs/release-acceptance.sh` / `.ps1` run the text encoding guard as part of global gates; matrix docs list it.
 - **`docs/regression-archive/`**: §9 summary template + workflow README for M2 audit trail.

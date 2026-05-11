@@ -49,17 +49,40 @@ def iter_text_candidates() -> list[Path]:
     return out
 
 
+def looks_utf16le(data: bytes) -> bool:
+    """Heuristic for UTF-16LE ASCII-ish text: many odd bytes are NUL."""
+    if len(data) < 4:
+        return False
+    odd = data[1::2]
+    return odd.count(0) >= max(2, len(odd) // 2)
+
+
 def main() -> int:
     offenders: list[Path] = []
+    utf16le_like: list[Path] = []
     for path in iter_text_candidates():
         data = path.read_bytes()
         if b"\x00" in data:
-            offenders.append(path.relative_to(ROOT))
+            rel = path.relative_to(ROOT)
+            offenders.append(rel)
+            if looks_utf16le(data):
+                utf16le_like.append(rel)
 
     if offenders:
         print("NUL bytes found in text-like files (possible UTF-16LE):", file=sys.stderr)
         for path in offenders:
             print(f"  - {path}", file=sys.stderr)
+        if utf16le_like:
+            print("", file=sys.stderr)
+            print("If these files are UTF-16LE, re-save them as UTF-8.", file=sys.stderr)
+            print("One-file repair example:", file=sys.stderr)
+            print(
+                "  python -c \"from pathlib import Path; "
+                "p=Path('FILE'); "
+                "p.write_text(p.read_bytes().decode('utf-16le'), "
+                "encoding='utf-8', newline='\\\\n')\"",
+                file=sys.stderr,
+            )
         return 1
 
     print("text encoding check OK")
