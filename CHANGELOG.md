@@ -28,6 +28,7 @@ All notable changes to this project are documented in this file.
 ### Documentation
 
 - **`.github/workflows/release-acceptance.yml`**: header comment lists artifact bundle; **README** Quick Start adds optional **`config-snapshot`**; **`release-acceptance-matrix.md`** notes **`release-acceptance-json`** includes **`config-snapshot.json`**.
+- **`ci-template.md`**, **`.gitlab-ci.yml`**, **`config-snapshot-workflow.md`**: spell out **`release-acceptance`** / manual job artifact filenames (incl. **`config-snapshot.json`**).
 - **`plugin-extension.md`**: FR-6 config-only slice (`response_headers`) vs future dynamic plugins; link **ADR 001**.
 - **`route-explain-json-schema.md`**: matched envelope **`response_headers`** field.
 - **`diagnostic-codes.md`**: note on matched **`response_headers`**.
