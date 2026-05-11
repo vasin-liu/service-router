@@ -33,6 +33,7 @@ All notable changes to this project are documented in this file.
 
 ### Documentation
 
+- **`regression-archive/section-9-summary-template.md`**: checklist heading renamed to **Expected artifacts (JSON + Markdown)**; **`summarize-section9-release-acceptance.py`** docstring / argparse help / generated Markdown section title aligned.
 - **`release-acceptance-matrix.md`**, **`ci-template.md`**, **`config-snapshot-workflow.md`**, **`m2-release-readiness.md`**, **`regression-archive/`**, **`.github/workflows/release-acceptance.yml`**: artifact / bundle descriptions include **`section-9-summary.generated.md`** alongside the five JSON files.
 - **`.github/workflows/release-acceptance.yml`**: header comment lists artifact bundle; **README** Quick Start adds optional **`config-snapshot`**; **`release-acceptance-matrix.md`** notes **`release-acceptance-json`** includes **`config-snapshot.json`**.
 - **`ci-template.md`**, **`.gitlab-ci.yml`**, **`config-snapshot-workflow.md`**: spell out **`release-acceptance`** / manual job artifact filenames (incl. **`config-snapshot.json`**)；**`config-snapshot-workflow.md`** 增加 §9 五 JSON → 粘贴表说明。

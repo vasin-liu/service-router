@@ -19,9 +19,9 @@ Tip: **`docs/release-acceptance.sh`** / **`.ps1`** now writes **`section-9-summa
 | **Deviations** | e.g. `ALLOW_PROBE_FAIL=1`, flaky registry, issue link |
 | **Sign-off** | |
 
-## Expected JSON files (`release-acceptance.sh` / `.ps1` or CI `release-acceptance-json`)
+## Expected artifacts (JSON + Markdown) (`release-acceptance.sh` / `.ps1` or CI `release-acceptance-json`)
 
-Check off each file you attach or link (same names under `artifacts/release-acceptance/`):
+Check off each file you attach or link (same names under `artifacts/release-acceptance/`). The five JSON files are required for machine-readable evidence; **`section-9-summary.generated.md`** is the human paste companion from the same run.
 
 - [ ] `check-config.json`
 - [ ] `doctor.json`

@@ -4,9 +4,13 @@
 Reads the default directory written by docs/release-acceptance.sh / .ps1:
   artifacts/release-acceptance/
 
-Expected files (same names as CI bundle release-acceptance-json):
+Expected inputs (same names as CI bundle release-acceptance-json):
   check-config.json, doctor.json, doctor-probe.json,
   route-explain-smoke.json, config-snapshot.json
+
+When those exist, docs/release-acceptance.sh / docs/release-acceptance.ps1 also
+write section-9-summary.generated.md in the same directory (same content as
+redirecting this script's stdout to that file).
 
 Global gates (cargo check / test) are not recorded in these JSON files; pass
 --global-gates or set SERVICE_ROUTER_ACCEPTANCE_GLOBAL_GATES when known.
@@ -166,7 +170,7 @@ def main() -> int:
         "--artifacts-dir",
         type=Path,
         default=Path(os.environ.get("SERVICE_ROUTER_ACCEPTANCE_OUT", "artifacts/release-acceptance")),
-        help="Directory with the five JSON files (default: SERVICE_ROUTER_ACCEPTANCE_OUT or artifacts/release-acceptance)",
+        help="Directory with the five JSON artifacts (default: SERVICE_ROUTER_ACCEPTANCE_OUT or artifacts/release-acceptance); release-acceptance runners also write section-9-summary.generated.md here.",
     )
     p.add_argument(
         "--profile",
@@ -275,7 +279,7 @@ def main() -> int:
         f"| **Deviations** | {deviations or '—'} |",
         f"| **Sign-off** | {sign_off or '—'} |",
         "",
-        "## Expected JSON files",
+        "## Expected artifacts (JSON + Markdown)",
         "",
     ]
 
