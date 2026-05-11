@@ -27,14 +27,13 @@ All notable changes to this project are documented in this file.
 - **`ci-template.md`**: smoke `route-explain` row notes mock **`response_headers`** on `orders-api`.
 - **`product-prd-developer.md`**: FR-6 节增加与本仓库 **`response_headers`** 工程切片及 **`plugin-extension.md`** 的对照说明。
 - **`check-config-strict-schema.md`**, **`operations-runbook.md`**, **`plugin-extension.md`**, **README**: clarify that **`check-config` always compiles routes** (including **`response_headers`** validation).
-- **`implementation-status.md`**: M3 table — FR-5.1–FR-5.3 engineering slice (FR-5.3 de-scoped to redacted JSON export; hosted share links out of repo); FR-6 partial row.
+- **`implementation-status.md`**: M3 table — FR-5.1–FR-5.3 engineering slice (FR-5.3 de-scoped to redacted JSON export; hosted share links out of repo); FR-6 partial row; **「本次已落地」/「验证结果」/「下一版本迭代进展」** 与当前 CLI 及 **`cargo test`** 对齐；新增 **「M3 已交付能力清单」** 表。
 - **`.gitmessage`**: UTF-8 commit template discouraging IDE/tool footers (optional `git config commit.template .gitmessage`).
 - `docs/m2-release-readiness.md`: **Engineering closure (M2)** subsection and criterion mapping.
 - README: **`config-diff`**; optional **`git config commit.template .gitmessage`**.
 - Consul deferred: noted in `developer-roadmap-1-2y.md` §4.1, `implementation-status.md` (远期注册中心), `product-design-one-pager.md`, `release-acceptance-matrix.md` (out of scope), `README.md`.
 - `docs/operations-runbook.md`: post-deployment checklist (§7), Prometheus alerting hooks vs `failure_reasons` (§8), binary upgrade notes under config rollback (§3); UTF-8 encoding normalized.
 - `docs/ci-template.md`: document compose-backed `doctor --probe-upstream` steps in `ci.yml`.
-- `docs/implementation-status.md`: refresh “下一阶段建议” after M2 doc/CI closure; point remaining work to env regression, optional K8s scale-up, and decoupled product milestones.
 - `docs/release-acceptance-matrix.md`: §9 regression archive summary table (M2 / audit trail) and cross-link from implementation-status.
 - README: index note for release-acceptance §9 archive template.
 

@@ -11,10 +11,11 @@
 
 - 新增 CLI 子命令（`src/main.rs`）：
   - `run [config]`：启动服务（默认行为）
-  - `check-config [config] [--json]`：配置加载、路由编译与注册中心初始化检查（支持 JSON 输出）
-  - `check-config --strict`：附加严格体检（空路由、重复 route id、重复匹配条件）
-  - `doctor [config]`：基础环境检查（配置文件、解析、监听地址、注册中心初始化）
-  - `route-explain <path> [method] --config <path> --header key:value [--json]`：解释路由命中/未命中情况（支持 JSON 输出）
+  - `check-config [config] [--json] [--strict]`：加载配置后**先编译路由快照**（含 glob/regex、**`routes[].response_headers`** 校验），再初始化注册中心解析器；`--strict` 附加结构化体检（空路由、重复 id、遮蔽、双目标等）
+  - `doctor [config] [--probe-upstream] [--json]`：环境与注册中心健康；可选上游 TCP 探测
+  - `route-explain … [--request-file] [--header …] [--json] [--verbose]`：路由命中/未命中诊断（JSON 含 `diagnostic_version`、命中时可选 **`response_headers`**）
+  - `config-diff <左> <右> [--json | --markdown]`：两份配置结构化对比（退出码 **1** 表示有差异）
+  - `config-snapshot [config] [-o path]`：脱敏诊断 JSON（路由含 **`response_header_keys`** 等键名级字段）
   - `help`：帮助说明
 
 - 构建修复：
@@ -40,16 +41,13 @@
 
 ## 验证结果
 
-- `cargo check` 已通过（存在少量既有 warning，不阻塞）
-- Windows SDK 链接问题已解除，当前可继续推进功能实现
-- 命令级 smoke test 已执行，当前示例配置受环境变量影响：
-  - `NACOS_PASSWORD` 未设置时，`check-config` / `route-explain` 会按预期失败并返回可读错误
-- 基于 `config/mock-config.yaml` 的验证已通过：
-  - `cargo run -- check-config config/mock-config.yaml --json --strict` 返回 strict 通过
-  - `cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json` 返回命中 `orders-api`
-- `cargo test mock::tests` 已通过（2 passed）
-- `cargo run -- doctor --config config/mock-config.yaml` 已通过并输出 registry health 明细
-- 全量验证通过：`cargo test -- --nocapture`（23 passed）
+- **`cargo test`**：库内单测 + `service-router` 二进制内测在主线 CI 与本地预期为全绿（具体用例数随仓库演进，以 `cargo test` 为准）。
+- `cargo check` 已通过（存在少量既有 warning，不阻塞）。
+- 命令级 smoke（Mock 配置）：
+  - `cargo run -- check-config config/mock-config.yaml --json --strict` → strict 通过。
+  - `cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json` → 命中 `orders-api`；示例路由含 **`response_headers`** 时 JSON 可出现非空 **`response_headers`** 对象。
+  - `cargo run -- doctor --config config/mock-config.yaml --json`（及 CI 中的 compose + **`doctor --probe-upstream`**）见 `.github/workflows/ci.yml`。
+- 使用依赖外部密钥的 `config/config.yaml` 时：未导出所需环境变量则 `check-config` / `route-explain` 失败属预期，错误信息应可读。
 
 ## 封板交付补充
 
@@ -57,28 +55,14 @@
   - 提供下一迭代 P0/P1/P2 任务池
   - 包含验收标准、Sprint 拆分、风险与里程碑建议
 
-## 下一版本迭代进展（进行中）
+## 下一版本迭代进展（历史归档）
 
-- 已落地 P0 增强：
-  - `route-explain` 增加修复建议输出（文本 + JSON）
-  - `route-explain` 增加 `--verbose`，可检查全部规则
-  - `check-config --strict` 增强覆盖型遮蔽检测（prefix/exact 场景）
-  - `route-explain` 建议输出升级为结构化对象（`code`/`message`/`command`）
-  - `route-explain --json` 增加统一版本字段 `diagnostic_version`
-- 已补充测试：
-  - strict 重复 ID 检测
-  - strict 遮蔽检测
-  - mismatch 原因与建议输出
-- 已落地 CI 基线：
-  - `.github/workflows/ci.yml`
-  - `.github/workflows/doctor-probe.yml`（仅 `workflow_dispatch`，上游 TCP 探测）
-  - `docs/ci-template.md`
-  - `docs/route-explain-json-schema.md`（CI 可消费 JSON 示例）
-- 最新验证：
-  - `cargo check` 通过
-  - `cargo test -- --nocapture` 通过（23 passed）
-  - 新增 P1 进展：`doctor --probe-upstream` 可探测上游连通性（直连 URL + registry 解析实例）
-  - 新增 P1 进展：`doctor --json` 输出结构化诊断（含 registry health 与 upstream probe 结果）
+> **说明**：本节记录较早迭代批次叙事，**不代表「尚未完成」**。**当前仓库能力与验收以** 上文 **「完成定义（M3，工程侧切片）」表**、下文 **「M3 已交付能力清单」** 及根目录 **`CHANGELOG.md`（Unreleased）** 为准。
+
+- 已落地 P0 增强：`route-explain` 修复建议（文本 + JSON）、`--verbose`、`--strict` 遮蔽检测、建议结构化、`diagnostic_version`。
+- 已补充测试：strict 重复 ID / 遮蔽、mismatch 原因与建议。
+- 已落地 CI 基线：`.github/workflows/ci.yml`、`doctor-probe` 工作流、`docs/ci-template.md`、`docs/route-explain-json-schema.md`。
+- `doctor --probe-upstream`、`doctor --json`（registry health、upstream probe）已并进主线 CI（compose 门禁）。
 
 ## 已实现（迭代）
 
@@ -157,7 +141,19 @@
 |:---|:---|:---|
 | FR-5.1 配置结构化对比 | 已提供 | CLI **`config-diff <左> <右> [--json \| --markdown]`**：加载两份 YAML（含 env 展开）、对比 `server` / `log_level` / `registries` / 按 `id` 的 `routes`；有差异时退出码 **1** |
 | FR-5.2 变更说明 / 评审辅助 | 已提供 | 同上 **`--markdown`**，便于粘贴 PR 描述 |
-| FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**附链 / 在线分享**仍由工单或 Git 另行完成 |
+| FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、路由 **`response_header_keys`**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**附链 / 在线分享**仍由工单或 Git 另行完成 |
 | FR-6 插件 / 扩展生态 | 部分（配置切片） | 无动态插件 / 运行时加载；已提供路由级 **`response_headers`**（仅普通 HTTP）作为内置扩展点，详见 **`docs/plugin-extension.md`**；WebSocket 不应用此项 |
 
 **「M3 工程达成」最低标准（本仓库）**：**FR-5.1～FR-5.3**（工程可交付部分）已齐；**FR-5.3** 的外链托管不属于本仓库。**FR-6**：以配置切片为初版交付，完整插件生态仍为后续里程碑。
+
+### M3 已交付能力清单（与当前代码对齐）
+
+| 能力 | 说明 |
+|:---|:---|
+| **`config-diff`** | 两份 YAML 经相同加载规则后对比；`--json` / `--markdown`；有差异退出码 **1** |
+| **`config-snapshot`** | 脱敏 JSON；路由行含 **`response_header_keys`**（仅键名）；实现见 `src/lib.rs` `config_snapshot_export` |
+| **`routes[].response_headers`** | 仅普通 **HTTP** 下游响应追加/覆盖头；编译期校验；**WebSocket** 不应用；详 **`docs/plugin-extension.md`** |
+| **`route-explain`** | 命中 JSON 含 **`response_headers`**；文本命中列出出站头；未命中诊断与 schema 见 **`docs/route-explain-json-schema.md`** |
+| **`check-config`** | **每次**均执行路由编译（与 **`run`** / 热更新一致），非法 **`response_headers`** 在 strict 之前即失败；见 **`docs/check-config-strict-schema.md`** 开篇 |
+| **Mock 示例** | **`config/mock-config.yaml`** 中 `orders-api` 带示例 **`response_headers`**，供 smoke / 演示 |
+| **测试与回归** | `proxy_http` 本地 TCP 桩测合并顺序；`routing::matcher` 中 YAML→`RouterSnapshot` 正/反例；`config_snapshot_export` 断言快照不泄露响应头**值** |
