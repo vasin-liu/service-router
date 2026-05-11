@@ -72,6 +72,8 @@ Suggestion entries under `suggestions[]` / `remediation_outline[]` use:
 | `HEADER_MISSING` | Required header absent. |
 | `RULE_HEADER_NAME_INVALID` | Rule declares an invalid header name. |
 
+Matched envelopes also include **`response_headers`** (object or `null`): configured outbound HTTP response headers for the winning rule; see [`route-explain-json-schema.md`](./route-explain-json-schema.md).
+
 ## Readiness (`GET /ready`)
 
 HTTP status is **503** only when **every** configured registry reports `status: unhealthy` in the embedded `registry_health` array (same row shape as doctor). Otherwise **200** with `status: ready`. No registry configured → **200** (direct `upstream_url` routing still allowed).

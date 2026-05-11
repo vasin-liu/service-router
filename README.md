@@ -60,6 +60,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 
 ## Config Notes
 
+- **`routes[].response_headers`**: optional map of extra **HTTP response** headers added after upstream response headers (same name overrides); validated at startup; **not** applied on WebSocket upgrades — see **`docs/plugin-extension.md`**.
 - **`server.instance_selection`**: `first` (default) uses the first resolved instance for `service_id`; `round_robin` rotates per service id (in-memory counter; hot-reload can change mode).
 - Default config path: `config/config.yaml`
 - Mock development config: `config/mock-config.yaml`
@@ -75,6 +76,7 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/product-design-one-pager.md` — short product summary and near-term vs **long-term** bullets (config UI + optional entry B)
 - `docs/product-design.md` — fuller design and improvement backlog
 - `docs/implementation-status.md` — milestone alignment (M1/M2) and what shipped
+- `docs/plugin-extension.md` — config-only **`response_headers`** slice vs future plugins (FR-6)
 - `docs/m2-release-readiness.md` — M2 completion criteria vs repo evidence; **`bash scripts/verify-m2-baseline.sh`** or **`powershell -File scripts/verify-m2-baseline.ps1`** for Mock baseline (optional **`M2_WITH_DOCKER_PROBE`** / **`$env:M2_WITH_DOCKER_PROBE='1'`** to mirror CI compose probe)
 - Optional Git commit template (no IDE footers): **`git config commit.template .gitmessage`** — see `.gitmessage`
 

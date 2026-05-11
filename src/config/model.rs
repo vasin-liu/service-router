@@ -272,6 +272,10 @@ pub struct RoutingRule {
     pub upstream_url: Option<String>,
     /// Strip this prefix from the path before forwarding.
     pub strip_prefix: Option<String>,
+    /// Extra response headers for plain HTTP proxies only (applied after upstream
+    /// headers; same-name entries override upstream). Ignored for WebSocket upgrades.
+    #[serde(default)]
+    pub response_headers: Option<HashMap<String, String>>,
     /// Higher priority rules are evaluated first (lower number = higher priority).
     #[serde(default = "default_rule_priority")]
     pub priority: u32,

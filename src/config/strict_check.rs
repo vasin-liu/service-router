@@ -213,6 +213,7 @@ mod tests {
                 service_id: Some("svc-a".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 10,
             },
             crate::config::model::RoutingRule {
@@ -225,6 +226,7 @@ mod tests {
                 service_id: Some("svc-b".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 20,
             },
         ]);
@@ -249,6 +251,7 @@ mod tests {
                 service_id: Some("svc-all".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 1,
             },
             crate::config::model::RoutingRule {
@@ -261,6 +264,7 @@ mod tests {
                 service_id: Some("svc-orders".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 10,
             },
         ]);
@@ -287,6 +291,7 @@ mod tests {
                 service_id: Some("svc-detail".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 80,
             },
             crate::config::model::RoutingRule {
@@ -299,6 +304,7 @@ mod tests {
                 service_id: Some("svc-site".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 40,
             },
         ]);
@@ -323,6 +329,7 @@ mod tests {
             service_id: Some("ignored-registry".to_string()),
             upstream_url: Some("http://127.0.0.1:9090".to_string()),
             strip_prefix: None,
+            response_headers: None,
             priority: 10,
         }]);
         let findings = run_strict_config_checks(&config);
@@ -343,6 +350,7 @@ mod tests {
             service_id: Some("svc".to_string()),
             upstream_url: None,
             strip_prefix: Some("/nope".to_string()),
+            response_headers: None,
             priority: 10,
         }]);
         let findings = run_strict_config_checks(&config);

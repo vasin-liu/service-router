@@ -89,6 +89,7 @@ mod tests {
                 service_id: Some("svc-low".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 200,
             },
             RoutingRule {
@@ -99,6 +100,7 @@ mod tests {
                 service_id: Some("svc-high".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 10,
             },
         ];

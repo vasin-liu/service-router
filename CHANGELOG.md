@@ -6,13 +6,17 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Routing rules: optional **`response_headers`** (YAML map); merged onto downstream **HTTP** responses after upstream headers, same-name entries override upstream; forbidden hop-by-hop / framing headers rejected at compile time; **ignored for WebSocket** upgrades (`docs/plugin-extension.md`). **`route-explain --json`** (matched envelope) adds **`response_headers`**; **`config-snapshot`** route rows add **`response_header_keys`** when set.
 - CLI **`config-snapshot`**: emit redacted JSON (`diagnostic_version` **1.0** + UUID `snapshot_id`) for issue/PR paste; **`--output` / `-o`** file or stdout with **`-`**; logic in **`service_router::config_snapshot_export`** (`src/lib.rs`) to avoid UTF-16 source pitfalls on Windows editors.
 - CLI **`config-diff`**: compare two YAML configs after load (`server`, `log_level`, `registries`, routes by `id`); **`--json`** (`diagnostic_version` **1.0**) or **`--markdown`** for PR blurbs; exit **1** on differences.
 - **`tools/emit_diff_rs.py`**: regenerates UTF-8 `src/config/diff.rs` on environments where UTF-16-encoded sources break `rustc` (optional maintenance aid).
 
 ### Documentation
 
-- **`implementation-status.md`**: M3 table — FR-5.1–FR-5.3 engineering slice (FR-5.3 de-scoped to redacted JSON export; hosted share links out of repo).
+- **`plugin-extension.md`**: FR-6 config-only slice (`response_headers`) vs future dynamic plugins.
+- **`route-explain-json-schema.md`**: matched envelope **`response_headers`** field.
+- **`diagnostic-codes.md`**: note on matched **`response_headers`**.
+- **`implementation-status.md`**: M3 table — FR-5.1–FR-5.3 engineering slice (FR-5.3 de-scoped to redacted JSON export; hosted share links out of repo); FR-6 partial row.
 - **`.gitmessage`**: UTF-8 commit template discouraging IDE/tool footers (optional `git config commit.template .gitmessage`).
 - `docs/m2-release-readiness.md`: **Engineering closure (M2)** subsection and criterion mapping.
 - README: **`config-diff`**; optional **`git config commit.template .gitmessage`**.

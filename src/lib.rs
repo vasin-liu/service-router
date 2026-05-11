@@ -97,6 +97,8 @@ pub mod config_snapshot_export {
             pub upstream_url_redacted: Option<String>,
             #[serde(skip_serializing_if = "Option::is_none")]
             pub strip_prefix: Option<String>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            pub response_header_keys: Option<Vec<String>>,
         }
 
         pub fn build_config_snapshot_export(config: &AppConfig, config_yaml_path: &Path) -> ConfigSnapshotExport {
@@ -188,6 +190,15 @@ pub mod config_snapshot_export {
                 ks.sort();
                 ks
             });
+            let response_header_keys = rule.response_headers.as_ref().and_then(|h| {
+                if h.is_empty() {
+                    None
+                } else {
+                    let mut ks: Vec<String> = h.keys().cloned().collect();
+                    ks.sort();
+                    Some(ks)
+                }
+            });
             RouteSnapshotRow {
                 id: rule.id.clone(),
                 priority: rule.priority,
@@ -201,6 +212,7 @@ pub mod config_snapshot_export {
                     .as_ref()
                     .map(|u| redact_http_credentials(u)),
                 strip_prefix: rule.strip_prefix.clone(),
+                response_header_keys,
             }
         }
 

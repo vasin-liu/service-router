@@ -101,7 +101,14 @@ pub async fn proxy_handler(
             path = %rewritten_path,
             "Proxying HTTP request"
         );
-        http_proxy::proxy_http(req, &state.http_client, &upstream_base, &rewritten_path).await
+        http_proxy::proxy_http(
+            req,
+            &state.http_client,
+            &upstream_base,
+            &rewritten_path,
+            rule.response_headers.as_deref(),
+        )
+        .await
     };
     res.map_err(|e| {
         state.metrics.record_failure(failure_code_for_proxy(&e));

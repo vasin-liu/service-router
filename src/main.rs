@@ -643,6 +643,7 @@ fn route_explain(
 
     if let Some(rule) = snapshot.resolve(&path, &method, &header_map) {
         if as_json {
+            let response_headers_json = explain_response_headers_json(rule);
             let output = serde_json::json!({
                 "diagnostic_version": "1.0",
                 "matched": true,
@@ -653,7 +654,8 @@ fn route_explain(
                 "rule_id": rule.id,
                 "priority": rule.priority,
                 "target": rule.upstream_url.clone().or_else(|| rule.service_id.clone()),
-                "rewritten_path": rule.rewrite_path(&path).to_string()
+                "rewritten_path": rule.rewrite_path(&path).to_string(),
+                "response_headers": response_headers_json,
             });
             println!("{}", serde_json::to_string_pretty(&output)?);
             return Ok(ExitCode::SUCCESS);
@@ -818,6 +820,24 @@ fn path_mismatch_action_message(
             re.as_str()
         ),
     }
+}
+
+fn explain_response_headers_json(rule: &service_router::routing::CompiledRoutingRule) -> serde_json::Value {
+    let Some(pairs) = rule.response_headers.as_ref() else {
+        return serde_json::Value::Null;
+    };
+    if pairs.is_empty() {
+        return serde_json::Value::Null;
+    }
+    let mut m = serde_json::Map::new();
+    for (name, value) in pairs {
+        let v_str = value
+            .to_str()
+            .map(|s| s.to_string())
+            .unwrap_or_else(|_| String::from_utf8_lossy(value.as_bytes()).into_owned());
+        m.insert(name.as_str().to_string(), serde_json::Value::String(v_str));
+    }
+    serde_json::Value::Object(m)
 }
 
 fn explain_rule_mismatch(
@@ -1415,6 +1435,7 @@ mod tests {
             service_id: Some("svc".to_string()),
             upstream_url: None,
             strip_prefix: None,
+            response_headers: None,
             priority: 10,
         };
         let compiled = CompiledRoutingRule::compile(&rule).expect("compile rule");
@@ -1454,6 +1475,7 @@ mod tests {
             service_id: Some("svc".to_string()),
             upstream_url: None,
             strip_prefix: None,
+            response_headers: None,
             priority: 10,
         };
         let compiled = CompiledRoutingRule::compile(&rule).expect("compile");
@@ -1483,6 +1505,7 @@ mod tests {
             service_id: Some("svc".to_string()),
             upstream_url: None,
             strip_prefix: None,
+            response_headers: None,
             priority: 10,
         };
         let compiled = CompiledRoutingRule::compile(&rule).expect("compile");

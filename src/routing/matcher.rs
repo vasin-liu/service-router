@@ -4,6 +4,7 @@ use regex::Regex;
 
 use crate::config::model::{PathMatcher, RoutingRule};
 use crate::error::ConfigError;
+use crate::proxy::http_proxy::is_forbidden_config_response_header;
 
 /// A routing rule with path matchers pre-compiled for efficient matching.
 #[derive(Debug)]
@@ -15,6 +16,8 @@ pub struct CompiledRoutingRule {
     pub service_id: Option<String>,
     pub upstream_url: Option<String>,
     pub strip_prefix: Option<String>,
+    /// Compiled `response_headers` for HTTP downstream responses (`None` if unset).
+    pub response_headers: Option<Vec<(http::HeaderName, http::HeaderValue)>>,
     pub priority: u32,
 }
 
@@ -62,6 +65,12 @@ impl CompiledRoutingRule {
             }
         };
 
+        let response_headers = match &rule.response_headers {
+            None => None,
+            Some(m) if m.is_empty() => None,
+            Some(m) => Some(compile_response_headers(&rule.id, m)?),
+        };
+
         Ok(Self {
             id: rule.id.clone(),
             compiled_path,
@@ -70,6 +79,7 @@ impl CompiledRoutingRule {
             service_id: rule.service_id.clone(),
             upstream_url: rule.upstream_url.clone(),
             strip_prefix: rule.strip_prefix.clone(),
+            response_headers,
             priority: rule.priority,
         })
     }
@@ -127,6 +137,32 @@ impl CompiledRoutingRule {
     }
 }
 
+fn compile_response_headers(
+    route_id: &str,
+    map: &HashMap<String, String>,
+) -> Result<Vec<(http::HeaderName, http::HeaderValue)>, ConfigError> {
+    let mut out = Vec::with_capacity(map.len());
+    for (name_raw, val_raw) in map {
+        if is_forbidden_config_response_header(name_raw) {
+            return Err(ConfigError::Validation(format!(
+                "route '{route_id}' response_headers: '{name_raw}' is not allowed (hop-by-hop or body-framing)"
+            )));
+        }
+        let name = http::header::HeaderName::from_bytes(name_raw.as_bytes()).map_err(|_| {
+            ConfigError::Validation(format!(
+                "route '{route_id}' response_headers: invalid header name '{name_raw}'"
+            ))
+        })?;
+        let value = http::header::HeaderValue::from_str(val_raw).map_err(|_| {
+            ConfigError::Validation(format!(
+                "route '{route_id}' response_headers: invalid value for '{name_raw}'"
+            ))
+        })?;
+        out.push((name, value));
+    }
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,6 +177,7 @@ mod tests {
             service_id: Some("svc".to_string()),
             upstream_url: None,
             strip_prefix: None,
+            response_headers: None,
             priority: 100,
         }
     }
@@ -195,5 +232,29 @@ mod tests {
         assert_eq!(compiled.rewrite_path("/api/users"), "/users");
         assert_eq!(compiled.rewrite_path("/api"), "/");
         assert_eq!(compiled.rewrite_path("/other"), "/other");
+    }
+
+    #[test]
+    fn response_headers_compiled() {
+        let mut rule = make_rule("rh", PathMatcher::Prefix { value: "/".to_string() });
+        rule.response_headers = Some(HashMap::from([(
+            "x-out".to_string(),
+            "ok".to_string(),
+        )]));
+        let compiled = CompiledRoutingRule::compile(&rule).unwrap();
+        let pairs = compiled.response_headers.as_ref().unwrap();
+        assert_eq!(pairs.len(), 1);
+        assert_eq!(pairs[0].0.as_str(), "x-out");
+        assert_eq!(pairs[0].1.to_str().unwrap(), "ok");
+    }
+
+    #[test]
+    fn forbidden_response_header_rejected() {
+        let mut rule = make_rule("bad-rh", PathMatcher::Prefix { value: "/".to_string() });
+        rule.response_headers = Some(HashMap::from([(
+            "Content-Length".to_string(),
+            "0".to_string(),
+        )]));
+        assert!(CompiledRoutingRule::compile(&rule).is_err());
     }
 }

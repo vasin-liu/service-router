@@ -12,6 +12,7 @@ pub async fn proxy_http(
     client: &Client,
     upstream_base: &str,
     rewritten_path: &str,
+    extra_response_headers: Option<&[(http::HeaderName, http::HeaderValue)]>,
 ) -> Result<Response, ProxyError> {
     // Build the upstream URL, preserving the original query string.
     let upstream_url = build_upstream_url(upstream_base, rewritten_path, req.uri().query());
@@ -62,6 +63,12 @@ pub async fn proxy_http(
         }
     }
 
+    if let Some(extra) = extra_response_headers {
+        for (name, value) in extra {
+            headers_map.insert(name, value.clone());
+        }
+    }
+
     builder
         .body(Body::from(body_bytes))
         .map_err(|e| ProxyError::UpstreamConnection(e.to_string()))
@@ -78,6 +85,12 @@ fn build_upstream_url(base: &str, path: &str, query: Option<&str>) -> String {
         Some(q) if !q.is_empty() => format!("{}{}?{}", base, path, q),
         _ => format!("{}{}", base, path),
     }
+}
+
+/// Headers users may not set via `routing_rule.response_headers` (framing /
+/// hop-by-hop); validated while compiling routing rules.
+pub(crate) fn is_forbidden_config_response_header(name: &str) -> bool {
+    is_hop_by_hop(name) || name.eq_ignore_ascii_case("content-length")
 }
 
 /// Returns `true` for HTTP/1.1 hop-by-hop headers that must not be forwarded.

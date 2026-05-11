@@ -40,6 +40,12 @@ JSON shape:
 
 Example: `config/route-explain-request-sample.yaml`.
 
+## Matched envelope
+
+When **`matched`** is **`true`**:
+
+- `response_headers`: object or **`null`** — outbound response headers configured on the matched rule (`null` when unset); keys and values mirror the compiled rule (HTTP proxy only when traffic is forwarded; **`route-explain` does not run the proxy**).
+
 ## Matched output example
 
 ```json
@@ -53,7 +59,8 @@ Example: `config/route-explain-request-sample.yaml`.
   "rule_id": "orders-api",
   "priority": 10,
   "target": "order-service",
-  "rewritten_path": "/api/orders/123"
+  "rewritten_path": "/api/orders/123",
+  "response_headers": null
 }
 ```
 

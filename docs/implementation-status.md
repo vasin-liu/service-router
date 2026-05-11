@@ -158,6 +158,6 @@
 | FR-5.1 配置结构化对比 | 已提供 | CLI **`config-diff <左> <右> [--json \| --markdown]`**：加载两份 YAML（含 env 展开）、对比 `server` / `log_level` / `registries` / 按 `id` 的 `routes`；有差异时退出码 **1** |
 | FR-5.2 变更说明 / 评审辅助 | 已提供 | 同上 **`--markdown`**，便于粘贴 PR 描述 |
 | FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**附链 / 在线分享**仍由工单或 Git 另行完成 |
-| FR-6 插件 / 扩展生态 | 未启动 | 接口形态需单独设计评审后再编码；当前里程碑不阻塞 FR-5 |
+| FR-6 插件 / 扩展生态 | 部分（配置切片） | 无动态插件 / 运行时加载；已提供路由级 **`response_headers`**（仅普通 HTTP）作为内置扩展点，详见 **`docs/plugin-extension.md`**；WebSocket 不应用此项 |
 
-**「M3 工程达成」最低标准（本仓库）**：**FR-5.1～FR-5.3**（工程可交付部分）已齐；**FR-5.3** 的外链托管不属于本仓库；FR-6 同上表。
+**「M3 工程达成」最低标准（本仓库）**：**FR-5.1～FR-5.3**（工程可交付部分）已齐；**FR-5.3** 的外链托管不属于本仓库。**FR-6**：以配置切片为初版交付，完整插件生态仍为后续里程碑。
