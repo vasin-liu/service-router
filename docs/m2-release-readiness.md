@@ -81,7 +81,7 @@ Change config via **`SERVICE_ROUTER_CONFIG`** if needed (both scripts).
 
 ### Optional: JSON bundle for §9 archive (Mock)
 
-`verify-m2-baseline` mirrors PR CI gates but **does not** write JSON under `artifacts/release-acceptance/`. To collect the same **five** files as **`release-acceptance-matrix.md`** §7 — `check-config.json`, `doctor.json`, `doctor-probe.json`, `route-explain-smoke.json`, `config-snapshot.json` — for a ticket or **`regression-archive`** §9 row, run **`docs/release-acceptance.sh`** (or **`.ps1`**) after the baseline.
+`verify-m2-baseline` mirrors PR CI gates but **does not** write JSON under `artifacts/release-acceptance/`. To collect the same **five** JSON files as **`release-acceptance-matrix.md`** §7 — `check-config.json`, `doctor.json`, `doctor-probe.json`, `route-explain-smoke.json`, `config-snapshot.json` — plus **`section-9-summary.generated.md`**, for a ticket or **`regression-archive`** §9 row, run **`docs/release-acceptance.sh`** (or **`.ps1`**) after the baseline.
 
 Skip redundant `cargo check` / `cargo test` if you already ran the baseline:
 
@@ -96,7 +96,7 @@ $env:SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL = '0'
 powershell -NoProfile -ExecutionPolicy Bypass -File docs/release-acceptance.ps1
 ```
 
-Then use **`regression-archive/section-9-summary-template.md`** and attach `artifacts/release-acceptance/`, or the GitHub **`release-acceptance-json`** artifact from a manual **`release-acceptance`** workflow run. Index: **`regression-archive/README.md`**.
+Then attach `artifacts/release-acceptance/` (including **`section-9-summary.generated.md`** when the runner completed that step), or the GitHub **`release-acceptance-json`** artifact from a manual **`release-acceptance`** workflow run; use **`regression-archive/section-9-summary-template.md`** only if you need a blank stub. Index: **`regression-archive/README.md`**.
 
 ## Sign-off
 

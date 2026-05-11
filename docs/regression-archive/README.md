@@ -5,14 +5,14 @@ This folder holds **templates and workflow notes** for archiving release accepta
 ## Suggested flow
 
 1. Run **`docs/release-acceptance.sh`** (or **`docs/release-acceptance.ps1`**) with the same `SERVICE_ROUTER_CONFIG` as the environment under test.
-2. Collect the output directory (default **`artifacts/release-acceptance/`**), which should contain these five files after a successful run:
+2. Collect the output directory (default **`artifacts/release-acceptance/`**), which should contain these five JSON files after a successful run (plus **`section-9-summary.generated.md`**):
    - `check-config.json`
    - `doctor.json`
    - `doctor-probe.json`
    - `route-explain-smoke.json`
    - `config-snapshot.json` (redacted)
 3. Copy **`section-9-summary-template.md`** to your ticket/wiki or internal storage; fill one row per **profile** (Mock / Nacos / Eureka / Kubernetes); use the template’s checklist for the JSON files. Optionally generate a paste-ready Markdown table from the five JSON files: **`python scripts/summarize-section9-release-acceptance.py`** (see `--help`; supports the same env vars as `release-acceptance` for profile, artifact path, and sign-off fields). The runner scripts now emit this automatically as **`section-9-summary.generated.md`** in the artifact directory.
-4. Attach or link the artifact bundle: on GitHub Actions, the workflow uploads artifact **`release-acceptance-json`** (same files); GitLab **`release-acceptance-manual`** publishes `artifacts/release-acceptance/`; or use object storage / ticket attachment per org policy (do not commit secrets into this repo).
+4. Attach or link the artifact bundle: on GitHub Actions, the workflow uploads artifact **`release-acceptance-json`** (five JSON + **`section-9-summary.generated.md`**); GitLab **`release-acceptance-manual`** publishes `artifacts/release-acceptance/`; or use object storage / ticket attachment per org policy (do not commit secrets into this repo).
 
 ## References
 

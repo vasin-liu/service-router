@@ -3,7 +3,7 @@
 Use this checklist before release cut or environment rollout.  
 Goal: verify the same command contracts across `Mock`, `Nacos`, `Eureka`, and `Kubernetes`.
 
-Quick runner (generates JSON artifacts):
+Quick runner (generates JSON artifacts + **`section-9-summary.generated.md`**):
 
 ```bash
 bash docs/release-acceptance.sh
@@ -15,7 +15,7 @@ PowerShell (Windows):
 powershell -ExecutionPolicy Bypass -File docs/release-acceptance.ps1
 ```
 
-GitHub Actions: run **Actions → release-acceptance → Run workflow** (see `.github/workflows/release-acceptance.yml`; downloads **`release-acceptance-json`** artifact, including **`config-snapshot.json`** alongside the other §7 JSON files).
+GitHub Actions: run **Actions → release-acceptance → Run workflow** (see `.github/workflows/release-acceptance.yml`; downloads **`release-acceptance-json`** artifact, including **`config-snapshot.json`** alongside the other §7 JSON files and **`section-9-summary.generated.md`**).
 
 ## 1) Global Gates (all profiles)
 
@@ -126,6 +126,7 @@ Store these per profile for each release candidate:
 - `doctor-probe.json`
 - `route-explain-smoke.json`
 - `config-snapshot.json` (redacted routing/registry summary; written by `release-acceptance.sh` / `.ps1` since this repo revision)
+- `section-9-summary.generated.md` (paste-ready §9 table from the five JSON files; same runner)
 
 Retention recommendation: keep at least last 10 release candidates.
 
@@ -134,6 +135,7 @@ Retention recommendation: keep at least last 10 release candidates.
 `docs/release-acceptance.sh` supports:
 
 - Produces **`config-snapshot.json`** (redacted) alongside the other §7 files when the script completes successfully.
+- Produces **`section-9-summary.generated.md`** after the JSON files (same directory).
 - `SERVICE_ROUTER_CONFIG` (default `config/mock-config.yaml`)
 - `SERVICE_ROUTER_SMOKE_PATH` (default `/api/orders/123`)
 - `SERVICE_ROUTER_SMOKE_METHOD` (default `GET`)
@@ -145,7 +147,7 @@ Retention recommendation: keep at least last 10 release candidates.
 
 ## 9) Regression archive summary (for M2 / audit trail)
 
-Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or a **private** archive (do not commit secrets); store §7 JSON artifacts next to the summary. Copy-paste stub: [`docs/regression-archive/section-9-summary-template.md`](./regression-archive/section-9-summary-template.md). Workflow index: [`docs/regression-archive/README.md`](./regression-archive/README.md). Optional: **`python scripts/summarize-section9-release-acceptance.py`** emits a Markdown table from the five JSON files (see `--help`).
+Use this short template after running §1–§4 for **each profile** you care about (`Mock` minimum; add `Nacos`, `Eureka`, `Kubernetes` when validating real environments). Paste into your ticket, wiki, or a **private** archive (do not commit secrets); store §7 JSON artifacts next to the summary. Prefer the auto-generated **`section-9-summary.generated.md`** from the same `release-acceptance` run (or re-run **`python scripts/summarize-section9-release-acceptance.py`** — see `--help`). Manual stub: [`docs/regression-archive/section-9-summary-template.md`](./regression-archive/section-9-summary-template.md). Workflow index: [`docs/regression-archive/README.md`](./regression-archive/README.md).
 
 | Field | Example |
 |:------|:--------|
@@ -162,4 +164,4 @@ Use this short template after running §1–§4 for **each profile** you care ab
 | **Deviations** | e.g. `ALLOW_PROBE_FAIL=1`, flaky registry, known issue link |
 | **Sign-off** | name or team |
 
-**Minimum for M2 “四类回归”闭链:** at least one archived row for **Mock** (automation-friendly) and, when available, one row per additional registry type you deploy against. Linking the **release-acceptance** workflow artifact or the local `release-acceptance.sh` output directory satisfies the “JSON 产物” part of the release gate.
+**Minimum for M2 “四类回归”闭链:** at least one archived row for **Mock** (automation-friendly) and, when available, one row per additional registry type you deploy against. Linking the **release-acceptance** workflow artifact or the local `release-acceptance.sh` output directory satisfies the “JSON 产物” part of the release gate (prefer including **`section-9-summary.generated.md`** from the same run).
