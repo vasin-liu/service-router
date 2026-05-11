@@ -12,3 +12,7 @@ cargo run -- check-config "${CONFIG}" --json --strict
 cargo run -- doctor --config "${CONFIG}" --json
 cargo run -- route-explain "${PROBE_PATH}" "${PROBE_METHOD}" --config "${CONFIG}" --json
 cargo run -- config-snapshot --config "${CONFIG}" -o -
+
+# Full release-acceptance bundle (five *.json + section-9-summary.generated.md under
+# artifacts/release-acceptance/): SERVICE_ROUTER_ACCEPTANCE_RUN_GLOBAL=0 bash docs/release-acceptance.sh
+# See docs/release-acceptance-matrix.md §7–§9.

@@ -89,7 +89,7 @@
 **M2 主线（文档/门禁/诊断）上述 §1–§4 已闭环**：EndpointSlice 可选 `endpoint_slice_label_selector`、`release-acceptance.yml` + 矩阵文档、`upstream_probe` / `failure_code` 与 metrics 对齐、`operations-runbook` 巡检与告警章节、GitHub/GitLab CI 含 compose + `doctor --probe-upstream`。
 
 1. **环境与回归沉淀（M2 完成定义）**  
-   在 **Mock / Nacos / Eureka / Kubernetes** 真实或准生产配置下各跑一轮 **`release-acceptance-matrix.md`** 门禁，归档 JSON 产物与结论（团队流程项）。**§9 模板与流程索引**：**`docs/regression-archive/`**；`docs/release-acceptance.sh` 现已一并写出 **`config-snapshot.json`**（脱敏）。
+   在 **Mock / Nacos / Eureka / Kubernetes** 真实或准生产配置下各跑一轮 **`release-acceptance-matrix.md`** 门禁，归档 JSON/Markdown 产物与结论（团队流程项；含 **`section-9-summary.generated.md`**）。**§9 模板与流程索引**：**`docs/regression-archive/`**；`docs/release-acceptance.sh` 现已一并写出 **`config-snapshot.json`**（脱敏）与 **`section-9-summary.generated.md`**（§9 粘贴表）。
 
 2. **Kubernetes 规模化（按需迭代）**  
    在现有 Service 端口过滤、EndpointSlice `ready`/`serving`、列表标签筛选基础上，按集群需要扩展（观察性、多集群上下文等）；保持可配置、可单测。
