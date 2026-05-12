@@ -142,7 +142,7 @@
 | FR-5.1 配置结构化对比 | 已提供 | CLI **`config-diff <左> <右> [--json \| --markdown]`**：加载两份 YAML（含 env 展开）、对比 `server` / `log_level` / `registries` / 按 `id` 的 `routes`；有差异时退出码 **1** |
 | FR-5.2 变更说明 / 评审辅助 | 已提供 | 同上 **`--markdown`**，便于粘贴 PR 描述 |
 | FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、路由 **`response_header_keys`**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**`release-acceptance`** 另写出 **`section-9-summary.generated.md`**；**`scripts/summarize-section9-release-acceptance.py`** 可重生成或自定义 §9 粘贴表（见 **`docs/regression-archive/`**）；**附链 / 在线分享**仍由工单或 Git 另行完成 |
-| FR-6 插件 / 扩展生态 | 部分（配置切片） | 无动态插件 / 运行时加载；已提供路由级 **`response_headers`**（仅普通 HTTP）作为内置扩展点，详见 **`docs/plugin-extension.md`**；WebSocket 不应用此项 |
+| FR-6 插件 / 扩展生态 | Phase C 已实现 | **`PluginMiddleware`** async trait（`on_request` / `on_response`）+ **`PluginChain`** 有序执行链 + **`server.plugins[]`** YAML 配置（`name` / `order` / `enabled` / `config`）已接入 `proxy_handler`；内置 `request-logger` 插件；插件可短路请求；路由级 **`response_headers`** 仍保留作为轻量扩展点；详见 **`docs/plugin-extension.md`** + **ADR 002** |
 
 **「M3 工程达成」最低标准（本仓库）**：**FR-5.1～FR-5.3**（工程可交付部分）已齐；**FR-5.3** 的外链托管不属于本仓库。**FR-6**：以配置切片为初版交付，完整插件生态仍为后续里程碑。
 
@@ -158,3 +158,16 @@
 | **`check-config`** | **每次**均执行路由编译（与 **`run`** / 热更新一致），非法 **`response_headers`** 在 strict 之前即失败；见 **`docs/check-config-strict-schema.md`** 开篇 |
 | **Mock 示例** | **`config/mock-config.yaml`** 中 `orders-api` 带示例 **`response_headers`**，供 smoke / 演示 |
 | **测试与回归** | `proxy_http` 本地 TCP 桩测合并顺序；`routing::matcher` 中 YAML→`RouterSnapshot` 正/反例；`config_snapshot_export` 断言快照不泄露响应头**值** |
+| **`init --template`** | CLI 脚手架：`mock` / `nacos` / `eureka` / `k8s` 四套起步模板，生成 `config/config.yaml`；对应 FR-1.1 |
+| **`x-request-id`** | `proxy_handler` 生成或复用入站 UUID；传播到上游、写入结构化日志、回传响应头；对应 FR-2.3 |
+| **`--local-override`** | `run --local-override <path>`：按 `route_id` 临时覆盖上游 URL；适用本地联调场景；对应 FR-3.1 |
+| **WebSocket 双向帧中继** | `proxy_websocket` 使用 `hyper::upgrade` + `tokio-tungstenite` 完成完整双向帧转发 |
+| **`random` / `weighted_round_robin`** | `server.instance_selection` 新增两种策略；`weighted_round_robin` 读取实例 `weight` 元数据，默认权重 1 |
+| **FR-1.3 启动修复建议** | `run_server` 的 5 个错误路径（config parse / local-override / registry init / route compile / port bind）均输出可执行修复命令 |
+| **`smoke-proxy`** | CLI 命令：在临时端口启动代理 → 发一个请求 → 校验状态码 → 退出；`--request`、`--method`、`--expect-status`；对应 FR-4.3 |
+| **Circuit Breaker + Retry** | `server.max_retries`（连接级重试）+ `server.circuit_breaker_threshold` / `circuit_breaker_recovery_secs`（per-upstream 熔断器 Closed/Open/Half-Open）；实现见 `src/server/circuit_breaker.rs` |
+| **`replay`** | CLI 命令：从 YAML/JSON 文件读取 `requests[]` 请求序列，启动临时代理并依次转发，输出 pass/fail 汇总；对应 FR-3.2 |
+| **`config-drift`** | CLI 命令：将基线配置与一到多个 profile 配置逐一对比，检测漂移；`--json` 结构化输出；退出码 1 表示存在漂移 |
+| **ADR 002** | FR-6 动态插件 SDK 设计评审：Rust trait + `dlopen`、生命周期、`server.plugins[]` 配置、安全与可观测性方案；见 `docs/adr/002-fr6-plugin-sdk-design.md` |
+| **Plugin SDK (Phase C)** | `PluginMiddleware` trait + `PluginChain` + `server.plugins[]` 配置解析 + `build_plugin_chain` 工厂；已接入 `proxy_handler` 请求/响应路径 |
+| **FR-6.2 内置插件** | `request-logger`（INFO 级日志）、`request-headers`（注入上游请求头，鉴权/追踪）、`response-headers`（追加/覆盖响应头，安全头）；6 个单元测试 |

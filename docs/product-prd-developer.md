@@ -125,7 +125,7 @@
 - 验收标准：
   - 30% 以上团队在一个季度内至少启用 1 个扩展能力
 
-**本仓库工程切片（非动态插件）**：路由级 **`response_headers`**（仅普通 HTTP 响应、编译期校验）与扩展说明见 **`docs/plugin-extension.md`**；与上表 FR-6.1～FR-6.3 的「运行时插件 / 分发」目标分离，后者仍待独立设计评审后再实现。
+**本仓库工程切片**：`PluginMiddleware` async trait + `PluginChain` 有序执行链 + `server.plugins[]` YAML 配置已实现（Phase C）；内置 3 个官方插件（`request-logger`、`request-headers`、`response-headers`）对齐 FR-6.2；路由级 `response_headers` 保留为轻量扩展点。FR-6.3 插件分发（`dlopen` 外部加载）仍为后续目标，设计见 ADR 002。详见 **`docs/plugin-extension.md`**。
 
 ## 7. 非功能需求（NFR）
 

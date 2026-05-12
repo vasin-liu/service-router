@@ -16,7 +16,7 @@
 - 上游目标：`upstream_url` 直连或 `service_id` 动态解析
 - 注册中心：Nacos、Eureka、Kubernetes（通过 Endpoints API 解析实例；可选 `kubeconfig_path`/`kubeconfig_context`）
 - 运行能力：配置热更新、`/health`、`/ready`
-- 协议能力：HTTP 代理（完整），WebSocket（初版）
+- 协议能力：HTTP 代理（完整），WebSocket（双向帧中继）
 
 ## 技术架构（简）
 
@@ -36,15 +36,14 @@
 
 ## 现阶段限制
 
-- 负载均衡：`server.instance_selection` 为 `first`（默认）或 `round_robin`；无权重/健康度路由
-- WebSocket 尚未实现完整双向帧透传
+- 负载均衡：`server.instance_selection` 支持 `first`（默认）、`round_robin`、`random`、`weighted_round_robin`；无主动健康检查
 - `/ready` 聚合各注册中心的 `health()` 结果；仅当全部报 `unhealthy` 时返回 503
 - Kubernetes：`Service.spec.ports` 约束后端 TCP 端口，再读 `Endpoints` / `EndpointSlice`；Slice 跳过 `ready`/`serving` 为 false 的端点；EndpointSlice 列表支持可选 `endpoint_slice_label_selector` 与 `kubernetes.io/service-name` AND 组合
 
 ## 下一步（建议）
 
-- P1：完善 WS 双向代理、引入负载均衡（`/ready` 已对接 registry health）
-- P2：加入熔断重试与核心指标
+- P1：主动健康检查（当前负载均衡仅被动；与熔断器协同，周期性探测上游 liveness）
+- P2：FR-6.3 插件分发机制初版（`dlopen` 外部 `.so`/`.dll` 加载，对齐 ADR 002）
 - P3：Kubernetes 端口/Service 对齐、就绪与标签维度过滤等与大规模集群兼容性增强
 - **远期**：配置界面（图形化编辑与校验预览，本地优先；**不阻塞**当前 YAML + CLI 主线）——见 `docs/developer-roadmap-1-2y.md` §4.1  
 - **更远期**：**Consul** 作为可选注册中心接入（与现有 Mock/Nacos/Eureka/K8s 并列评审后再实现）——见 **同文档 §4.1**、`docs/implementation-status.md`「远期（注册中心扩展）」

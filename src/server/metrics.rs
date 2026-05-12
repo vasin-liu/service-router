@@ -65,6 +65,7 @@ pub fn failure_code_for_proxy(err: &ProxyError) -> &'static str {
         ProxyError::UpstreamConnection(_) => "upstream_connection",
         ProxyError::WsUpgrade(_) => "ws_upgrade",
         ProxyError::BodyRead(_) => "body_read",
+        ProxyError::PluginError(_) => "plugin_error",
     }
 }
 

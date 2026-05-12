@@ -69,6 +69,9 @@ pub enum ProxyError {
 
     #[error("Request body read error: {0}")]
     BodyRead(String),
+
+    #[error("Plugin error: {0}")]
+    PluginError(String),
 }
 
 impl axum::response::IntoResponse for ProxyError {

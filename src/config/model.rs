@@ -23,6 +23,19 @@ impl Default for AppConfig {
     }
 }
 
+impl AppConfig {
+    /// Apply local overrides: for each override entry, find the route with the
+    /// matching `id` and replace its target with the override `upstream_url`.
+    pub fn apply_local_overrides(&mut self, overrides: &[LocalOverrideEntry]) {
+        for entry in overrides {
+            if let Some(route) = self.routes.iter_mut().find(|r| r.id == entry.route_id) {
+                route.upstream_url = Some(entry.upstream_url.clone());
+                route.service_id = None;
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct ServerConfig {
@@ -36,6 +49,21 @@ pub struct ServerConfig {
     /// When a route uses `service_id` and the registry returns multiple instances.
     #[serde(default)]
     pub instance_selection: InstanceSelection,
+    /// Max retry attempts on upstream failure (0 = no retry). Only retries on
+    /// connection errors, not on successful HTTP error status codes.
+    #[serde(default)]
+    pub max_retries: u32,
+    /// Circuit breaker: trips open after this many consecutive upstream
+    /// failures per upstream host, then rejects requests for
+    /// `circuit_breaker_recovery_secs`. 0 = disabled.
+    #[serde(default)]
+    pub circuit_breaker_threshold: u32,
+    /// Seconds to keep the circuit breaker open before allowing a probe request.
+    #[serde(default = "default_cb_recovery")]
+    pub circuit_breaker_recovery_secs: u64,
+    /// Ordered list of plugins to load into the proxy pipeline.
+    #[serde(default)]
+    pub plugins: Vec<PluginConfig>,
 }
 
 impl Default for ServerConfig {
@@ -45,6 +73,10 @@ impl Default for ServerConfig {
             port: default_port(),
             upstream_timeout_secs: default_upstream_timeout(),
             instance_selection: InstanceSelection::default(),
+            max_retries: 0,
+            circuit_breaker_threshold: 0,
+            circuit_breaker_recovery_secs: default_cb_recovery(),
+            plugins: Vec::new(),
         }
     }
 }
@@ -52,6 +84,7 @@ impl Default for ServerConfig {
 fn default_host() -> String { "0.0.0.0".to_string() }
 fn default_port() -> u16 { 8080 }
 fn default_upstream_timeout() -> u64 { 30 }
+fn default_cb_recovery() -> u64 { 30 }
 
 /// How to choose one upstream when a `service_id` resolves to multiple instances.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq)]
@@ -62,6 +95,11 @@ pub enum InstanceSelection {
     First,
     /// Rotate among instances per `service_id` using an in-memory counter.
     RoundRobin,
+    /// Pick a random instance (uniform distribution).
+    Random,
+    /// Weighted round-robin using the `weight` metadata key on each instance
+    /// (defaults to 1 when absent). Higher weight = more traffic share.
+    WeightedRoundRobin,
 }
 
 // ---------------------------------------------------------------------------
@@ -281,4 +319,44 @@ pub struct RoutingRule {
     pub priority: u32,
 }
 
+/// Per-route override loaded from a local overlay file (`--local-override`).
+/// Replaces the target of a matching route by `id` without modifying the main config.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct LocalOverrideEntry {
+    pub route_id: String,
+    pub upstream_url: String,
+}
+
+/// Top-level shape of a local-override YAML file.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct LocalOverrideFile {
+    pub overrides: Vec<LocalOverrideEntry>,
+}
+
 fn default_rule_priority() -> u32 { 100 }
+
+// ---------------------------------------------------------------------------
+// Plugin configuration
+// ---------------------------------------------------------------------------
+
+/// Declares a single plugin to be loaded into the proxy pipeline.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct PluginConfig {
+    /// Unique name, also used as the lookup key for built-in plugins.
+    pub name: String,
+    /// Execution order (lower = earlier). Defaults to 100.
+    #[serde(default = "default_plugin_order")]
+    pub order: u32,
+    /// Whether this plugin entry is active. Defaults to `true`.
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+    /// Opaque config blob forwarded to `PluginMiddleware::init`.
+    #[serde(default)]
+    pub config: serde_json::Value,
+}
+
+fn default_plugin_order() -> u32 { 100 }
+fn default_enabled() -> bool { true }

@@ -13,11 +13,12 @@ pub async fn proxy_http(
     upstream_base: &str,
     rewritten_path: &str,
     extra_response_headers: Option<&[(http::HeaderName, http::HeaderValue)]>,
+    request_id: &str,
 ) -> Result<Response, ProxyError> {
     // Build the upstream URL, preserving the original query string.
     let upstream_url = build_upstream_url(upstream_base, rewritten_path, req.uri().query());
 
-    debug!(upstream_url = %upstream_url, "Forwarding HTTP request");
+    debug!(request_id = %request_id, upstream_url = %upstream_url, "Forwarding HTTP request");
 
     let method = req.method().clone();
     let headers = req.headers().clone();
@@ -36,6 +37,9 @@ pub async fn proxy_http(
             upstream_req = upstream_req.header(name, value);
         }
     }
+
+    // Propagate request-id to upstream (overwrite any existing value).
+    upstream_req = upstream_req.header("x-request-id", request_id);
 
     upstream_req = upstream_req.body(body_bytes);
 
@@ -161,7 +165,7 @@ mod tests {
         ];
 
         let client = Client::new();
-        let resp = proxy_http(req, &client, &upstream_base, "/", Some(&extra))
+        let resp = proxy_http(req, &client, &upstream_base, "/", Some(&extra), "test-req-id")
             .await
             .unwrap();
 
