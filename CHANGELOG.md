@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+_(no changes yet)_
+
+## 1.0.0 (2026-05-12)
+
 ### Added
 
 - **Plugin SDK (Phase C)**: `PluginMiddleware` async trait (`on_request` / `on_response`), `PluginChain` ordered execution with reverse-order response hooks, `server.plugins[]` YAML config section (`name`, `order`, `enabled`, `config`), factory function `build_plugin_chain` wired into `run_server`; plugins can short-circuit the request. `ProxyError::PluginError` variant added for plugin failures.

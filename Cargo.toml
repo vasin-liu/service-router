@@ -1,8 +1,11 @@
 [package]
 name = "service-router"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 description = "Microservice registry proxy with Nacos/Eureka support, intelligent routing, and WebSocket proxying"
+license = "MIT"
+repository = "https://github.com/user/service-router"
+homepage = "https://github.com/user/service-router"
 
 [[bin]]
 name = "service-router"
