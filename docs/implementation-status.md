@@ -4,7 +4,7 @@
 
 - 状态：**M3（工程侧）已完成**；主线研发重心转入 **M4 准备（生态化与规模化）**
 - 已完成里程碑：M1（开发者最小可用工具链）、M2（稳定性 / 诊断 / 发布门禁）、**M3（协作与扩展 — FR-5 全量 + FR-6 Plugin SDK + 3 内置插件）**
-- 当前阶段目标：**M4** — 主动健康检查、性能基准、FR-6.3 外部插件加载（`dlopen`）、多环境一致性增强；全量 PRD 指标仍以 **`docs/product-prd-developer.md`** 为准
+- 当前阶段目标：**M4** — FR-6.3 外部插件加载（`dlopen`，设计已就绪 ADR 002，按需实施）、多环境一致性增强；~~主动健康检查~~ ✔ ~~性能基准~~ ✔；全量 PRD 指标仍以 **`docs/product-prd-developer.md`** 为准
 - **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 §7 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 验收产物包）](./m2-release-readiness.md#m2-release-acceptance-bundle)。
 
 ## 本次已落地
@@ -94,8 +94,8 @@
 2. **Kubernetes 规模化（按需迭代）**
    多集群上下文、观察性增强；保持可配置、可单测。
 
-3. **NFR-1 性能基准**
-   建立代理附加延迟 p50/p99 基准数据，为后续优化提供决策依据。
+3. ~~**NFR-1 性能基准**~~ **已完成**
+   代理附加延迟 p50 ~0.77ms / p99 ~0.90ms（loopback, 0-4KB body）；基准文档见 `docs/benchmark-baseline.md`；benchmark 代码 `benches/proxy_overhead.rs`。
 
 ## 远期（注册中心扩展，不设固定版本）
 
@@ -172,3 +172,4 @@
 | **Plugin SDK (Phase C)** | `PluginMiddleware` trait + `PluginChain` + `server.plugins[]` 配置解析 + `build_plugin_chain` 工厂；已接入 `proxy_handler` 请求/响应路径 |
 | **FR-6.2 内置插件** | `request-logger`（INFO 级日志）、`request-headers`（注入上游请求头，鉴权/追踪）、`response-headers`（追加/覆盖响应头，安全头）；6 个单元测试 |
 | **主动健康检查** | `server.health_check`（`interval_secs` / `path` / `timeout_secs` / `unhealthy_threshold` / `healthy_threshold`）；后台周期探测所有注册中心实例；`select_service_instance` 自动跳过不健康实例；全部下线时回退到完整列表；4 个单元测试 |
+| **NFR-1 性能基准** | `benches/proxy_overhead.rs`（criterion）测量 `proxy_http` loopback 端到端延迟；p50 ~0.77ms / p99 ~0.90ms（0-4KB body）；结果文档 `docs/benchmark-baseline.md` |

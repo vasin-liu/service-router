@@ -11,4 +11,5 @@ Ordered roughly by **`docs/implementation-status.md`** “下一阶段建议” 
 | P1 | Resilience | ~~LB weights~~ ✔; ~~WS bidirectional relay~~ ✔; ~~circuit breakers~~ ✔; ~~retry policy~~ ✔; ~~active health checks~~ ✔ — **全部完成**. |
 | P2 | Kubernetes | Scale/observability/multi-cluster: **`implementation-status.md`** §下一阶段-2; **`developer-roadmap-1-2y.md`**. |
 | P2 | Phase C done | ~~FR-6 plugin SDK design review~~ ✔; ~~multi-env profile + config drift detection~~ ✔ `config-drift` CLI. |
+| ~~P2~~ ✔ | NFR-1 | ~~Performance benchmark~~ ✔ `benches/proxy_overhead.rs` + `docs/benchmark-baseline.md`; p50 ~0.77ms / p99 ~0.90ms. |
 | 远期 | Registry | **Consul**: **`developer-roadmap-1-2y.md` §4.1**. |

@@ -65,3 +65,8 @@ hyper = { version = "1.9.0", features = ["full"] }
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3.0"
+criterion = { version = "0.8.2", features = ["html_reports", "async_tokio"] }
+
+[[bench]]
+name = "proxy_overhead"
+harness = false

@@ -43,7 +43,7 @@
 ## 下一步（建议）
 
 - P1：FR-6.3 插件分发机制初版（`dlopen` 外部 `.so`/`.dll` 加载，对齐 ADR 002）
-- P2：NFR-1 性能基准（代理附加延迟 p50/p99 量化）
+- ~~P2：NFR-1 性能基准~~ **已完成**（p50 ~0.77ms / p99 ~0.90ms，见 `docs/benchmark-baseline.md`）
 - P3：Kubernetes 端口/Service 对齐、就绪与标签维度过滤等与大规模集群兼容性增强
 - **远期**：配置界面（图形化编辑与校验预览，本地优先；**不阻塞**当前 YAML + CLI 主线）——见 `docs/developer-roadmap-1-2y.md` §4.1  
 - **更远期**：**Consul** 作为可选注册中心接入（与现有 Mock/Nacos/Eureka/K8s 并列评审后再实现）——见 **同文档 §4.1**、`docs/implementation-status.md`「远期（注册中心扩展）」
