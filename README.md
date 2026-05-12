@@ -107,6 +107,14 @@ Example file: **`config/mock-scenarios-sample.yaml`**.
 - `docs/m2-release-readiness.md` — M2 completion criteria vs repo evidence; **`bash scripts/verify-m2-baseline.sh`** or **`powershell -File scripts/verify-m2-baseline.ps1`** for Mock baseline (optional **`M2_WITH_DOCKER_PROBE`** / **`$env:M2_WITH_DOCKER_PROBE='1'`** to mirror CI compose probe)
 - Optional Git commit template (no IDE footers): **`git config commit.template .gitmessage`** — see `.gitmessage`
 
+## Configuration Schema
+
+A JSON Schema for config YAML is available at [`docs/config-schema.json`](docs/config-schema.json). To enable editor validation in VS Code, add to `.vscode/settings.json`:
+
+```json
+{ "yaml.schemas": { "./docs/config-schema.json": "config/*.yaml" } }
+```
+
 ## JSON Diagnostics Docs
 
 - `docs/diagnostic-codes.md` — stable strings for metrics, doctor probes, route-explain, `/ready`

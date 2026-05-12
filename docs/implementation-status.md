@@ -2,11 +2,12 @@
 
 ## 当前状态
 
-- 状态：**PRD 工程交付已达上限**；代码层面迭代边际收益接近于零，建议转入**运维验收 / 版本发布 / 用户文档**方向
+- 状态：**v1.0.0 已发布**（2026-05-12），tag 已推送并触发 release workflow；dev 已合并到 main
 - 已完成里程碑：M1（开发者最小可用工具链）、M2（稳定性 / 诊断 / 发布门禁）、**M3（协作与扩展 — FR-5 全量 + FR-6 Plugin SDK + 3 内置插件）**、**M4 部分（主动健康检查 + 性能基准 + NFR-2 插件隔离 + NFR-5 配置版本号）**
-- PRD 覆盖率：**FR 17/18 (94%)**，弹性基础设施 **5/5 (100%)**，NFR **4/5 已覆盖**；唯一未开始：FR-6.3 `dlopen` 外部插件加载（ADR 002 设计已就绪，按需实施）
-- 下一步重心：**真实环境验收**（Nacos/Eureka/K8s 矩阵回归）→ **版本发布准备**（tag + release workflow + binary 分发）→ **用户文档与教程**
-- **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 §7 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 验收产物包）](./m2-release-readiness.md#m2-release-acceptance-bundle)。
+- PRD 覆盖率：**FR 17/18 (94%)**，弹性基础设施 **5/5 (100%)**，NFR **5/5 (100%)**；唯一未开始：FR-6.3 `dlopen` 外部插件加载（ADR 002 设计已就绪，按需实施）
+- **v1.0.0 交付内容**：Mock profile 验收通过（81 tests, 5 JSON artifacts），release workflow + 4 平台 binary 构建，Getting Started 教程，插件开发指南，配置 JSON Schema，Dockerfile
+- 下一步重心：**外部注册中心验收**（Nacos/Eureka/K8s 矩阵回归）→ **Docker 镜像发布** → **FR-6.3 按需**
+- **外部环境合规**：Mock profile 已验收并归档（`docs/regression-archive/v1.0.0-mock-acceptance.md`）；Nacos / Eureka / Kubernetes 验收待目标环境可用时补充。
 
 ## 本次已落地
 

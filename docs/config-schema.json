@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vasin-liu/service-router/config-schema.json",
+  "title": "Service Router Configuration",
+  "description": "Configuration schema for service-router YAML config files.",
+  "type": "object",
+  "properties": {
+    "config_version": {
+      "type": "string",
+      "default": "1",
+      "description": "Schema version of this config file."
+    },
+    "server": { "$ref": "#/$defs/ServerConfig" },
+    "registries": { "$ref": "#/$defs/RegistriesConfig" },
+    "routes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/RoutingRule" }
+    },
+    "log_level": {
+      "type": "string",
+      "default": "info",
+      "description": "Logging level (trace, debug, info, warn, error)."
+    }
+  },
+  "required": ["server", "registries", "routes"],
+  "additionalProperties": false,
+
+  "$defs": {
+    "ServerConfig": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string", "default": "0.0.0.0" },
+        "port": { "type": "integer", "default": 8080, "minimum": 1, "maximum": 65535 },
+        "upstream_timeout_secs": { "type": "integer", "default": 30, "minimum": 1 },
+        "instance_selection": {
+          "type": "string",
+          "enum": ["first", "round_robin", "random", "weighted_round_robin"],
+          "default": "first"
+        },
+        "max_retries": { "type": "integer", "default": 0, "minimum": 0, "description": "Retry attempts on connection-level upstream failures." },
+        "circuit_breaker_threshold": { "type": "integer", "default": 0, "minimum": 0, "description": "Consecutive failures before opening circuit. 0 = disabled." },
+        "circuit_breaker_recovery_secs": { "type": "integer", "default": 30, "minimum": 1, "description": "Seconds to keep circuit open before half-open probe." },
+        "plugins": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PluginConfig" },
+          "default": []
+        },
+        "health_check": {
+          "oneOf": [
+            { "$ref": "#/$defs/HealthCheckConfig" },
+            { "type": "null" }
+          ],
+          "description": "Active health checking for upstream instances. Omit to disable."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "PluginConfig": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Plugin name (built-in: request-logger, request-headers, response-headers)." },
+        "order": { "type": "integer", "default": 100, "description": "Execution order (lower = earlier)." },
+        "enabled": { "type": "boolean", "default": true },
+        "config": { "description": "Opaque config object forwarded to the plugin." }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+
+    "HealthCheckConfig": {
+      "type": "object",
+      "properties": {
+        "interval_secs": { "type": "integer", "default": 10, "minimum": 1 },
+        "path": { "type": "string", "default": "/health" },
+        "timeout_secs": { "type": "integer", "default": 5, "minimum": 1 },
+        "unhealthy_threshold": { "type": "integer", "default": 3, "minimum": 1 },
+        "healthy_threshold": { "type": "integer", "default": 1, "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+
+    "RegistriesConfig": {
+      "type": "object",
+      "properties": {
+        "query_mode": {
+          "type": "string",
+          "enum": ["priority", "merge"],
+          "default": "priority"
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RegistryConfig" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "RegistryConfig": {
+      "type": "object",
+      "required": ["type"],
+      "oneOf": [
+        { "$ref": "#/$defs/NacosRegistry" },
+        { "$ref": "#/$defs/EurekaRegistry" },
+        { "$ref": "#/$defs/KubernetesRegistry" },
+        { "$ref": "#/$defs/MockRegistry" }
+      ]
+    },
+
+    "NacosRegistry": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "nacos" },
+        "priority": { "type": "integer", "default": 100 },
+        "server_addr": { "type": "string", "description": "Nacos server address (http://host:port or http://host:port/nacos)." },
+        "namespace": { "type": "string" },
+        "group": { "type": "string" },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "username": { "type": "string" },
+            "password": { "type": "string" },
+            "token_refresh_interval_secs": { "type": "integer", "default": 1800 }
+          },
+          "required": ["username", "password"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "server_addr"],
+      "additionalProperties": false
+    },
+
+    "EurekaRegistry": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "eureka" },
+        "priority": { "type": "integer", "default": 100 },
+        "server_url": { "type": "string" },
+        "health_path": { "type": "string", "default": "/apps" },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "username": { "type": "string" },
+            "password": { "type": "string" }
+          },
+          "required": ["username", "password"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "server_url"],
+      "additionalProperties": false
+    },
+
+    "KubernetesRegistry": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "kubernetes" },
+        "priority": { "type": "integer", "default": 100 },
+        "api_server_url": { "type": "string", "default": "https://kubernetes.default.svc" },
+        "namespace": { "type": "string" },
+        "kubeconfig_path": { "type": "string" },
+        "kubeconfig_context": { "type": "string" },
+        "insecure_skip_tls_verify": { "type": "boolean", "default": false },
+        "endpoint_slice_label_selector": { "type": "string" },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "token_file": { "type": "string" },
+            "token": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+
+    "MockRegistry": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "mock" },
+        "priority": { "type": "integer", "default": 100 },
+        "services": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "host": { "type": "string" },
+                "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+                "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
+              },
+              "required": ["host", "port"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "error_services": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Service IDs that simulate registry failures."
+        },
+        "health_behavior": { "$ref": "#/$defs/MockHealthBehavior" }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+
+    "MockHealthBehavior": {
+      "type": "object",
+      "required": ["type"],
+      "oneOf": [
+        { "properties": { "type": { "const": "healthy" } }, "additionalProperties": false },
+        { "properties": { "type": { "const": "degraded" }, "message": { "type": "string" } }, "additionalProperties": false },
+        { "properties": { "type": { "const": "unhealthy" }, "message": { "type": "string" } }, "additionalProperties": false }
+      ]
+    },
+
+    "RoutingRule": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "$ref": "#/$defs/PathMatcher" },
+        "methods": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"] }
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "All listed headers must match."
+        },
+        "service_id": { "type": "string", "description": "Resolved via registry. Mutually exclusive with upstream_url." },
+        "upstream_url": { "type": "string", "description": "Direct upstream URL. Mutually exclusive with service_id." },
+        "strip_prefix": { "type": "string" },
+        "response_headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Extra headers on HTTP responses (not WebSocket)."
+        },
+        "priority": { "type": "integer", "default": 100, "description": "Lower number = higher priority." }
+      },
+      "required": ["id", "path"],
+      "additionalProperties": false
+    },
+
+    "PathMatcher": {
+      "type": "object",
+      "required": ["type", "value"],
+      "properties": {
+        "type": { "type": "string", "enum": ["exact", "prefix", "glob", "regex"] },
+        "value": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

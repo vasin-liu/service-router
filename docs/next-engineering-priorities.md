@@ -1,17 +1,16 @@
-# Next engineering priorities (after M3 slice)
+# Next engineering priorities (post v1.0.0)
 
-Ordered roughly by **`docs/implementation-status.md`** “下一阶段建议” and roadmap docs. **No code change is implied** until each item is scheduled.
+v1.0.0 released 2026-05-12. Ordered by impact. **No code change is implied** until each item is scheduled.
 
-| Priority | Track | Action |
-|:---------|:------|:-------|
-| P0 | Environment | Run **`release-acceptance-matrix.md`** §3–§4 per profile (Nacos / Eureka / Kubernetes + Mock); archive §9 summary + artifacts (**`docs/regression-archive/`**). |
-| P0 | Rollout | After deploy or hot-reload: **`scripts/post-deploy-smoke.sh`** / **`.ps1`** + runbook §7–§8 checks. |
-| P1 | FR-5.3 process | Ticket paste: **`docs/config-snapshot-workflow.md`**；release 五份 §7 JSON + **`section-9-summary.generated.md`** / §9 表：**`scripts/summarize-section9-release-acceptance.py`**（**`docs/regression-archive/`**）。 |
-| P1 | FR-6 | ~~Dynamic plugins design review~~ ✔ ADR 002; ~~Plugin SDK (Phase C)~~ ✔ trait + chain + config + 3 built-in plugins; **next**: FR-6.3 `dlopen` external plugin loading. |
-| P1 | Resilience | ~~LB weights~~ ✔; ~~WS bidirectional relay~~ ✔; ~~circuit breakers~~ ✔; ~~retry policy~~ ✔; ~~active health checks~~ ✔ — **全部完成**. |
-| P2 | Kubernetes | Scale/observability/multi-cluster: **`implementation-status.md`** §下一阶段-2; **`developer-roadmap-1-2y.md`**. |
-| P2 | Phase C done | ~~FR-6 plugin SDK design review~~ ✔; ~~multi-env profile + config drift detection~~ ✔ `config-drift` CLI. |
-| ~~P2~~ ✔ | NFR-1 | ~~Performance benchmark~~ ✔ `benches/proxy_overhead.rs` + `docs/benchmark-baseline.md`; p50 ~0.77ms / p99 ~0.90ms. |
-| ~~P2~~ ✔ | NFR-2 | ~~Plugin panic isolation~~ ✔ `AssertUnwindSafe` + `catch_unwind` in `PluginChain`; panicking plugin returns error, not crash. |
-| ~~P2~~ ✔ | NFR-5 | ~~Config versioning~~ ✔ `config_version` field + `docs/config-versioning.md`; backward-compatible default `"1"`. |
-| 远期 | Registry | **Consul**: **`developer-roadmap-1-2y.md` §4.1**. |
+| Priority | Track | Status | Action |
+|:---------|:------|:-------|:-------|
+| ~~P0~~ ✔ | Release | done | v1.0.0 tag + release workflow + Mock profile acceptance archived. |
+| ~~P0~~ ✔ | Docs | done | Getting Started guide, plugin dev guide, config JSON Schema, Dockerfile. |
+| P0 | Environment | pending | Nacos / Eureka / Kubernetes acceptance on real clusters; archive to `docs/regression-archive/`. |
+| P1 | Distribution | pending | Docker image publish to container registry. |
+| P1 | FR-6.3 | pending | `dlopen` external plugin loading (ADR 002 design ready, implement on demand). |
+| P2 | Observability | pending | OpenTelemetry integration (replace self-built /metrics). |
+| P2 | Testing | pending | E2E integration tests (real HTTP proxy round-trips). |
+| P2 | Kubernetes | pending | Scale/observability/multi-cluster enhancements. |
+| P3 | DX | pending | `run --dev` mode, IDE support enhancements. |
+| 远期 | Registry | pending | **Consul**: **`developer-roadmap-1-2y.md` §4.1**. |

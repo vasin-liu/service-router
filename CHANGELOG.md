@@ -4,7 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
-_(no changes yet)_
+### Added
+
+- **Configuration JSON Schema**: `docs/config-schema.json` for editor validation (VS Code YAML extension compatible).
+- **Plugin development guide**: `docs/plugin-dev-guide.md` — trait API reference, built-in plugin docs, safety guarantees.
+- **Dockerfile**: multi-stage build for containerized deployment.
+- **`.dockerignore`**: excludes non-essential files from Docker context.
 
 ## 1.0.0 (2026-05-12)
 

@@ -1,0 +1,11 @@
+target/
+artifacts/
+docs/
+.git/
+.github/
+.gitlab-ci.yml
+.cursor/
+.claude/
+*.md
+scripts/
+tools/
