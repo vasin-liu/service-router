@@ -6,6 +6,9 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **Rule template packs**: 3 new scenario templates for `init --template`: `api-gateway` (multi-service routing with auth/security headers, health check, circuit breaker), `bff` (Backend-for-Frontend aggregating multiple backends), `canary` (weighted traffic splitting between stable and canary instances).
+- **FR-6.3 external plugin loading (dlopen)**: `server.plugins[].path` config field to load plugins from external shared libraries (`.so`/`.dll`/`.dylib`); library must export `create_plugin() -> Box<dyn PluginMiddleware>` symbol.
+- **Plugin CLI commands**: `plugin list [config]` shows all configured plugins with source/order/status; `plugin check <path>` validates an external plugin shared library.
 - **HTTPS/TLS termination**: optional `server.tls` config block (`cert_path`, `key_path`) enables HTTPS via `axum-server` + `rustls`; falls back to plain HTTP when omitted.
 - **`run --dev` mode**: `service-router run --dev` sets verbose logging (`service_router=debug,tower_http=debug`), auto-discovers `local-override.yaml` next to config file.
 - **OpenTelemetry tracing**: set `OTEL_EXPORTER_OTLP_ENDPOINT` to export traces via OTLP/gRPC to Jaeger, Grafana Tempo, etc.; spans inherit from existing `tracing` instrumentation.

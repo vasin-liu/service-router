@@ -197,26 +197,80 @@ use crate::config::model::PluginConfig;
 
 /// Build a PluginChain from configuration. Only enabled entries are
 /// instantiated, sorted by `order`. Unknown names are logged and skipped.
+///
+/// If a `path` is set on a plugin config entry, the plugin is loaded from an
+/// external shared library via `dlopen`. The library must export a
+/// `create_plugin` function with signature `fn() -> Box<dyn PluginMiddleware>`.
 pub async fn build_plugin_chain(configs: &[PluginConfig]) -> Result<PluginChain, String> {
     let mut entries: Vec<&PluginConfig> = configs.iter().filter(|c| c.enabled).collect();
     entries.sort_by_key(|c| c.order);
 
     let mut plugins: Vec<Box<dyn PluginMiddleware>> = Vec::new();
+    let mut _libs: Vec<libloading::Library> = Vec::new();
+
     for cfg in entries {
-        let mut plugin: Box<dyn PluginMiddleware> = match cfg.name.as_str() {
-            "request-logger" => Box::new(RequestLoggerPlugin),
-            "request-headers" => Box::new(RequestHeadersPlugin::new()),
-            "response-headers" => Box::new(ResponseHeadersPlugin::new()),
-            other => {
-                tracing::warn!(name = %other, "Unknown plugin name, skipping");
-                continue;
+        let mut plugin: Box<dyn PluginMiddleware> = if let Some(ref lib_path) = cfg.path {
+            match load_external_plugin(lib_path) {
+                Ok((p, lib)) => {
+                    _libs.push(lib);
+                    p
+                }
+                Err(e) => {
+                    tracing::error!(name = %cfg.name, path = %lib_path, error = %e, "Failed to load external plugin");
+                    return Err(format!("Failed to load external plugin '{}' from '{}': {}", cfg.name, lib_path, e));
+                }
+            }
+        } else {
+            match cfg.name.as_str() {
+                "request-logger" => Box::new(RequestLoggerPlugin),
+                "request-headers" => Box::new(RequestHeadersPlugin::new()),
+                "response-headers" => Box::new(ResponseHeadersPlugin::new()),
+                other => {
+                    tracing::warn!(name = %other, "Unknown built-in plugin name, skipping");
+                    continue;
+                }
             }
         };
         plugin.init(cfg.config.clone()).await?;
-        tracing::info!(plugin = %cfg.name, order = cfg.order, "Plugin loaded");
+        tracing::info!(plugin = %cfg.name, order = cfg.order,
+            source = if cfg.path.is_some() { "external" } else { "built-in" },
+            "Plugin loaded");
         plugins.push(plugin);
     }
     Ok(PluginChain::new(plugins))
+}
+
+// ---------------------------------------------------------------------------
+// External plugin loading via dlopen
+// ---------------------------------------------------------------------------
+
+type CreatePluginFn = unsafe fn() -> Box<dyn PluginMiddleware>;
+
+/// Loads an external plugin from a shared library.
+/// The library must export a C-compatible symbol `create_plugin` that returns
+/// `Box<dyn PluginMiddleware>`.
+fn load_external_plugin(path: &str) -> Result<(Box<dyn PluginMiddleware>, libloading::Library), String> {
+    unsafe {
+        let lib = libloading::Library::new(path)
+            .map_err(|e| format!("Cannot load library '{}': {}", path, e))?;
+        let create_fn: libloading::Symbol<CreatePluginFn> = lib.get(b"create_plugin")
+            .map_err(|e| format!("Symbol 'create_plugin' not found in '{}': {}", path, e))?;
+        let plugin = create_fn();
+        Ok((plugin, lib))
+    }
+}
+
+/// Validates that a shared library at the given path can be loaded and exposes
+/// the `create_plugin` symbol. Returns the plugin name on success.
+pub fn check_external_plugin(path: &str) -> Result<String, String> {
+    unsafe {
+        let lib = libloading::Library::new(path)
+            .map_err(|e| format!("Cannot load library: {}", e))?;
+        let create_fn: libloading::Symbol<CreatePluginFn> = lib.get(b"create_plugin")
+            .map_err(|e| format!("Symbol 'create_plugin' not found: {}", e))?;
+        let plugin = create_fn();
+        Ok(plugin.name().to_string())
+    }
 }
 
 #[cfg(test)]
@@ -372,12 +426,14 @@ mod tests {
                 order: 50,
                 enabled: false,
                 config: serde_json::Value::Null,
+                path: None,
             },
             PluginConfig {
                 name: "request-logger".to_string(),
                 order: 10,
                 enabled: true,
                 config: serde_json::Value::Null,
+                path: None,
             },
         ];
         let chain = build_plugin_chain(&configs).await.unwrap();

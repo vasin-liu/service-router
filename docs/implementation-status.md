@@ -2,15 +2,14 @@
 
 ## 当前状态
 
-- 状态：**v1.1.0-dev** — v1.0.0 基础上进行生产化加固迭代
-- 已完成里程碑：M1-M4 全部完成 + **v1.1 生产化加固**
-- **v1.1 新增交付内容**：
-  - HTTPS/TLS 终止（`server.tls` 配置 + `axum-server` + `rustls`）
-  - `run --dev` 模式（verbose log + local-override 自动发现）
-  - OpenTelemetry tracing 集成（`OTEL_EXPORTER_OTLP_ENDPOINT` 环境变量驱动 OTLP 导出）
-  - E2E 集成测试（`tests/e2e_proxy.rs`，3 个端到端测试用例）
-  - Graceful shutdown 增强（drain 日志 + 启动协议标注）
-- PRD 覆盖率：**FR 17/18 (94%)**，弹性基础设施 **5/5 (100%)**，NFR **5/5 (100%)**
+- 状态：**v1.2.0-dev** — Phase C 补齐迭代（规则模板 + dlopen 外部插件 + 插件 CLI）
+- 已完成里程碑：M1-M4 全部完成 + v1.1 生产化加固 + **v1.2 Phase C 补齐**
+- **v1.2 新增交付内容**：
+  - 规则模板包：`api-gateway`、`bff`、`canary` 三个场景化模板
+  - FR-6.3 dlopen 外部插件加载（`server.plugins[].path` + `libloading`）
+  - 插件 CLI 命令：`plugin list` / `plugin check`
+- **v1.1 已交付**：HTTPS/TLS、OpenTelemetry、E2E 测试、`run --dev`、graceful shutdown
+- PRD 覆盖率：**FR 18/18 (100%)**，弹性基础设施 **5/5 (100%)**，NFR **5/5 (100%)**
 - 测试覆盖：**84 tests** 全部通过（含 3 个 E2E 测试）
 
 ## 本次已落地

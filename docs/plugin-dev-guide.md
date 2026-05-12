@@ -180,6 +180,57 @@ server:
 - **Execution order**: `on_request` runs in ascending `order`; `on_response` runs in descending `order` (like middleware unwinding).
 - **Error propagation**: Returning `Err(String)` from any hook aborts the chain and results in a 502 response with the error logged.
 
-## Future: External Plugins (FR-6.3)
+## External Plugins (FR-6.3)
 
-The current SDK supports built-in (compiled-in) plugins only. External plugin loading via `dlopen` (`.so`/`.dll`) is designed in [ADR 002](adr/002-fr6-plugin-sdk-design.md) and will be implemented when there is demand. The `PluginMiddleware` trait will remain the stable API contract for external plugins.
+External plugins are loaded from shared libraries (`.so`/`.dll`/`.dylib`) via `dlopen` at startup.
+
+### Writing an External Plugin
+
+Create a Rust crate that depends on `service-router` (for the `PluginMiddleware` trait) and exports a `create_plugin` function:
+
+```rust
+use service_router::server::PluginMiddleware;
+
+struct MyPlugin;
+
+#[async_trait::async_trait]
+impl PluginMiddleware for MyPlugin {
+    fn name(&self) -> &str { "my-plugin" }
+    // implement on_request / on_response as needed
+}
+
+#[no_mangle]
+pub extern "C" fn create_plugin() -> Box<dyn PluginMiddleware> {
+    Box::new(MyPlugin)
+}
+```
+
+Build as a `cdylib`:
+
+```toml
+[lib]
+crate-type = ["cdylib"]
+```
+
+### Configuration
+
+```yaml
+server:
+  plugins:
+    - name: my-plugin
+      order: 50
+      path: "./target/release/libmy_plugin.so"  # or .dll / .dylib
+      config:
+        key: value
+```
+
+### Validation
+
+```bash
+service-router plugin check ./target/release/libmy_plugin.so
+```
+
+### CLI
+
+- `service-router plugin list [config]` -- lists all configured plugins with source and status.
+- `service-router plugin check <path>` -- validates that a shared library exports `create_plugin` and returns a valid plugin.

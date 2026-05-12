@@ -79,7 +79,8 @@
         "name": { "type": "string", "description": "Plugin name (built-in: request-logger, request-headers, response-headers)." },
         "order": { "type": "integer", "default": 100, "description": "Execution order (lower = earlier)." },
         "enabled": { "type": "boolean", "default": true },
-        "config": { "description": "Opaque config object forwarded to the plugin." }
+        "config": { "description": "Opaque config object forwarded to the plugin." },
+        "path": { "type": "string", "description": "Path to external shared library (.so/.dll/.dylib). When set, plugin is loaded via dlopen." }
       },
       "required": ["name"],
       "additionalProperties": false

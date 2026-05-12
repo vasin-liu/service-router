@@ -102,6 +102,8 @@ async fn run() -> anyhow::Result<ExitCode> {
             profile_paths,
             as_json,
         } => config_drift(base_path, profile_paths, as_json),
+        Command::PluginList { config_path } => plugin_list(config_path).await,
+        Command::PluginCheck { plugin_path } => plugin_check(&plugin_path),
         Command::Help => {
             print_help();
             Ok(ExitCode::SUCCESS)
@@ -488,6 +490,12 @@ enum Command {
         profile_paths: Vec<PathBuf>,
         as_json: bool,
     },
+    PluginList {
+        config_path: PathBuf,
+    },
+    PluginCheck {
+        plugin_path: String,
+    },
     Help,
 }
 
@@ -837,6 +845,29 @@ fn parse_command(args: Vec<String>) -> Command {
                 }
             }
         }
+        Some("plugin") => {
+            match args.get(1).map(String::as_str) {
+                Some("list") => {
+                    let config_path = args.get(2)
+                        .map(PathBuf::from)
+                        .unwrap_or_else(|| PathBuf::from("config/config.yaml"));
+                    Command::PluginList { config_path }
+                }
+                Some("check") => {
+                    match args.get(2) {
+                        Some(path) => Command::PluginCheck { plugin_path: path.clone() },
+                        None => {
+                            eprintln!("Usage: plugin check <path-to-shared-library>");
+                            Command::Help
+                        }
+                    }
+                }
+                _ => {
+                    eprintln!("Usage: plugin <list [config]|check <path>>");
+                    Command::Help
+                }
+            }
+        }
         Some("-h") | Some("--help") | Some("help") => Command::Help,
         Some(other) => {
             eprintln!("Unknown command: {other}");
@@ -847,7 +878,7 @@ fn parse_command(args: Vec<String>) -> Command {
 
 fn print_help() {
     println!(
-        "service-router commands:\n  run [config] [--local-override <path>] [--dev]      Start proxy server (--dev: verbose log + auto-discover local-override)\n  init [--template mock|nacos|eureka|k8s] [-o dir]   Generate starter config (default: mock)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  smoke-proxy [config] [--request <path>] [--method GET] [--expect-status 200]  CI smoke: start proxy, send one request, verify status, exit\n  replay <request-file> [--config <path>]            Replay a sequence of requests through the proxy (YAML/JSON with requests[] array)\n  config-drift <base> <profile1> [profile2 ...] [--json]  Compare base config against profile(s); exit 1 on drift\n  config-diff <left> <right> [--json|--markdown]   Structural diff of two YAML configs (after env expansion); exit 1 if different\n  config-snapshot [config] [--config <path>] [-o|--output <path>]  Redacted JSON snapshot for issue/PR attachment (stdout or file; use - for stdout)\n  help                                               Show help"
+        "service-router commands:\n  run [config] [--local-override <path>] [--dev]      Start proxy server (--dev: verbose log + auto-discover local-override)\n  init [--template <name>] [-o dir]                   Generate starter config (templates: mock, nacos, eureka, k8s, api-gateway, bff, canary)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  smoke-proxy [config] [--request <path>] [--method GET] [--expect-status 200]  CI smoke: start proxy, send one request, verify status, exit\n  replay <request-file> [--config <path>]            Replay a sequence of requests through the proxy (YAML/JSON with requests[] array)\n  config-drift <base> <profile1> [profile2 ...] [--json]  Compare base config against profile(s); exit 1 on drift\n  config-diff <left> <right> [--json|--markdown]   Structural diff of two YAML configs (after env expansion); exit 1 if different\n  config-snapshot [config] [--config <path>] [-o|--output <path>]  Redacted JSON snapshot for issue/PR attachment (stdout or file; use - for stdout)\n  plugin list [config]                               List configured plugins (built-in and external)\n  plugin check <path>                                Validate an external plugin shared library (.so/.dll/.dylib)\n  help                                               Show help"
     );
 }
 
@@ -857,9 +888,12 @@ fn init_project(template: &str, output_dir: &Path) -> anyhow::Result<ExitCode> {
         "nacos" => INIT_TEMPLATE_NACOS,
         "eureka" => INIT_TEMPLATE_EUREKA,
         "k8s" | "kubernetes" => INIT_TEMPLATE_K8S,
+        "api-gateway" => INIT_TEMPLATE_API_GATEWAY,
+        "bff" => INIT_TEMPLATE_BFF,
+        "canary" => INIT_TEMPLATE_CANARY,
         other => {
             eprintln!(
-                "Unknown template '{}'. Available: mock, nacos, eureka, k8s",
+                "Unknown template '{}'. Available: mock, nacos, eureka, k8s, api-gateway, bff, canary",
                 other
             );
             return Ok(ExitCode::from(1));
@@ -1024,6 +1058,241 @@ routes:
       value: "/"
     service_id: "api-gateway"
 "#;
+
+const INIT_TEMPLATE_API_GATEWAY: &str = r#"# API Gateway template — multi-service routing with auth headers and rate-limit plugin
+log_level: "info"
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  upstream_timeout_secs: 30
+  instance_selection: round_robin
+  max_retries: 2
+  circuit_breaker_threshold: 5
+  circuit_breaker_recovery_secs: 30
+  plugins:
+    - name: request-headers
+      order: 10
+      config:
+        X-Gateway: "service-router"
+    - name: response-headers
+      order: 20
+      config:
+        X-Powered-By: "service-router"
+        Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+  health_check:
+    interval_secs: 10
+    path: "/health"
+    timeout_secs: 5
+    unhealthy_threshold: 3
+    healthy_threshold: 1
+
+registries:
+  query_mode: priority
+  sources:
+    - type: mock
+      priority: 1
+      services:
+        user-service:
+          - host: "127.0.0.1"
+            port: 9001
+        order-service:
+          - host: "127.0.0.1"
+            port: 9002
+        product-service:
+          - host: "127.0.0.1"
+            port: 9003
+
+routes:
+  - id: "users-api"
+    priority: 10
+    path:
+      type: prefix
+      value: "/api/users"
+    service_id: "user-service"
+    strip_prefix: "/api/users"
+    response_headers:
+      X-Service: "user-service"
+
+  - id: "orders-api"
+    priority: 10
+    path:
+      type: prefix
+      value: "/api/orders"
+    service_id: "order-service"
+    strip_prefix: "/api/orders"
+    response_headers:
+      X-Service: "order-service"
+
+  - id: "products-api"
+    priority: 10
+    path:
+      type: prefix
+      value: "/api/products"
+    service_id: "product-service"
+    strip_prefix: "/api/products"
+    response_headers:
+      X-Service: "product-service"
+
+  - id: "catch-all"
+    priority: 100
+    path:
+      type: prefix
+      value: "/"
+    upstream_url: "http://127.0.0.1:9001"
+"#;
+
+const INIT_TEMPLATE_BFF: &str = r#"# BFF (Backend-for-Frontend) template — single entry point aggregating multiple backends
+log_level: "info"
+
+server:
+  host: "127.0.0.1"
+  port: 3000
+  upstream_timeout_secs: 10
+  instance_selection: round_robin
+  plugins:
+    - name: request-headers
+      order: 10
+      config:
+        X-BFF-Client: "web"
+    - name: request-logger
+      order: 99
+
+registries:
+  query_mode: priority
+  sources:
+    - type: mock
+      priority: 1
+      services:
+        auth-service:
+          - host: "127.0.0.1"
+            port: 9010
+        content-service:
+          - host: "127.0.0.1"
+            port: 9011
+        notification-service:
+          - host: "127.0.0.1"
+            port: 9012
+
+routes:
+  - id: "auth"
+    priority: 10
+    path:
+      type: prefix
+      value: "/auth"
+    service_id: "auth-service"
+
+  - id: "content"
+    priority: 10
+    path:
+      type: prefix
+      value: "/content"
+    service_id: "content-service"
+
+  - id: "notifications"
+    priority: 10
+    path:
+      type: prefix
+      value: "/notifications"
+    service_id: "notification-service"
+
+  - id: "fallback"
+    priority: 100
+    path:
+      type: prefix
+      value: "/"
+    upstream_url: "http://127.0.0.1:9010"
+"#;
+
+const INIT_TEMPLATE_CANARY: &str = r#"# Canary / Grayscale release template — weighted traffic splitting between stable and canary
+log_level: "info"
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  upstream_timeout_secs: 30
+  instance_selection: weighted_round_robin
+  max_retries: 1
+  plugins:
+    - name: request-logger
+      order: 99
+    - name: response-headers
+      order: 10
+      config:
+        X-Canary: "active"
+
+registries:
+  query_mode: priority
+  sources:
+    - type: mock
+      priority: 1
+      services:
+        my-service:
+          - host: "127.0.0.1"
+            port: 9001
+            metadata:
+              version: "stable"
+              weight: "90"
+          - host: "127.0.0.1"
+            port: 9002
+            metadata:
+              version: "canary"
+              weight: "10"
+
+routes:
+  - id: "canary-api"
+    priority: 10
+    path:
+      type: prefix
+      value: "/api"
+    service_id: "my-service"
+
+  - id: "catch-all"
+    priority: 100
+    path:
+      type: prefix
+      value: "/"
+    service_id: "my-service"
+"#;
+
+async fn plugin_list(config_path: PathBuf) -> anyhow::Result<ExitCode> {
+    let config = load_config(&config_path).map_err(|e| {
+        anyhow::anyhow!("Failed to load config from {}: {}", config_path.display(), e)
+    })?;
+    let plugins = &config.server.plugins;
+    if plugins.is_empty() {
+        println!("No plugins configured in {}", config_path.display());
+        return Ok(ExitCode::SUCCESS);
+    }
+
+    println!("{:<20} {:<8} {:<10} {:<10} {}", "NAME", "ORDER", "ENABLED", "SOURCE", "PATH/INFO");
+    println!("{}", "-".repeat(72));
+    for p in plugins {
+        let source = if p.path.is_some() { "external" } else { "built-in" };
+        let path_info = p.path.as_deref().unwrap_or("-");
+        println!("{:<20} {:<8} {:<10} {:<10} {}",
+            p.name, p.order, p.enabled, source, path_info);
+    }
+    println!("\nTotal: {} plugin(s)", plugins.len());
+    Ok(ExitCode::SUCCESS)
+}
+
+fn plugin_check(path: &str) -> anyhow::Result<ExitCode> {
+    match service_router::server::check_external_plugin(path) {
+        Ok(name) => {
+            println!("OK: Plugin '{}' loaded successfully from '{}'", name, path);
+            println!("  Symbol 'create_plugin' found and callable.");
+            Ok(ExitCode::SUCCESS)
+        }
+        Err(e) => {
+            eprintln!("FAIL: {}", e);
+            eprintln!("\nThe shared library must export:");
+            eprintln!("  #[no_mangle]");
+            eprintln!("  pub extern \"C\" fn create_plugin() -> Box<dyn PluginMiddleware>");
+            Ok(ExitCode::from(1))
+        }
+    }
+}
 
 fn config_snapshot(config_path: PathBuf, output: Option<PathBuf>) -> anyhow::Result<ExitCode> {
     let config = load_config(&config_path).map_err(|e| {

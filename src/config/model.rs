@@ -370,6 +370,10 @@ pub struct PluginConfig {
     /// Opaque config blob forwarded to `PluginMiddleware::init`.
     #[serde(default)]
     pub config: serde_json::Value,
+    /// Path to external shared library (`.so`/`.dll`/`.dylib`).
+    /// When set, the plugin is loaded via `dlopen` instead of built-in lookup.
+    #[serde(default)]
+    pub path: Option<String>,
 }
 
 fn default_plugin_order() -> u32 { 100 }

@@ -1,6 +1,6 @@
-# Next engineering priorities (post v1.1.0)
+# Next engineering priorities (post v1.2.0)
 
-v1.1.0 in development. Ordered by impact.
+v1.2.0 in development. Ordered by impact.
 
 | Priority | Track | Status | Action |
 |:---------|:------|:-------|:-------|
@@ -11,8 +11,10 @@ v1.1.0 in development. Ordered by impact.
 | ~~P3~~ ✔ | DX | done | `run --dev` mode (verbose log + local-override auto-discover). |
 | ~~P2~~ ✔ | Security | done | HTTPS/TLS termination (`server.tls` config, rustls). |
 | ~~P2~~ ✔ | Resilience | done | Graceful shutdown enhancement (drain logging). |
+| ~~P1~~ ✔ | FR-6.3 | done | `dlopen` external plugin loading (`server.plugins[].path`, `libloading`). |
+| ~~P1~~ ✔ | Templates | done | Rule template packs (`api-gateway`, `bff`, `canary`). |
+| ~~P1~~ ✔ | Plugin CLI | done | `plugin list` / `plugin check` commands. |
 | P0 | Environment | pending | Nacos / Eureka / Kubernetes acceptance on real clusters; archive to `docs/regression-archive/`. |
 | P1 | Distribution | pending | Docker image publish to container registry. |
-| P1 | FR-6.3 | pending | `dlopen` external plugin loading (ADR 002 design ready, implement on demand). |
 | P2 | Kubernetes | pending | Scale/observability/multi-cluster enhancements. |
 | 远期 | Registry | pending | **Consul**: **`developer-roadmap-1-2y.md` §4.1**. |
