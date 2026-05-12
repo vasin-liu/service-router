@@ -1,7 +1,11 @@
+use std::panic::AssertUnwindSafe;
+
 use async_trait::async_trait;
 use axum::extract::Request;
 use axum::response::Response;
+use futures::FutureExt;
 
+#[derive(Debug)]
 pub enum RequestAction {
     Continue(Request),
     Respond(Response),
@@ -44,9 +48,15 @@ impl PluginChain {
 
     pub async fn run_on_request(&self, mut req: Request) -> Result<RequestAction, String> {
         for plugin in &self.plugins {
-            match plugin.on_request(req).await? {
-                RequestAction::Continue(r) => req = r,
-                action @ RequestAction::Respond(_) => return Ok(action),
+            let name = plugin.name().to_string();
+            match AssertUnwindSafe(plugin.on_request(req)).catch_unwind().await {
+                Ok(Ok(RequestAction::Continue(r))) => req = r,
+                Ok(Ok(action @ RequestAction::Respond(_))) => return Ok(action),
+                Ok(Err(e)) => return Err(e),
+                Err(_panic) => {
+                    tracing::error!(plugin = %name, "Plugin panicked in on_request, skipping");
+                    return Err(format!("plugin '{}' panicked in on_request", name));
+                }
             }
         }
         Ok(RequestAction::Continue(req))
@@ -54,7 +64,15 @@ impl PluginChain {
 
     pub async fn run_on_response(&self, mut resp: Response) -> Result<Response, String> {
         for plugin in self.plugins.iter().rev() {
-            resp = plugin.on_response(resp).await?;
+            let name = plugin.name().to_string();
+            match AssertUnwindSafe(plugin.on_response(resp)).catch_unwind().await {
+                Ok(Ok(r)) => resp = r,
+                Ok(Err(e)) => return Err(e),
+                Err(_panic) => {
+                    tracing::error!(plugin = %name, "Plugin panicked in on_response, skipping");
+                    return Err(format!("plugin '{}' panicked in on_response", name));
+                }
+            }
         }
         Ok(resp)
     }
@@ -311,6 +329,39 @@ mod tests {
         let resp = plugin.on_response(resp).await.unwrap();
         assert_eq!(resp.headers().get("x-gateway").unwrap(), "sr");
         assert_eq!(resp.headers().get("x-frame-options").unwrap(), "DENY");
+    }
+
+    struct PanicPlugin;
+
+    #[async_trait]
+    impl PluginMiddleware for PanicPlugin {
+        fn name(&self) -> &str { "panicker" }
+
+        async fn on_request(&self, _req: Request) -> Result<RequestAction, String> {
+            panic!("intentional panic in on_request");
+        }
+
+        async fn on_response(&self, _resp: Response) -> Result<Response, String> {
+            panic!("intentional panic in on_response");
+        }
+    }
+
+    #[tokio::test]
+    async fn panicking_plugin_returns_error_instead_of_crashing() {
+        let chain = PluginChain::new(vec![Box::new(PanicPlugin)]);
+
+        let req = Request::builder().uri("/").body(Body::empty()).unwrap();
+        let result = chain.run_on_request(req).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("panicked"));
+
+        let resp = Response::builder()
+            .status(StatusCode::OK)
+            .body(Body::empty())
+            .unwrap();
+        let result = chain.run_on_response(resp).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("panicked"));
     }
 
     #[tokio::test]

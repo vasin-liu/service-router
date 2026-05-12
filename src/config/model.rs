@@ -5,6 +5,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct AppConfig {
+    /// Schema version of this config file. Omitted configs are treated as "1".
+    #[serde(default = "default_config_version")]
+    pub config_version: String,
     pub server: ServerConfig,
     pub registries: RegistriesConfig,
     pub routes: Vec<RoutingRule>,
@@ -12,9 +15,12 @@ pub struct AppConfig {
     pub log_level: String,
 }
 
+fn default_config_version() -> String { "1".to_string() }
+
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
+            config_version: default_config_version(),
             server: ServerConfig::default(),
             registries: RegistriesConfig::default(),
             routes: Vec::new(),

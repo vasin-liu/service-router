@@ -173,3 +173,5 @@
 | **FR-6.2 内置插件** | `request-logger`（INFO 级日志）、`request-headers`（注入上游请求头，鉴权/追踪）、`response-headers`（追加/覆盖响应头，安全头）；6 个单元测试 |
 | **主动健康检查** | `server.health_check`（`interval_secs` / `path` / `timeout_secs` / `unhealthy_threshold` / `healthy_threshold`）；后台周期探测所有注册中心实例；`select_service_instance` 自动跳过不健康实例；全部下线时回退到完整列表；4 个单元测试 |
 | **NFR-1 性能基准** | `benches/proxy_overhead.rs`（criterion）测量 `proxy_http` loopback 端到端延迟；p50 ~0.77ms / p99 ~0.90ms（0-4KB body）；结果文档 `docs/benchmark-baseline.md` |
+| **NFR-2 插件 panic 隔离** | `PluginChain` 的 `run_on_request` / `run_on_response` 使用 `AssertUnwindSafe` + `catch_unwind` 包裹每个插件调用；插件 panic 时返回错误而非崩溃请求处理线程；1 个新测试 |
+| **NFR-5 配置版本号** | `AppConfig.config_version` 可选字段（默认 `"1"`），为未来配置结构变更提供向后兼容基础；策略文档 `docs/config-versioning.md` |

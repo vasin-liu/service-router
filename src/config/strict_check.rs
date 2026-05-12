@@ -193,10 +193,8 @@ mod tests {
 
     fn base_config(routes: Vec<crate::config::model::RoutingRule>) -> AppConfig {
         AppConfig {
-            server: ServerConfig::default(),
-            registries: RegistriesConfig::default(),
             routes,
-            log_level: "info".to_string(),
+            ..Default::default()
         }
     }
 

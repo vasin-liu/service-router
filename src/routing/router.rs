@@ -71,10 +71,8 @@ mod tests {
 
     fn config_with_rules(rules: Vec<RoutingRule>) -> AppConfig {
         AppConfig {
-            server: ServerConfig::default(),
-            registries: RegistriesConfig::default(),
             routes: rules,
-            log_level: "info".to_string(),
+            ..Default::default()
         }
     }
 

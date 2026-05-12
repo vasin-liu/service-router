@@ -645,8 +645,6 @@ mod tests {
         });
 
         let config = AppConfig {
-            server: ServerConfig::default(),
-            registries: RegistriesConfig::default(),
             routes: vec![RoutingRule {
                 id: "orders".to_string(),
                 path: PathMatcher::Exact {
@@ -663,7 +661,7 @@ mod tests {
                 ])),
                 priority: 10,
             }],
-            log_level: "info".to_string(),
+            ..Default::default()
         };
         let state = AppState::new(
             Arc::new(ArcSwap::from_pointee(
