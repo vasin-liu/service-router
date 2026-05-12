@@ -1,6 +1,6 @@
 [package]
 name = "service-router"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 description = "Microservice registry proxy with Nacos/Eureka support, intelligent routing, and WebSocket proxying"
 license = "MIT"
@@ -64,6 +64,11 @@ once_cell = "1.0"
 url = "2.5"
 hyper-util = { version = "0.1.20", features = ["tokio"] }
 hyper = { version = "1.9.0", features = ["full"] }
+axum-server = { version = "0.8.0", features = ["tls-rustls"] }
+opentelemetry = "0.27"
+opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.27", features = ["grpc-tonic"] }
+tracing-opentelemetry = "0.28"
 
 [dev-dependencies]
 tokio-test = "0.4"

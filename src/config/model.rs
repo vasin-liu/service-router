@@ -73,6 +73,9 @@ pub struct ServerConfig {
     /// Active health checking for upstream instances resolved via registries.
     #[serde(default)]
     pub health_check: Option<HealthCheckConfig>,
+    /// Optional TLS configuration for HTTPS termination.
+    #[serde(default)]
+    pub tls: Option<TlsConfig>,
 }
 
 impl Default for ServerConfig {
@@ -87,6 +90,7 @@ impl Default for ServerConfig {
             circuit_breaker_recovery_secs: default_cb_recovery(),
             plugins: Vec::new(),
             health_check: None,
+            tls: None,
         }
     }
 }
@@ -395,6 +399,18 @@ pub struct HealthCheckConfig {
     /// Mark healthy again after this many consecutive successful probes.
     #[serde(default = "default_hc_healthy_threshold")]
     pub healthy_threshold: u32,
+}
+
+// ---------------------------------------------------------------------------
+// TLS configuration
+// ---------------------------------------------------------------------------
+
+/// HTTPS termination: provide paths to a PEM certificate chain and private key.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct TlsConfig {
+    pub cert_path: String,
+    pub key_path: String,
 }
 
 fn default_hc_interval() -> u64 { 10 }

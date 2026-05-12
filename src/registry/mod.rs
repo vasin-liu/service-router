@@ -145,4 +145,5 @@ pub trait ServiceRegistry: Send + Sync + 'static {
 /// Type-erased, reference-counted registry handle.
 pub type ArcRegistry = Arc<dyn ServiceRegistry>;
 
+pub use factory::build_resolver;
 pub use resolver::MultiRegistryResolver;

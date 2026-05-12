@@ -44,7 +44,8 @@ async fn run() -> anyhow::Result<ExitCode> {
         Command::Run {
             config_path,
             local_override,
-        } => run_server(config_path, local_override).await,
+            dev_mode,
+        } => run_server(config_path, local_override, dev_mode).await,
         Command::Init {
             template,
             output_dir,
@@ -111,7 +112,28 @@ async fn run() -> anyhow::Result<ExitCode> {
 async fn run_server(
     config_path: PathBuf,
     local_override: Option<PathBuf>,
+    dev_mode: bool,
 ) -> anyhow::Result<ExitCode> {
+    if dev_mode {
+        std::env::set_var("RUST_LOG", std::env::var("RUST_LOG")
+            .unwrap_or_else(|_| "service_router=debug,tower_http=debug".to_string()));
+        info!("--dev mode: verbose logging enabled, hot-reload active");
+    }
+
+    // --- Auto-discover local-override file in dev mode ---
+    let local_override = local_override.or_else(|| {
+        if !dev_mode { return None; }
+        let candidates = ["local-override.yaml", "local-override.yml"];
+        for name in &candidates {
+            let p = config_path.parent().unwrap_or(Path::new(".")).join(name);
+            if p.exists() {
+                info!(path = %p.display(), "--dev: auto-discovered local override");
+                return Some(p);
+            }
+        }
+        None
+    });
+
     // --- Load initial config ---
     let mut config = match load_config(&config_path) {
         Ok(c) => c,
@@ -159,12 +181,42 @@ async fn run_server(
         );
     }
 
-    // --- Set up logging ---
+    // --- Set up logging (with optional OpenTelemetry export) ---
     let log_level = config.log_level.clone();
-    tracing_subscriber::registry()
-        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&log_level)))
-        .with(fmt::layer())
-        .init();
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(&log_level));
+
+    if std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok() {
+        use opentelemetry::trace::TracerProvider;
+
+        let otlp_exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_tonic()
+            .build()
+            .expect("Failed to build OTLP exporter");
+
+        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+            .with_batch_exporter(otlp_exporter, opentelemetry_sdk::runtime::Tokio)
+            .with_resource(opentelemetry_sdk::Resource::new(vec![
+                opentelemetry::KeyValue::new("service.name", "service-router"),
+            ]))
+            .build();
+
+        let tracer = provider.tracer("service-router");
+        let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
+
+        tracing_subscriber::registry()
+            .with(env_filter)
+            .with(fmt::layer())
+            .with(otel_layer)
+            .init();
+
+        info!("OpenTelemetry tracing enabled (OTLP exporter)");
+    } else {
+        tracing_subscriber::registry()
+            .with(env_filter)
+            .with(fmt::layer())
+            .init();
+    };
 
     info!(
         "service-router starting — config: {}",
@@ -320,11 +372,39 @@ async fn run_server(
             return Ok(ExitCode::from(1));
         }
     };
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    if let Some(tls) = &config.server.tls {
+        use axum_server::tls_rustls::RustlsConfig;
+        let rustls_config = RustlsConfig::from_pem_file(&tls.cert_path, &tls.key_path)
+            .await
+            .map_err(|e| {
+                eprintln!("Error: Failed to load TLS certificate: {}", e);
+                eprintln!("\nSuggested fixes:");
+                eprintln!("  1. Verify cert_path and key_path in your config:");
+                eprintln!("     server.tls.cert_path: {}", tls.cert_path);
+                eprintln!("     server.tls.key_path: {}", tls.key_path);
+                anyhow::anyhow!("TLS config error: {}", e)
+            })?;
+        info!(
+            host = %config.server.host,
+            port = %config.server.port,
+            "service-router listening (HTTPS)"
+        );
+        let addr: std::net::SocketAddr = listen_addr.parse()?;
+        axum_server::bind_rustls(addr, rustls_config)
+            .serve(app.into_make_service())
+            .await?;
+    } else {
+        info!(
+            host = %config.server.host,
+            port = %config.server.port,
+            "service-router listening (HTTP)"
+        );
+        axum::serve(listener, app)
+            .with_graceful_shutdown(shutdown_signal())
+            .await?;
+    }
 
-    info!("service-router stopped");
+    info!("service-router stopped gracefully");
     Ok(ExitCode::SUCCESS)
 }
 
@@ -350,7 +430,7 @@ async fn shutdown_signal() {
         _ = terminate => {}
     }
 
-    info!("Shutdown signal received");
+    info!("Shutdown signal received, draining in-flight connections...");
 }
 
 #[derive(Debug)]
@@ -358,6 +438,7 @@ enum Command {
     Run {
         config_path: PathBuf,
         local_override: Option<PathBuf>,
+        dev_mode: bool,
     },
     Init {
         template: String,
@@ -416,10 +497,12 @@ fn parse_command(args: Vec<String>) -> Command {
         None => Command::Run {
             config_path: default_config(),
             local_override: None,
+            dev_mode: false,
         },
         Some("run") => {
             let mut config_path = default_config();
             let mut local_override: Option<PathBuf> = None;
+            let mut dev_mode = false;
             let mut i = 1;
             while i < args.len() {
                 if args[i] == "--local-override" {
@@ -428,6 +511,8 @@ fn parse_command(args: Vec<String>) -> Command {
                         i += 2;
                         continue;
                     }
+                } else if args[i] == "--dev" {
+                    dev_mode = true;
                 } else if !args[i].starts_with('-') {
                     config_path = PathBuf::from(&args[i]);
                 }
@@ -436,6 +521,7 @@ fn parse_command(args: Vec<String>) -> Command {
             Command::Run {
                 config_path,
                 local_override,
+                dev_mode,
             }
         }
         Some("init") => {
@@ -761,7 +847,7 @@ fn parse_command(args: Vec<String>) -> Command {
 
 fn print_help() {
     println!(
-        "service-router commands:\n  run [config] [--local-override <path>]              Start proxy server (default)\n  init [--template mock|nacos|eureka|k8s] [-o dir]   Generate starter config (default: mock)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  smoke-proxy [config] [--request <path>] [--method GET] [--expect-status 200]  CI smoke: start proxy, send one request, verify status, exit\n  replay <request-file> [--config <path>]            Replay a sequence of requests through the proxy (YAML/JSON with requests[] array)\n  config-drift <base> <profile1> [profile2 ...] [--json]  Compare base config against profile(s); exit 1 on drift\n  config-diff <left> <right> [--json|--markdown]   Structural diff of two YAML configs (after env expansion); exit 1 if different\n  config-snapshot [config] [--config <path>] [-o|--output <path>]  Redacted JSON snapshot for issue/PR attachment (stdout or file; use - for stdout)\n  help                                               Show help"
+        "service-router commands:\n  run [config] [--local-override <path>] [--dev]      Start proxy server (--dev: verbose log + auto-discover local-override)\n  init [--template mock|nacos|eureka|k8s] [-o dir]   Generate starter config (default: mock)\n  check-config [config] [--json] [--strict]          Validate config and registry setup\n  doctor [config] [--config <path>] [--probe-upstream] [--json]  Environment checks; --probe-upstream TCP-probes registry endpoints (non-mock) and route targets\n  route-explain [path] [method] [options]            Explain route match result\n    options: --config <path> --request-file <path> --header \"key:value\" [--json] [--verbose]\n      With --request-file, path/method/headers come from the file (YAML/JSON); CLI headers override file keys.\n  smoke-proxy [config] [--request <path>] [--method GET] [--expect-status 200]  CI smoke: start proxy, send one request, verify status, exit\n  replay <request-file> [--config <path>]            Replay a sequence of requests through the proxy (YAML/JSON with requests[] array)\n  config-drift <base> <profile1> [profile2 ...] [--json]  Compare base config against profile(s); exit 1 on drift\n  config-diff <left> <right> [--json|--markdown]   Structural diff of two YAML configs (after env expansion); exit 1 if different\n  config-snapshot [config] [--config <path>] [-o|--output <path>]  Redacted JSON snapshot for issue/PR attachment (stdout or file; use - for stdout)\n  help                                               Show help"
     );
 }
 

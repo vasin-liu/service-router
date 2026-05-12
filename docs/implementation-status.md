@@ -2,12 +2,16 @@
 
 ## 当前状态
 
-- 状态：**v1.0.0 已发布**（2026-05-12），tag 已推送并触发 release workflow；dev 已合并到 main
-- 已完成里程碑：M1（开发者最小可用工具链）、M2（稳定性 / 诊断 / 发布门禁）、**M3（协作与扩展 — FR-5 全量 + FR-6 Plugin SDK + 3 内置插件）**、**M4 部分（主动健康检查 + 性能基准 + NFR-2 插件隔离 + NFR-5 配置版本号）**
-- PRD 覆盖率：**FR 17/18 (94%)**，弹性基础设施 **5/5 (100%)**，NFR **5/5 (100%)**；唯一未开始：FR-6.3 `dlopen` 外部插件加载（ADR 002 设计已就绪，按需实施）
-- **v1.0.0 交付内容**：Mock profile 验收通过（81 tests, 5 JSON artifacts），release workflow + 4 平台 binary 构建，Getting Started 教程，插件开发指南，配置 JSON Schema，Dockerfile
-- 下一步重心：**外部注册中心验收**（Nacos/Eureka/K8s 矩阵回归）→ **Docker 镜像发布** → **FR-6.3 按需**
-- **外部环境合规**：Mock profile 已验收并归档（`docs/regression-archive/v1.0.0-mock-acceptance.md`）；Nacos / Eureka / Kubernetes 验收待目标环境可用时补充。
+- 状态：**v1.1.0-dev** — v1.0.0 基础上进行生产化加固迭代
+- 已完成里程碑：M1-M4 全部完成 + **v1.1 生产化加固**
+- **v1.1 新增交付内容**：
+  - HTTPS/TLS 终止（`server.tls` 配置 + `axum-server` + `rustls`）
+  - `run --dev` 模式（verbose log + local-override 自动发现）
+  - OpenTelemetry tracing 集成（`OTEL_EXPORTER_OTLP_ENDPOINT` 环境变量驱动 OTLP 导出）
+  - E2E 集成测试（`tests/e2e_proxy.rs`，3 个端到端测试用例）
+  - Graceful shutdown 增强（drain 日志 + 启动协议标注）
+- PRD 覆盖率：**FR 17/18 (94%)**，弹性基础设施 **5/5 (100%)**，NFR **5/5 (100%)**
+- 测试覆盖：**84 tests** 全部通过（含 3 个 E2E 测试）
 
 ## 本次已落地
 

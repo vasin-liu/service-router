@@ -51,8 +51,25 @@
             { "type": "null" }
           ],
           "description": "Active health checking for upstream instances. Omit to disable."
+        },
+        "tls": {
+          "oneOf": [
+            { "$ref": "#/$defs/TlsConfig" },
+            { "type": "null" }
+          ],
+          "description": "HTTPS termination. Omit for plain HTTP."
         }
       },
+      "additionalProperties": false
+    },
+
+    "TlsConfig": {
+      "type": "object",
+      "properties": {
+        "cert_path": { "type": "string", "description": "Path to PEM certificate chain file." },
+        "key_path": { "type": "string", "description": "Path to PEM private key file." }
+      },
+      "required": ["cert_path", "key_path"],
       "additionalProperties": false
     },
 

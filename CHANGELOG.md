@@ -6,10 +6,18 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **HTTPS/TLS termination**: optional `server.tls` config block (`cert_path`, `key_path`) enables HTTPS via `axum-server` + `rustls`; falls back to plain HTTP when omitted.
+- **`run --dev` mode**: `service-router run --dev` sets verbose logging (`service_router=debug,tower_http=debug`), auto-discovers `local-override.yaml` next to config file.
+- **OpenTelemetry tracing**: set `OTEL_EXPORTER_OTLP_ENDPOINT` to export traces via OTLP/gRPC to Jaeger, Grafana Tempo, etc.; spans inherit from existing `tracing` instrumentation.
+- **E2E integration tests**: `tests/e2e_proxy.rs` — 3 tests covering real HTTP proxy round-trip, `x-request-id` header propagation, and `/health` endpoint.
 - **Configuration JSON Schema**: `docs/config-schema.json` for editor validation (VS Code YAML extension compatible).
 - **Plugin development guide**: `docs/plugin-dev-guide.md` — trait API reference, built-in plugin docs, safety guarantees.
 - **Dockerfile**: multi-stage build for containerized deployment.
 - **`.dockerignore`**: excludes non-essential files from Docker context.
+
+### Changed
+
+- **Graceful shutdown**: improved logging on shutdown signal (draining message) and startup (listening host/port/protocol).
 
 ## 1.0.0 (2026-05-12)
 
