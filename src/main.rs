@@ -256,6 +256,24 @@ async fn run_server(
     );
     state.plugin_chain = plugin_chain;
 
+    // --- Start active health checker if configured ---
+    if let Some(hc_config) = config.server.health_check.clone() {
+        let hc_status = Arc::clone(&state.health_status);
+        let hc_resolver = Arc::clone(&state.resolver);
+        let hc_cfg_slot = Arc::clone(&state.config);
+        info!(
+            interval_secs = hc_config.interval_secs,
+            path = %hc_config.path,
+            "Starting active health checker"
+        );
+        service_router::server::spawn_health_checker(
+            hc_config,
+            hc_resolver,
+            hc_cfg_slot,
+            hc_status,
+        );
+    }
+
     // Lightweight periodic metrics log for environments where scraping `/metrics`
     // is inconvenient. Logs only when counters are non-empty.
     {

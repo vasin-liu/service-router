@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-- 状态：**M2（工程侧）已封板**；主线研发重心转入 **M3（协作与扩展，对齐 PRD FR-5 / FR-6 的工程切片）**
-- 已完成里程碑：M1（开发者最小可用工具链）、**M2（稳定性 / 诊断 / 发布门禁 — 仓库可复核）**
-- 当前阶段目标：**M3** — 协作向能力（配置对比、评审摘要等）与远期扩展接口铺垫；全量 PRD 指标（插件生态占比等）仍以 **`docs/product-prd-developer.md`** 为准、单独度量
+- 状态：**M3（工程侧）已完成**；主线研发重心转入 **M4 准备（生态化与规模化）**
+- 已完成里程碑：M1（开发者最小可用工具链）、M2（稳定性 / 诊断 / 发布门禁）、**M3（协作与扩展 — FR-5 全量 + FR-6 Plugin SDK + 3 内置插件）**
+- 当前阶段目标：**M4** — 主动健康检查、性能基准、FR-6.3 外部插件加载（`dlopen`）、多环境一致性增强；全量 PRD 指标仍以 **`docs/product-prd-developer.md`** 为准
 - **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 §7 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 验收产物包）](./m2-release-readiness.md#m2-release-acceptance-bundle)。
 
 ## 本次已落地
@@ -84,18 +84,18 @@
 - **配置界面**：已写入 `docs/developer-roadmap-1-2y.md` §4.1 作为远期项，不纳入当前迭代验收。
 - **流量入口**：**显式代理端口（§4.2 模型 A）** 为当前产品与验收基准；**端口转发/透明汇入（§4.2 模型 B）** 为远期可选叠加，不进当前门禁。
 
-## 下一阶段建议（按优先级）
+## 下一阶段建议（M4 方向）
 
-**M2 主线（文档/门禁/诊断）上述 §1–§4 已闭环**：EndpointSlice 可选 `endpoint_slice_label_selector`、`release-acceptance.yml` + 矩阵文档、`upstream_probe` / `failure_code` 与 metrics 对齐、`operations-runbook` 巡检与告警章节、GitHub/GitLab CI 含 compose + `doctor --probe-upstream`。
+> **已闭环**: M2 主线（文档/门禁/诊断）、M3 协作与扩展（FR-5 全量 + FR-6 Plugin SDK）、转发弹性（LB 四策略 + WebSocket 双向 + 熔断重试）均已完成。
 
-1. **环境与回归沉淀（M2 完成定义）**  
-   在 **Mock / Nacos / Eureka / Kubernetes** 真实或准生产配置下各跑一轮 **`release-acceptance-matrix.md`** 门禁，归档 JSON/Markdown 产物与结论（团队流程项；含 **`section-9-summary.generated.md`**）。**§9 模板与流程索引**：**`docs/regression-archive/`**；`docs/release-acceptance.sh` 现已一并写出 **`config-snapshot.json`**（脱敏）与 **`section-9-summary.generated.md`**（§9 粘贴表）。
+1. **环境与回归沉淀（持续运维）**  
+   在 **Nacos / Eureka / Kubernetes** 真实环境跑 **`release-acceptance-matrix.md`** 门禁，归档 §9 产物（团队流程项，与代码里程碑解耦）。
 
-2. **Kubernetes 规模化（按需迭代）**  
-   在现有 Service 端口过滤、EndpointSlice `ready`/`serving`、列表标签筛选基础上，按集群需要扩展（观察性、多集群上下文等）；保持可配置、可单测。
+2. **Kubernetes 规模化（按需迭代）**
+   多集群上下文、观察性增强；保持可配置、可单测。
 
-3. **转发与弹性（独立里程碑）**  
-   负载均衡策略、WebSocket 完整性、熔断重试等见 **`docs/product-design-one-pager.md`** / **`docs/developer-roadmap-1-2y.md`**，单独评审后排期，不捆绑当前 M2 门禁。（已有：`server.instance_selection` 支持 `first` / `round_robin`，无权重与健康路由。）一页优先级表：**`docs/next-engineering-priorities.md`**。
+3. **NFR-1 性能基准**
+   建立代理附加延迟 p50/p99 基准数据，为后续优化提供决策依据。
 
 ## 远期（注册中心扩展，不设固定版本）
 
@@ -144,7 +144,7 @@
 | FR-5.3 快照 / 复现链接 | 部分已提供 | **`config-snapshot [config] [--config path] [-o file]`**：输出脱敏 JSON（`diagnostic_version` **1.0**、稳定 `snapshot_id`）；不含注册中心口令、URL userinfo、路由 header 匹配**值**（仅键名）、路由 **`response_header_keys`**（仅键名）、Mock 仅保留实例计数与 `error_service_ids`；**`release-acceptance`** 另写出 **`section-9-summary.generated.md`**；**`scripts/summarize-section9-release-acceptance.py`** 可重生成或自定义 §9 粘贴表（见 **`docs/regression-archive/`**）；**附链 / 在线分享**仍由工单或 Git 另行完成 |
 | FR-6 插件 / 扩展生态 | Phase C 已实现 | **`PluginMiddleware`** async trait（`on_request` / `on_response`）+ **`PluginChain`** 有序执行链 + **`server.plugins[]`** YAML 配置（`name` / `order` / `enabled` / `config`）已接入 `proxy_handler`；内置 `request-logger` 插件；插件可短路请求；路由级 **`response_headers`** 仍保留作为轻量扩展点；详见 **`docs/plugin-extension.md`** + **ADR 002** |
 
-**「M3 工程达成」最低标准（本仓库）**：**FR-5.1～FR-5.3**（工程可交付部分）已齐；**FR-5.3** 的外链托管不属于本仓库。**FR-6**：以配置切片为初版交付，完整插件生态仍为后续里程碑。
+**「M3 工程达成」判定**：FR-5.1～FR-5.3 全部交付；FR-6.1（插件生命周期）+ FR-6.2（3 个官方插件）已交付。**FR-6.3**（插件分发 / `dlopen`）归入 M4。
 
 ### M3 已交付能力清单（与当前代码对齐）
 
@@ -171,3 +171,4 @@
 | **ADR 002** | FR-6 动态插件 SDK 设计评审：Rust trait + `dlopen`、生命周期、`server.plugins[]` 配置、安全与可观测性方案；见 `docs/adr/002-fr6-plugin-sdk-design.md` |
 | **Plugin SDK (Phase C)** | `PluginMiddleware` trait + `PluginChain` + `server.plugins[]` 配置解析 + `build_plugin_chain` 工厂；已接入 `proxy_handler` 请求/响应路径 |
 | **FR-6.2 内置插件** | `request-logger`（INFO 级日志）、`request-headers`（注入上游请求头，鉴权/追踪）、`response-headers`（追加/覆盖响应头，安全头）；6 个单元测试 |
+| **主动健康检查** | `server.health_check`（`interval_secs` / `path` / `timeout_secs` / `unhealthy_threshold` / `healthy_threshold`）；后台周期探测所有注册中心实例；`select_service_instance` 自动跳过不健康实例；全部下线时回退到完整列表；4 个单元测试 |

@@ -64,6 +64,9 @@ pub struct ServerConfig {
     /// Ordered list of plugins to load into the proxy pipeline.
     #[serde(default)]
     pub plugins: Vec<PluginConfig>,
+    /// Active health checking for upstream instances resolved via registries.
+    #[serde(default)]
+    pub health_check: Option<HealthCheckConfig>,
 }
 
 impl Default for ServerConfig {
@@ -77,6 +80,7 @@ impl Default for ServerConfig {
             circuit_breaker_threshold: 0,
             circuit_breaker_recovery_secs: default_cb_recovery(),
             plugins: Vec::new(),
+            health_check: None,
         }
     }
 }
@@ -360,3 +364,35 @@ pub struct PluginConfig {
 
 fn default_plugin_order() -> u32 { 100 }
 fn default_enabled() -> bool { true }
+
+// ---------------------------------------------------------------------------
+// Health check configuration
+// ---------------------------------------------------------------------------
+
+/// Active health checking: periodically probes upstream instances and marks
+/// them healthy/unhealthy so that `select_service_instance` can skip bad ones.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct HealthCheckConfig {
+    /// Seconds between probe rounds.
+    #[serde(default = "default_hc_interval")]
+    pub interval_secs: u64,
+    /// HTTP path to GET on each instance (e.g. "/health").
+    #[serde(default = "default_hc_path")]
+    pub path: String,
+    /// Per-probe timeout in seconds.
+    #[serde(default = "default_hc_timeout")]
+    pub timeout_secs: u64,
+    /// Mark unhealthy after this many consecutive failed probes.
+    #[serde(default = "default_hc_unhealthy_threshold")]
+    pub unhealthy_threshold: u32,
+    /// Mark healthy again after this many consecutive successful probes.
+    #[serde(default = "default_hc_healthy_threshold")]
+    pub healthy_threshold: u32,
+}
+
+fn default_hc_interval() -> u64 { 10 }
+fn default_hc_path() -> String { "/health".to_string() }
+fn default_hc_timeout() -> u64 { 5 }
+fn default_hc_unhealthy_threshold() -> u32 { 3 }
+fn default_hc_healthy_threshold() -> u32 { 1 }

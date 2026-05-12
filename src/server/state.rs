@@ -11,6 +11,7 @@ use crate::registry::MultiRegistryResolver;
 use crate::routing::SharedRouter;
 use crate::server::circuit_breaker::CircuitBreakerMap;
 use crate::server::metrics::ProxyMetrics;
+use crate::server::health_checker::HealthStatus;
 use crate::server::plugin::PluginChain;
 
 /// Shared application state injected into every Axum handler.
@@ -32,6 +33,8 @@ pub struct AppState {
     pub circuit_breaker: Arc<CircuitBreakerMap>,
     /// Plugin pipeline for request/response interception.
     pub plugin_chain: Arc<PluginChain>,
+    /// Active health check status (instances marked unhealthy are skipped).
+    pub health_status: Arc<HealthStatus>,
 }
 
 impl AppState {
@@ -61,6 +64,7 @@ impl AppState {
             instance_rr_counters: Arc::new(DashMap::new()),
             circuit_breaker,
             plugin_chain: Arc::new(PluginChain::new(Vec::new())),
+            health_status: Arc::new(HealthStatus::new()),
         }
     }
 }

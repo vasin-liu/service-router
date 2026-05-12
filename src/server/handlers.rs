@@ -14,6 +14,7 @@ use crate::config::model::InstanceSelection;
 use crate::error::ProxyError;
 use crate::proxy::{http_proxy, ws_proxy};
 use crate::server::circuit_breaker::CircuitBreakerMap;
+use crate::server::health_checker::HealthStatus;
 use crate::server::plugin::RequestAction;
 use crate::registry::{any_registry_operational, registry_health_json_row, ServiceInstance};
 use crate::server::metrics::{
@@ -98,6 +99,7 @@ pub async fn proxy_handler(
             svc_id.as_str(),
             selection,
             &state.instance_rr_counters,
+            &state.health_status,
         )
         .base_url()
     } else {
@@ -324,8 +326,49 @@ fn select_service_instance<'a>(
     svc_id: &str,
     selection: InstanceSelection,
     rr: &DashMap<String, AtomicUsize>,
+    health_status: &HealthStatus,
 ) -> &'a ServiceInstance {
     debug_assert!(!instances.is_empty());
+    let healthy: Vec<&ServiceInstance> = instances
+        .iter()
+        .filter(|i| health_status.is_healthy(&format!("{}:{}", i.host, i.port)))
+        .collect();
+    if !healthy.is_empty() && healthy.len() < instances.len() {
+        let idx = match selection {
+            InstanceSelection::First => 0,
+            InstanceSelection::RoundRobin => {
+                let c = rr
+                    .entry(svc_id.to_string())
+                    .or_insert_with(|| AtomicUsize::new(0))
+                    .fetch_add(1, Ordering::Relaxed);
+                c % healthy.len()
+            }
+            InstanceSelection::Random => rand_index(healthy.len()),
+            InstanceSelection::WeightedRoundRobin => {
+                let weights: Vec<usize> = healthy
+                    .iter()
+                    .map(|i| {
+                        i.metadata.get("weight").and_then(|w| w.parse::<usize>().ok()).unwrap_or(1).max(1)
+                    })
+                    .collect();
+                let total: usize = weights.iter().sum();
+                let c = rr
+                    .entry(svc_id.to_string())
+                    .or_insert_with(|| AtomicUsize::new(0))
+                    .fetch_add(1, Ordering::Relaxed)
+                    % total;
+                let mut cum = 0;
+                let mut picked = healthy.len() - 1;
+                for (i, w) in weights.iter().enumerate() {
+                    cum += w;
+                    if c < cum { picked = i; break; }
+                }
+                picked
+            }
+        };
+        return healthy[idx];
+    }
+    // All healthy or all unhealthy (fallback to full list) — use original logic.
     match selection {
         InstanceSelection::First => instances.first().expect("non-empty instances"),
         InstanceSelection::RoundRobin => {
@@ -402,6 +445,10 @@ mod tests {
     use crate::routing::RouterSnapshot;
     use crate::server::ProxyMetrics;
 
+    fn default_health() -> HealthStatus {
+        HealthStatus::new()
+    }
+
     #[test]
     fn round_robin_rotates_per_service_id() {
         let instances = vec![
@@ -417,12 +464,14 @@ mod tests {
             },
         ];
         let m = DashMap::new();
+        let hs = default_health();
         assert_eq!(
             select_service_instance(
                 &instances,
                 "svc",
                 InstanceSelection::RoundRobin,
-                &m
+                &m,
+                &hs,
             )
             .host,
             "10.0.0.1"
@@ -432,7 +481,8 @@ mod tests {
                 &instances,
                 "svc",
                 InstanceSelection::RoundRobin,
-                &m
+                &m,
+                &hs,
             )
             .host,
             "10.0.0.2"
@@ -442,7 +492,8 @@ mod tests {
                 &instances,
                 "svc",
                 InstanceSelection::RoundRobin,
-                &m
+                &m,
+                &hs,
             )
             .host,
             "10.0.0.1"
@@ -464,8 +515,9 @@ mod tests {
             },
         ];
         let m = DashMap::new();
+        let hs = default_health();
         let selected =
-            select_service_instance(&instances, "svc", InstanceSelection::Random, &m);
+            select_service_instance(&instances, "svc", InstanceSelection::Random, &m, &hs);
         assert!(selected.host == "a" || selected.host == "b");
     }
 
@@ -484,6 +536,7 @@ mod tests {
             },
         ];
         let m = DashMap::new();
+        let hs = default_health();
         let mut picks = Vec::new();
         for _ in 0..4 {
             picks.push(
@@ -492,6 +545,7 @@ mod tests {
                     "svc",
                     InstanceSelection::WeightedRoundRobin,
                     &m,
+                    &hs,
                 )
                 .host
                 .clone(),
@@ -516,11 +570,13 @@ mod tests {
             },
         ];
         let m = DashMap::new();
+        let hs = default_health();
         let p1 = select_service_instance(
             &instances,
             "svc",
             InstanceSelection::WeightedRoundRobin,
             &m,
+            &hs,
         )
         .host
         .clone();
@@ -529,6 +585,7 @@ mod tests {
             "svc",
             InstanceSelection::WeightedRoundRobin,
             &m,
+            &hs,
         )
         .host
         .clone();
@@ -551,12 +608,13 @@ mod tests {
             },
         ];
         let m = DashMap::new();
+        let hs = default_health();
         assert_eq!(
-            select_service_instance(&instances, "svc", InstanceSelection::First, &m).host,
+            select_service_instance(&instances, "svc", InstanceSelection::First, &m, &hs).host,
             "a"
         );
         assert_eq!(
-            select_service_instance(&instances, "svc", InstanceSelection::First, &m).host,
+            select_service_instance(&instances, "svc", InstanceSelection::First, &m, &hs).host,
             "a"
         );
     }
