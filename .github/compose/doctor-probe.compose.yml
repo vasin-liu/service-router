@@ -1,0 +1,12 @@
+services:
+  mock-order-service:
+    image: hashicorp/http-echo:1.0
+    command: ["-text=order-service", "-listen=:9001"]
+    ports:
+      - "9001:9001"
+
+  mock-api-gateway:
+    image: hashicorp/http-echo:1.0
+    command: ["-text=api-gateway", "-listen=:9000"]
+    ports:
+      - "9000:9000"

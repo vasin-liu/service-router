@@ -1,0 +1,7 @@
+# Architecture Decision Records (lightweight)
+
+Short ADRs live in this directory when we need a durable decision trail without a heavy template process.
+
+| ADR | Title |
+|:----|:------|
+| [001-fr6-dynamic-plugins-deferred.md](./001-fr6-dynamic-plugins-deferred.md) | FR-6 dynamic plugins deferred; config `response_headers` slice |

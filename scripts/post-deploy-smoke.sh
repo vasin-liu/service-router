@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Subset of docs/operations-runbook.md §7: hit /health and /ready on a running router.
+# Does not replace release-acceptance (no CLI config compile here).
+set -euo pipefail
+
+BASE="${SERVICE_ROUTER_BASE_URL:-http://127.0.0.1:8080}"
+BASE="${BASE%/}"
+
+echo "[post-deploy-smoke] GET ${BASE}/health"
+curl -sfS "${BASE}/health" >/dev/null
+echo "[post-deploy-smoke] GET ${BASE}/ready"
+curl -sfS "${BASE}/ready" >/dev/null
+echo "[post-deploy-smoke] OK"

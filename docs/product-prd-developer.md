@@ -125,6 +125,8 @@
 - 验收标准：
   - 30% 以上团队在一个季度内至少启用 1 个扩展能力
 
+**本仓库工程切片**：`PluginMiddleware` async trait + `PluginChain` 有序执行链 + `server.plugins[]` YAML 配置已实现（Phase C）；内置 3 个官方插件（`request-logger`、`request-headers`、`response-headers`）对齐 FR-6.2；路由级 `response_headers` 保留为轻量扩展点。FR-6.3 插件分发（`dlopen` 外部加载）仍为后续目标，设计见 ADR 002。详见 **`docs/plugin-extension.md`**。
+
 ## 7. 非功能需求（NFR）
 
 - NFR-1 性能：引入调试能力后，代理附加延迟控制在可接受阈值内

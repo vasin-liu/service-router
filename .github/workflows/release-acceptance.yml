@@ -1,0 +1,105 @@
+# Release acceptance: global gates + five §7 CLI JSON files + section-9-summary.generated.md.
+# Manual trigger: compose-backed mock upstreams by default; optional skip for config-only runs.
+#
+# Uploads Actions artifact "release-acceptance-bundle" = full contents of artifacts/release-acceptance/:
+#   check-config.json, doctor.json, doctor-probe.json, route-explain-smoke.json, config-snapshot.json,
+#   section-9-summary.generated.md
+# (see docs/release-acceptance-matrix.md §7–§9).
+
+name: release-acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      config_path:
+        description: "Config path for release-acceptance.sh (SERVICE_ROUTER_CONFIG)"
+        required: false
+        default: config/mock-config.yaml
+      compose_file:
+        description: "Docker Compose file for mock TCP upstreams"
+        required: false
+        default: .github/compose/doctor-probe.compose.yml
+      skip_compose:
+        description: "Skip docker compose (sets SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL for probe step)"
+        required: false
+        default: "no"
+        type: choice
+        options:
+          - "no"
+          - "yes"
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    env:
+      SERVICE_ROUTER_CONFIG: ${{ github.event.inputs.config_path || 'config/mock-config.yaml' }}
+      SERVICE_ROUTER_ACCEPTANCE_OUT: artifacts/release-acceptance
+      DOCKER_COMPOSE_FILE: ${{ github.event.inputs.compose_file || '.github/compose/doctor-probe.compose.yml' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Start mock upstreams (docker compose)
+        if: ${{ github.event.inputs.skip_compose != 'yes' }}
+        run: docker compose -f "$DOCKER_COMPOSE_FILE" up -d
+
+      - name: Wait for mock ports
+        if: ${{ github.event.inputs.skip_compose != 'yes' }}
+        shell: bash
+        run: |
+          for p in 9000 9001; do
+            for i in {1..20}; do
+              if (echo > /dev/tcp/127.0.0.1/$p) >/dev/null 2>&1; then
+                break
+              fi
+              sleep 1
+              if [ "$i" -eq 20 ]; then
+                echo "port $p did not become reachable"
+                exit 1
+              fi
+            done
+          done
+
+      - name: Allow probe failure without compose
+        if: ${{ github.event.inputs.skip_compose == 'yes' }}
+        shell: bash
+        run: echo "SERVICE_ROUTER_ACCEPTANCE_ALLOW_PROBE_FAIL=1" >> "$GITHUB_ENV"
+
+      - name: Run release acceptance script
+        shell: bash
+        run: bash docs/release-acceptance.sh
+
+      # Full set: check-config, doctor, doctor-probe, route-explain-smoke, config-snapshot (redacted), section-9-summary.generated.md.
+      - name: Upload release-acceptance bundle (§7 JSON + §9 Markdown)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-acceptance-bundle
+          path: artifacts/release-acceptance/
+          if-no-files-found: warn
+
+      - name: Collect docker diagnostics on failure
+        if: failure() && github.event.inputs.skip_compose != 'yes'
+        shell: bash
+        run: |
+          mkdir -p .artifacts
+          docker compose -f "$DOCKER_COMPOSE_FILE" ps > .artifacts/compose-ps.txt || true
+          docker compose -f "$DOCKER_COMPOSE_FILE" logs --no-color > .artifacts/compose-logs.txt || true
+
+      - name: Upload docker diagnostics
+        if: failure() && github.event.inputs.skip_compose != 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-acceptance-docker-diagnostics
+          path: .artifacts/
+
+      - name: Stop mock upstreams
+        if: always() && github.event.inputs.skip_compose != 'yes'
+        run: docker compose -f "$DOCKER_COMPOSE_FILE" down -v

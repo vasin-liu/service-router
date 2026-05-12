@@ -18,6 +18,9 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
 
+      - name: Text encoding check
+        run: python scripts/check-text-encoding.py
+
       - name: Build and test
         run: |
           cargo check
@@ -26,5 +29,37 @@ jobs:
       - name: Mock profile strict check
         run: cargo run -- check-config config/mock-config.yaml --json --strict
 
-      - name: Mock profile doctor check
-        run: cargo run -- doctor --config config/mock-config.yaml
+      - name: Mock profile doctor (JSON)
+        run: cargo run -- doctor --config config/mock-config.yaml --json
+
+      - name: Smoke route-explain (mock profile — expect match)
+        run: cargo run -- route-explain /api/orders/123 GET --config config/mock-config.yaml --json
+
+      - name: Mock profile config-snapshot (redacted JSON to stdout)
+        run: cargo run -- config-snapshot --config config/mock-config.yaml -o -
+
+      - name: Start mock upstreams (doctor --probe-upstream)
+        run: docker compose -f .github/compose/doctor-probe.compose.yml up -d
+
+      - name: Wait for mock TCP ports
+        shell: bash
+        run: |
+          for p in 9000 9001; do
+            for i in {1..20}; do
+              if (echo > /dev/tcp/127.0.0.1/$p) >/dev/null 2>&1; then
+                break
+              fi
+              sleep 1
+              if [ "$i" -eq 20 ]; then
+                echo "port $p did not become reachable"
+                exit 1
+              fi
+            done
+          done
+
+      - name: Doctor probe-upstream (mock profile, JSON)
+        run: cargo run -- doctor --config config/mock-config.yaml --probe-upstream --json
+
+      - name: Stop mock upstreams
+        if: always()
+        run: docker compose -f .github/compose/doctor-probe.compose.yml down -v

@@ -1,0 +1,72 @@
+# Upstream TCP probe with local dockerized mock upstreams.
+
+name: doctor-upstream-probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      config_path:
+        description: "Config path for doctor --config"
+        required: false
+        default: "config/mock-config.yaml"
+      compose_file:
+        description: "Docker Compose file for mock upstreams"
+        required: false
+        default: ".github/compose/doctor-probe.compose.yml"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      DOCTOR_CONFIG: ${{ github.event.inputs.config_path || 'config/mock-config.yaml' }}
+      DOCKER_COMPOSE_FILE: ${{ github.event.inputs.compose_file || '.github/compose/doctor-probe.compose.yml' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Start mock upstreams (docker compose)
+        run: docker compose -f "$DOCKER_COMPOSE_FILE" up -d
+
+      - name: Wait for mock ports
+        shell: bash
+        run: |
+          for p in 9000 9001; do
+            for i in {1..20}; do
+              if (echo > /dev/tcp/127.0.0.1/$p) >/dev/null 2>&1; then
+                break
+              fi
+              sleep 1
+              if [ "$i" -eq 20 ]; then
+                echo "port $p did not become reachable"
+                exit 1
+              fi
+            done
+          done
+
+      - name: Doctor with upstream probe (mock profile)
+        run: cargo run -- doctor --config "$DOCTOR_CONFIG" --probe-upstream --json
+
+      - name: Collect docker diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p .artifacts
+          docker compose -f "$DOCKER_COMPOSE_FILE" ps > .artifacts/compose-ps.txt || true
+          docker compose -f "$DOCKER_COMPOSE_FILE" logs --no-color > .artifacts/compose-logs.txt || true
+
+      - name: Upload docker diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-probe-docker-diagnostics
+          path: .artifacts/
+
+      - name: Stop mock upstreams
+        if: always()
+        run: docker compose -f "$DOCKER_COMPOSE_FILE" down -v

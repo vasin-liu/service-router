@@ -1,0 +1,62 @@
+# Sample mock registry behaviors for integration tests / local rehearsals.
+# Not loaded by default; copy fragments into registries.sources[].mock or merge with mock-config.yaml.
+#
+# 1) Empty instance list → resolve OK, zero instances:
+#    services:
+#      empty-service: []
+#
+# 2) Simulated resolver failure → MultiRegistry sees UnexpectedResponse / AllFailed semantics:
+#    error_services:
+#      down-service: "simulated outage"
+#
+# 3) Registry health overrides for doctor:
+#    health_behavior:
+#      type: unhealthy
+#      message: "mock registry unreachable"
+
+log_level: "info"
+
+server:
+  host: "127.0.0.1"
+  port: 18081
+  upstream_timeout_secs: 30
+
+registries:
+  query_mode: priority
+  sources:
+    - type: mock
+      priority: 1
+      services:
+        ok-service:
+          - host: "127.0.0.1"
+            port: 8081
+            metadata:
+              tier: "test"
+        # Explicit empty rollout (different from unknown service ID):
+        empty-service: []
+      error_services:
+        down-service: "simulated registry outage"
+      # Uncomment to make doctor registry health FAIL:
+      # health_behavior:
+      #   type: degraded
+      #   message: "planned maintenance simulation"
+
+routes:
+  - id: "to-empty"
+    priority: 5
+    path:
+      type: prefix
+      value: "/probe/empty"
+    service_id: "empty-service"
+  - id: "to-error"
+    priority: 6
+    path:
+      type: prefix
+      value: "/probe/down"
+    service_id: "down-service"
+  - id: "catch"
+    priority: 100
+    path:
+      type: prefix
+      value: "/"
+    service_id: "ok-service"

@@ -1,6 +1,6 @@
 use std::path::Path;
 use crate::config::env_resolver::resolve_env_vars_in_yaml;
-use crate::config::model::AppConfig;
+use crate::config::model::{AppConfig, LocalOverrideFile, LocalOverrideEntry};
 use crate::error::ConfigError;
 
 /// Load and validate `AppConfig` from a YAML file.
@@ -28,6 +28,22 @@ pub fn load_config(path: impl AsRef<Path>) -> Result<AppConfig, ConfigError> {
     validate_config(&config)?;
 
     Ok(config)
+}
+
+/// Load local-override entries from a YAML file.
+pub fn load_local_overrides(path: impl AsRef<Path>) -> Result<Vec<LocalOverrideEntry>, ConfigError> {
+    let path = path.as_ref();
+    let raw = std::fs::read_to_string(path).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            ConfigError::FileNotFound(path.display().to_string())
+        } else {
+            ConfigError::ReadError(e)
+        }
+    })?;
+    let expanded = resolve_env_vars_in_yaml(&raw)?;
+    let file: LocalOverrideFile = serde_yaml::from_str(&expanded)
+        .map_err(|e| ConfigError::ParseError(format!("local-override: {e}")))?;
+    Ok(file.overrides)
 }
 
 fn validate_config(config: &AppConfig) -> Result<(), ConfigError> {

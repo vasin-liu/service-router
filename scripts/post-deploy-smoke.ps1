@@ -1,0 +1,9 @@
+# Subset of docs/operations-runbook.md §7: GET /health and /ready on a running router.
+$ErrorActionPreference = "Stop"
+$base = if ($env:SERVICE_ROUTER_BASE_URL) { $env:SERVICE_ROUTER_BASE_URL.TrimEnd("/") } else { "http://127.0.0.1:8080" }
+
+Write-Host "[post-deploy-smoke] GET $base/health"
+Invoke-WebRequest -Uri "$base/health" -UseBasicParsing | Out-Null
+Write-Host "[post-deploy-smoke] GET $base/ready"
+Invoke-WebRequest -Uri "$base/ready" -UseBasicParsing | Out-Null
+Write-Host "[post-deploy-smoke] OK"

@@ -14,9 +14,9 @@
 
 - 路由规则：`exact/prefix/glob/regex` + method + header
 - 上游目标：`upstream_url` 直连或 `service_id` 动态解析
-- 注册中心：Nacos、Eureka（Kubernetes 为预留 stub）
+- 注册中心：Nacos、Eureka、Kubernetes（通过 Endpoints API 解析实例；可选 `kubeconfig_path`/`kubeconfig_context`）
 - 运行能力：配置热更新、`/health`、`/ready`
-- 协议能力：HTTP 代理（完整），WebSocket（初版）
+- 协议能力：HTTP 代理（完整），WebSocket（双向帧中继）
 
 ## 技术架构（简）
 
@@ -36,13 +36,17 @@
 
 ## 现阶段限制
 
-- 未提供完整负载均衡策略（当前优先首实例）
-- WebSocket 尚未实现完整双向帧透传
-- `/ready` 暂未聚合注册中心真实健康状态
-- Kubernetes 发现能力未落地
+- 负载均衡：`server.instance_selection` 支持 `first`（默认）、`round_robin`、`random`、`weighted_round_robin`；可选 `server.health_check` 主动探测上游实例
+- `/ready` 聚合各注册中心的 `health()` 结果；仅当全部报 `unhealthy` 时返回 503
+- Kubernetes：`Service.spec.ports` 约束后端 TCP 端口，再读 `Endpoints` / `EndpointSlice`；Slice 跳过 `ready`/`serving` 为 false 的端点；EndpointSlice 列表支持可选 `endpoint_slice_label_selector` 与 `kubernetes.io/service-name` AND 组合
 
 ## 下一步（建议）
 
-- P1：完善 WS 双向代理、引入负载均衡、增强 readiness 真实性
-- P2：加入熔断重试与核心指标
-- P3：完成 Kubernetes Registry 正式实现
+- P1：FR-6.3 插件分发机制初版（`dlopen` 外部 `.so`/`.dll` 加载，对齐 ADR 002）
+- ~~P2：NFR-1 性能基准~~ **已完成**（p50 ~0.77ms / p99 ~0.90ms，见 `docs/benchmark-baseline.md`）
+- ~~P2：NFR-2 插件 panic 隔离~~ **已完成**（`catch_unwind` 包裹插件调用）
+- ~~P2：NFR-5 配置版本号~~ **已完成**（`config_version` 字段 + `docs/config-versioning.md`）
+- P3：Kubernetes 端口/Service 对齐、就绪与标签维度过滤等与大规模集群兼容性增强
+- **远期**：配置界面（图形化编辑与校验预览，本地优先；**不阻塞**当前 YAML + CLI 主线）——见 `docs/developer-roadmap-1-2y.md` §4.1  
+- **更远期**：**Consul** 作为可选注册中心接入（与现有 Mock/Nacos/Eureka/K8s 并列评审后再实现）——见 **同文档 §4.1**、`docs/implementation-status.md`「远期（注册中心扩展）」
+- **远期**：可选 **流量入口 B**（本机端口转发/中继汇入代理端口），在保留 **显式访问代理端口（A）** 为默认前提下叠加；HTTPS 与高阶劫持另评——见同文档 **§4.2**

@@ -1,0 +1,20 @@
+# ADR 001: FR-6 dynamic plugins deferred; `response_headers` as config slice
+
+## Status
+
+Accepted (engineering slice shipped in-tree).
+
+## Context
+
+PRD **FR-6** calls for a plugin ecosystem (lifecycle, examples, distribution). That implies runtime extensibility, isolation, and operational contracts not yet defined for this repository.
+
+## Decision
+
+1. **Ship first** a **configuration-only** extension: per-route **`response_headers`** on plain HTTP responses, validated at route compile time, documented in **`docs/plugin-extension.md`**.
+2. **Defer** dynamic plugin loading (Wasm/scripts/modules), marketplace, and lifecycle APIs until a **separate design review** produces security, observability, and upgrade requirements.
+3. **Do not** apply `response_headers` to WebSocket upgrade traffic until product explicitly requires it and semantics are agreed.
+
+## Consequences
+
+- Teams can standardize gateway-injected headers without a plugin SDK.
+- Full FR-6 PRD metrics (e.g. adoption %) remain **out of scope** for this codebase until the deferred design lands.

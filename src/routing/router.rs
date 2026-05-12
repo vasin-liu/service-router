@@ -71,10 +71,8 @@ mod tests {
 
     fn config_with_rules(rules: Vec<RoutingRule>) -> AppConfig {
         AppConfig {
-            server: ServerConfig::default(),
-            registries: RegistriesConfig::default(),
             routes: rules,
-            log_level: "info".to_string(),
+            ..Default::default()
         }
     }
 
@@ -89,6 +87,7 @@ mod tests {
                 service_id: Some("svc-low".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 200,
             },
             RoutingRule {
@@ -99,6 +98,7 @@ mod tests {
                 service_id: Some("svc-high".to_string()),
                 upstream_url: None,
                 strip_prefix: None,
+                response_headers: None,
                 priority: 10,
             },
         ];

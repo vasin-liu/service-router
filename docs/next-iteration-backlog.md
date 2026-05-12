@@ -1,67 +1,23 @@
-# Service Router 下一迭代 Backlog（建议）
+# Backlog（当前主线之后）
 
-## 目标
+> **历史说明**：早期迭代中的 B01–B09 与 M3 工程切片（`config-diff`、`config-snapshot`、`response_headers` 等）已合入主线；旧版「下一迭代 P0」段落已退役，避免与现状冲突。
 
-将当前 `v0.1` 的开发者能力从“可用”提升到“稳定可推广”，优先强化调试闭环、CI 集成与易用性。
+## 当前主线状态（摘要）
 
-## 优先级定义
+- **M2 工程封板**：Mock + CI compose 门禁、诊断 JSON 契约、运维与发布矩阵见 **`implementation-status.md`** / **`m2-release-readiness.md`**。
+- **M3 工程切片**：FR-5.1–FR-5.3（工程侧）、FR-6 配置态 **`response_headers`** 已交付；能力表见 **`implementation-status.md`**「M3 已交付能力清单」。
 
-- P0：必须进入下一迭代（阻塞推广）
-- P1：应进入下一迭代（显著提升体验）
-- P2：可择机进入（增强项）
+## 建议下一批工作（按价值排序）
 
-## Backlog 清单
+| 优先级 | 事项 | 说明与入口 |
+|:-------|:-----|:-----------|
+| **P0** | 四类环境回归与 §9 归档 | 业务在 **Nacos / Eureka / Kubernetes** 目标环境跑 **`release-acceptance-matrix.md`**，与 Mock 证据一并归档；模板 **`docs/regression-archive/`**。 |
+| **P0** | 发布后快速探测 | 进程已监听时跑 **`scripts/post-deploy-smoke.sh`**（或 **`.ps1`**）；完整清单 **`operations-runbook.md`** §7。 |
+| **P1** | 工单粘贴 `config-snapshot` | **`docs/config-snapshot-workflow.md`**。 |
+| **P1** | FR-6 动态插件 | 先评审 **`docs/adr/001-fr6-dynamic-plugins-deferred.md`** 中「延期」范围，再开设计与实现。 |
+| **P2** | K8s / 弹性 / Consul | 汇总表 **`docs/next-engineering-priorities.md`**（链接路线图与 one-pager）。 |
 
-| ID | 优先级 | 事项 | 价值 | 验收标准 |
-|---|---|---|---|---|
-| B01 | P0 | `check-config --strict` 增加更多冲突检测（优先级重叠、不可达规则） | 更早发现配置风险 | 至少新增 3 类可复现冲突检测，附测试用例 |
-| B02 | P0 | `route-explain` 输出建议动作（如何修复 mismatch） | 降低排障门槛 | 每类失败原因至少给 1 条建议，JSON/文本都可见 |
-| B03 | P0 | CI 命令模板（`check-config` + `doctor` + smoke） | 降低团队接入成本 | 提供可复制的 CI 配置片段（GitHub/GitLab 至少一种） |
-| B04 | P1 | `doctor` 增加网络连通检查（上游 URL / registry endpoint） | 提高故障定位效率 | 输出可读通过/失败原因，不可连通时明确失败码 |
-| B05 | P1 | Mock registry 增加动态场景（空实例/异常状态） | 增强测试覆盖 | 支持至少 2 种异常模拟并提供示例配置 |
-| B06 | P1 | 统一 CLI 参数规范与错误码文档 | 降低学习成本 | README 增加命令规范表与退出码说明 |
-| B07 | P2 | `route-explain` 增加请求样例回放输入 | 缩短联调链路 | 支持从文件读取 path/method/headers 并解释 |
-| B08 | P2 | 指标输出最小集（规则命中次数、失败原因计数） | 支持运营优化 | 暴露基础统计并可通过日志/接口查看 |
+## 相关文档
 
-## 建议 Sprint 拆分（2 周）
-
-### Sprint A（P0）
-
-- B01 严格检查增强
-- B02 诊断建议增强
-- B03 CI 模板输出
-
-**DoD**
-- `cargo test` 全通过
-- 新增测试覆盖核心分支
-- 文档同步到 README 与 release notes
-
-### Sprint B（P1）
-
-- B04 `doctor` 连通性检查
-- B05 mock 异常场景
-- B06 CLI 规范与退出码文档
-
-**DoD**
-- 命令输出可读且稳定
-- 在 mock 模式与真实 registry 模式下各跑 1 次验收
-
-## 技术风险与应对
-
-- 规则冲突检测复杂度上升  
-  - 应对：先支持可确定性高的规则类型（exact/prefix），逐步扩展 regex/glob。
-- 诊断信息过多影响可读性  
-  - 应对：默认简洁输出，`--verbose` 提供全量细节。
-- CI 模板跨平台差异  
-  - 应对：先发布单平台基线模板，再逐步补齐。
-
-## 里程碑建议
-
-- M1（下迭代结束）：完成 P0，形成团队可复制接入路径
-- M2（第二迭代结束）：完成 P1，达到“稳定推广”标准
-
-## 验收指标（下迭代）
-
-- 配置问题前置发现率提升（strict 检查命中）
-- 路由问题平均定位时间下降（基于 route-explain 反馈）
-- 新项目接入时间下降（基于 CI 模板和 quick start 使用）
+- **`CHANGELOG.md`**（Unreleased）：近期代码与文档变更。
+- **`docs/next-engineering-priorities.md`**：与 **`implementation-status.md`**「下一阶段建议」对齐的一页表。

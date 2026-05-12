@@ -7,6 +7,7 @@ server:
   host: "127.0.0.1"
   port: 8080
   upstream_timeout_secs: 30
+  # instance_selection: first   # first | round_robin — pick upstream when service_id has multiple instances (default first)
 
 # -------------------------------------------------------------------
 # Registry sources — can mix Nacos, Eureka, and Kubernetes
@@ -21,6 +22,9 @@ registries:
     # ---- Nacos (unauthenticated) -----------------------------------
     - nacos:
         priority: 1
+        # Accepts both forms:
+        # - http://127.0.0.1:8848
+        # - http://127.0.0.1:8848/nacos
         server_addr: "http://127.0.0.1:8848"
         namespace: "public"
         group: "DEFAULT_GROUP"
@@ -28,7 +32,7 @@ registries:
     # ---- Nacos (with username/password auth) -----------------------
     # - nacos:
     #     priority: 1
-    #     server_addr: "http://nacos.example.com:8848"
+    #     server_addr: "http://nacos.example.com:8848"   # or .../nacos
     #     namespace: "prod"
     #     group: "DEFAULT_GROUP"
     #     username: "nacos"
@@ -47,11 +51,16 @@ registries:
     #     username: "admin"
     #     password: "${EUREKA_PASSWORD}"
 
-    # ---- Kubernetes (stub — returns empty; for future use) ---------
+    # ---- Kubernetes (service discovery via Endpoints API) ----------
     # - kubernetes:
     #     priority: 3
     #     namespace: "default"
     #     api_server_url: "https://kubernetes.default.svc"
+    #     kubeconfig_path: "/path/to/kubeconfig.yaml"
+    #     kubeconfig_context: "kubernetes-admin@cluster"
+    #     insecure_skip_tls_verify: false
+    #     # Optional: AND with kubernetes.io/service-name on EndpointSlice list only (Core Endpoints unchanged):
+    #     # endpoint_slice_label_selector: "topology.kubernetes.io/zone=us-east-1a"
 
 # -------------------------------------------------------------------
 # Routing rules — evaluated in order; first match wins
