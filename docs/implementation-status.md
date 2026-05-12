@@ -2,9 +2,10 @@
 
 ## 当前状态
 
-- 状态：**M3（工程侧）已完成**；主线研发重心转入 **M4 准备（生态化与规模化）**
-- 已完成里程碑：M1（开发者最小可用工具链）、M2（稳定性 / 诊断 / 发布门禁）、**M3（协作与扩展 — FR-5 全量 + FR-6 Plugin SDK + 3 内置插件）**
-- 当前阶段目标：**M4** — FR-6.3 外部插件加载（`dlopen`，设计已就绪 ADR 002，按需实施）、多环境一致性增强；~~主动健康检查~~ ✔ ~~性能基准~~ ✔；全量 PRD 指标仍以 **`docs/product-prd-developer.md`** 为准
+- 状态：**PRD 工程交付已达上限**；代码层面迭代边际收益接近于零，建议转入**运维验收 / 版本发布 / 用户文档**方向
+- 已完成里程碑：M1（开发者最小可用工具链）、M2（稳定性 / 诊断 / 发布门禁）、**M3（协作与扩展 — FR-5 全量 + FR-6 Plugin SDK + 3 内置插件）**、**M4 部分（主动健康检查 + 性能基准 + NFR-2 插件隔离 + NFR-5 配置版本号）**
+- PRD 覆盖率：**FR 17/18 (94%)**，弹性基础设施 **5/5 (100%)**，NFR **4/5 已覆盖**；唯一未开始：FR-6.3 `dlopen` 外部插件加载（ADR 002 设计已就绪，按需实施）
+- 下一步重心：**真实环境验收**（Nacos/Eureka/K8s 矩阵回归）→ **版本发布准备**（tag + release workflow + binary 分发）→ **用户文档与教程**
 - **外部环境合规**：在真实集群上完成 **Nacos / Eureka / Kubernetes** 矩阵回归并填写 **`release-acceptance-matrix.md`** §**9**，属于持续运维责任项（与代码里程碑解耦；Mock 证据见 CI + **`scripts/verify-m2-baseline.*`**）。可选：本地采集与 CI 一致的 **五份 §7 JSON** 及 **`section-9-summary.generated.md`** 见 [m2-release-readiness.md（§9 验收产物包）](./m2-release-readiness.md#m2-release-acceptance-bundle)。
 
 ## 本次已落地
@@ -84,18 +85,21 @@
 - **配置界面**：已写入 `docs/developer-roadmap-1-2y.md` §4.1 作为远期项，不纳入当前迭代验收。
 - **流量入口**：**显式代理端口（§4.2 模型 A）** 为当前产品与验收基准；**端口转发/透明汇入（§4.2 模型 B）** 为远期可选叠加，不进当前门禁。
 
-## 下一阶段建议（M4 方向）
+## 下一阶段建议（运维与产品化方向）
 
-> **已闭环**: M2 主线（文档/门禁/诊断）、M3 协作与扩展（FR-5 全量 + FR-6 Plugin SDK）、转发弹性（LB 四策略 + WebSocket 双向 + 熔断重试）均已完成。
+> **已闭环**: M1-M3 全部工程交付、转发弹性（LB 四策略 + WebSocket 双向 + 熔断重试 + 主动健康检查）、NFR-1 性能基准、NFR-2 插件隔离、NFR-5 配置版本号。**代码层面迭代边际收益已接近于零。**
 
-1. **环境与回归沉淀（持续运维）**  
-   在 **Nacos / Eureka / Kubernetes** 真实环境跑 **`release-acceptance-matrix.md`** 门禁，归档 §9 产物（团队流程项，与代码里程碑解耦）。
+1. **真实环境验收（P0，团队流程项）**  
+   在 **Nacos / Eureka / Kubernetes** 真实环境跑 **`release-acceptance-matrix.md`** 门禁，归档 §9 产物。
 
-2. **Kubernetes 规模化（按需迭代）**
-   多集群上下文、观察性增强；保持可配置、可单测。
+2. **版本发布准备**  
+   打 tag（`v1.0.0` 或 `v0.9.0`），构建跨平台 binary（`.github/workflows/release.yml`），写正式 release notes。
 
-3. ~~**NFR-1 性能基准**~~ **已完成**
-   代理附加延迟 p50 ~0.77ms / p99 ~0.90ms（loopback, 0-4KB body）；基准文档见 `docs/benchmark-baseline.md`；benchmark 代码 `benches/proxy_overhead.rs`。
+3. **用户文档与教程**  
+   Getting Started 端到端教程（从 `init` 到成功代理）、场景化文档（联调、CI 集成、多环境管理）。
+
+4. **按需迭代（不阻塞发布）**  
+   ~~NFR-1 性能基准~~ ✔ / NFR-4 OpenTelemetry（按需）/ FR-6.3 `dlopen`（按需）/ Kubernetes 多集群（按需）。
 
 ## 远期（注册中心扩展，不设固定版本）
 

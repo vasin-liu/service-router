@@ -4,6 +4,8 @@ Microservice registry proxy with configurable routing, hot-reload, and developer
 
 **Registry integrations (shipping):** Mock, Nacos, Eureka, Kubernetes. **HashiCorp Consul** is on the long-term backlog ([`docs/developer-roadmap-1-2y.md`](docs/developer-roadmap-1-2y.md) §4.1).
 
+**New to service-router?** See the [Getting Started guide](docs/getting-started.md) for a complete end-to-end tutorial.
+
 ## Quick Start (10 minutes, mock mode)
 
 ### 1) Validate config
